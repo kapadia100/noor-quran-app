@@ -8,3 +8,13 @@ ios/App/App/public/
 ios/App/Pods/
 *.apk
 public/data/
+*.keystore
+*.jks
+android/keystore.properties
+*.aab
+*.ipa
+*.p12
+*.mobileprovision
+test-results/
+playwright-report/
+.env

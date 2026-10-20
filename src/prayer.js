@@ -1,3 +1,4 @@
+import {dayIn} from './lib.js';
 import {Coordinates,CalculationMethod,PrayerTimes,Madhab,Qibla,HighLatitudeRule} from 'adhan';
 import {Capacitor} from '@capacitor/core';
 import {LocalNotifications} from '@capacitor/local-notifications';
@@ -8,8 +9,9 @@ export const PRAYERS=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
 export const PNAME={fajr:['Fajr','فجر'],sunrise:['Sunrise','طلوع'],dhuhr:['Dhuhr','ظہر'],asr:['Asr','عصر'],maghrib:['Maghrib','مغرب'],isha:['Isha','عشاء']};
 export const P=Object.assign({city:'Karachi',lat:24.8607,lng:67.0011,tz:'Asia/Karachi',src:'city',method:'Karachi',madhab:'Hanafi',hijriAdj:0,alerts:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true,sunrise:false},adhan:true,days:7},LS.get('prayer',{}));
 export const saveP=()=>LS.set('prayer',P);
-export function params(){const p=CalculationMethod[P.method]();p.madhab=P.madhab==='Hanafi'?Madhab.Hanafi:Madhab.Shafi;if(Math.abs(P.lat)>48)p.highLatitudeRule=HighLatitudeRule.recommended(new Coordinates(P.lat,P.lng));return p}
-export function times(date=new Date()){return new PrayerTimes(new Coordinates(P.lat,P.lng),date,params())}
+export function params(){const p=(CalculationMethod[P.method]||CalculationMethod.Karachi)();p.madhab=P.madhab==='Hanafi'?Madhab.Hanafi:Madhab.Shafi;if(Math.abs(P.lat)>48)p.highLatitudeRule=HighLatitudeRule.recommended(new Coordinates(P.lat,P.lng));return p}
+// Prayer times for the calendar day of `date` in the selected city's timezone (not the device's).
+export function times(date=new Date()){return new PrayerTimes(new Coordinates(P.lat,P.lng),dayIn(P.tz,date),params())}
 export const fmt=d=>d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:P.tz||undefined});
 export function fmt12(d){return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:P.tz||undefined})}
 export function next(now=new Date()){for(let i=0;i<2;i++){const day=new Date(now.getTime()+i*864e5),pt=times(day);for(const k of PRAYERS){if(k==='sunrise')continue;if(pt[k]>now)return{key:k,time:pt[k]}}}}
@@ -17,10 +19,10 @@ export const qibla=()=>Qibla(new Coordinates(P.lat,P.lng));
 export function hijri(d=new Date(),lang='en'){const x=new Date(d.getTime()+(+P.hijriAdj||0)*864e5);
  try{return new Intl.DateTimeFormat((lang==='ur'?'ur':'en')+'-u-ca-islamic-umalqura',{day:'numeric',month:'long',year:'numeric',timeZone:P.tz||undefined}).format(x)}catch{return new Intl.DateTimeFormat('en-u-ca-islamic',{day:'numeric',month:'long',year:'numeric'}).format(x)}}
 export const greg=(d=new Date(),lang='en')=>d.toLocaleDateString(lang==='ur'?'ur-PK':'en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:P.tz||undefined});
-export function locate(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('no geolocation'));navigator.geolocation.getCurrentPosition(p=>{P.lat=+p.coords.latitude.toFixed(4);P.lng=+p.coords.longitude.toFixed(4);P.src='gps';P.city='GPS '+P.lat+', '+P.lng;P.tz=Intl.DateTimeFormat().resolvedOptions().timeZone;saveP();res(P)},rej,{enableHighAccuracy:false,timeout:15000,maximumAge:6e5})})}
+export function locate(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('no geolocation'));navigator.geolocation.getCurrentPosition(p=>{P.lat=+p.coords.latitude.toFixed(4);P.lng=+p.coords.longitude.toFixed(4);P.src='gps';P.city='GPS '+P.lat+', '+P.lng;P.tz=Intl.DateTimeFormat().resolvedOptions().timeZone;saveP();res(P)},e=>rej(new Error(e.code===1?'permission denied':e.code===3?'timeout':'position unavailable')),{enableHighAccuracy:false,timeout:15000,maximumAge:6e5})})}
 export function setCity(name){const c=CITIES.find(c=>c[0]===name);if(!c)return;[P.city,P.lat,P.lng,P.tz]=c;P.method=c[4];P.src='city';saveP()}
 // ---- notifications ----
-const native=()=>Capacitor.isNativePlatform();let webTimers=[];
+const native=()=>Capacitor.isNativePlatform();export const isNative=native;let webTimers=[];
 export async function schedule(){const now=new Date();const items=[];
  for(let d=0;d<(P.days||7);d++){const pt=times(new Date(now.getTime()+d*864e5));for(const k of PRAYERS){if(!P.alerts[k]||pt[k]<=now)continue;items.push({k,at:pt[k]})}}
  if(native()){const perm=await LocalNotifications.requestPermissions();if(perm.display!=='granted')return {ok:false,reason:'permission denied'};

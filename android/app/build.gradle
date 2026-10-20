@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Release signing: values come from android/keystore.properties (gitignored, created by scripts/make-keystore.sh)
+// or from environment variables in CI. If neither exists, the release build is produced UNSIGNED.
+def ksProps = new Properties()
+def ksFile = rootProject.file('keystore.properties')
+if (ksFile.exists()) { ksFile.withInputStream { ksProps.load(it) } }
+def ks = { k -> System.getenv(k) ?: ksProps.getProperty(k) }
+def hasSigning = ks('ANDROID_KEYSTORE_FILE') != null
+
 android {
     namespace = "com.aamir.quranapp"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +15,9 @@ android {
         applicationId "com.aamir.quranapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Bump BOTH for every store upload (versionCode must always increase).
+        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        versionName = (System.getenv("VERSION_NAME") ?: "1.0.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +25,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasSigning) {
+                storeFile file(ks('ANDROID_KEYSTORE_FILE'))
+                storePassword ks('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias ks('ANDROID_KEY_ALIAS')
+                keyPassword ks('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasSigning) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

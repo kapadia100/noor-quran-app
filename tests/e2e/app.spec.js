@@ -1,0 +1,48 @@
+import {test,expect} from '@playwright/test';
+let errors=[];
+test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error'&&!/net::|Failed to load resource/.test(m.text()))errors.push(m.text())});});
+test.afterEach(async({page})=>{expect(errors).toEqual([]);const ov=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);expect(ov).toBeLessThanOrEqual(1)});
+
+test('surah list + filter',async({page})=>{await page.goto('./');await expect(page.locator('#sl li')).toHaveCount(114);await page.fill('#f','yasin');await expect(page.locator('#sl li')).toHaveCount(1);await page.fill('#f','');await page.fill('#f','cow');await expect(page.locator('#sl li').first()).toContainText('Baqara')});
+test('reader: 2:255 jump, fixes, no basmala dup',async({page})=>{await page.goto('./#/search');await page.fill('#q','2:255');await page.press('#q','Enter');await expect(page).toHaveURL(/#\/surah\/2\/255/);await expect(page.locator('.ayah')).toHaveCount(286);
+ await expect(page.locator('#a181 .ar')).toContainText('بَعْدَ مَا');const first=await page.locator('#a1 .ar').innerText();expect(first.startsWith('بِسْمِ')).toBe(false)});
+test('invalid refs handled',async({page})=>{await page.goto('./#/surah/999');await expect(page).toHaveURL(/#\/$/);await page.goto('./#/search');await page.fill('#q','1:9');await page.press('#q','Enter');await expect(page.locator('#sr')).toContainText('Invalid')});
+test('translation switch incl. Urdu RTL',async({page})=>{await page.goto('./#/surah/1');for(const [ed,dir] of [['ur.jalandhry','rtl'],['fr.hamidullah','ltr'],['id.indonesian','ltr'],['en.sahih','ltr']]){await page.selectOption('#tr',ed);await expect(page.locator('#a1 .tr')).toHaveAttribute('dir',dir);await expect(page.locator('#a1 .tr')).not.toBeEmpty()}});
+test('juz 1, 15, 30',async({page})=>{for(const [n,c] of [[1,148],[15,185],[30,564]]){await page.goto('./#/juz/'+n);await expect(page.locator('.ayah')).toHaveCount(c)}await page.goto('./#/juz');await expect(page.locator('.list li')).toHaveCount(30)});
+test('AUDIO continuous play: auto-advance through ayahs and into next surah',async({page})=>{
+ await page.goto('./#/surah/112');await page.waitForSelector('.ayah');
+ await page.evaluate(()=>{window.__log=[];const a=window.__audio;a.muted=true;let done='';a.addEventListener('timeupdate',()=>{if(done!==a.src&&isFinite(a.duration)&&a.duration>2){done=a.src;window.__log.push(a.src);a.currentTime=a.duration-0.5}})});
+ await page.click('#playAll');
+ await expect.poll(()=>page.evaluate(()=>window.__log.length),{timeout:60000}).toBeGreaterThanOrEqual(6);
+ const log=await page.evaluate(()=>window.__log);expect(new Set(log).size).toBeGreaterThanOrEqual(5);
+ await expect(page).toHaveURL(/#\/surah\/113/);await expect(page.locator('#pInfo')).toContainText('113');});
+test('AUDIO per-ayah play continues, next/prev, reciter switch',async({page})=>{await page.goto('./#/surah/1');await page.waitForSelector('.ayah');
+ await page.evaluate(()=>window.__audio.muted=true);await page.click('[data-play="2"]');await expect(page.locator('#pInfo')).toContainText('1:3');
+ await page.click('#pNext');await expect(page.locator('#pInfo')).toContainText('1:4');await page.click('#pPrev');await expect(page.locator('#pInfo')).toContainText('1:3');
+ await expect(page.locator('#a3')).toHaveClass(/playing/);await page.selectOption('#rc','ar.husary');await expect.poll(()=>page.evaluate(()=>window.__audio.src)).toContain('husary');
+ await page.click('#pClose');await expect(page.locator('#player')).toBeHidden()});
+test('tafsir sheet',async({page})=>{await page.goto('./#/surah/1');await page.click('[data-taf="1:1"]');await expect(page.locator('#tfx')).not.toHaveText(/Loading/,{timeout:30000});expect((await page.locator('#tfx').innerText()).length).toBeGreaterThan(20)});
+test('hadith browse',async({page})=>{await page.goto('./#/hadith');await expect(page.locator('.list li').first()).toBeVisible({timeout:30000});await page.goto('./#/hadith/bukhari');await page.locator('.list li a').first().click();await expect(page.locator('.ayah').first()).toBeVisible({timeout:30000})});
+test('search translation + Arabic',async({page})=>{await page.goto('./#/search');await page.selectOption('#se','en.sahih');await page.fill('#q','patience');await page.press('#q','Enter');await expect(page.locator('#sr .card').first()).toBeVisible({timeout:30000});await expect(page.locator('#sr mark').first()).toBeVisible();
+ await page.selectOption('#se','quran-simple-clean');await page.fill('#q','الرحمن');await page.press('#q','Enter');await expect(page.locator('#sr .card').first()).toBeVisible({timeout:30000});
+ await page.fill('#q','zzqqxxnotaword');await page.press('#q','Enter');await expect(page.locator('#sr')).toContainText('0')});
+test('bookmarks + last read persist',async({page})=>{await page.goto('./#/surah/36');await page.waitForSelector('[data-bm="36:1"]');await page.click('[data-bm="36:1"]');await expect(page.locator('[data-bm="36:1"]')).toHaveText('★');await page.locator('#a20').scrollIntoViewIfNeeded();await page.waitForTimeout(600);await page.goto('./');await page.waitForSelector('#sl li');await page.click('a[href="#/bookmarks"]');await expect(page).toHaveURL(/bookmarks/);await expect(page.locator('a.card .badge').first()).toContainText('36:1');await page.goto('./#/');await expect(page.locator('.card.hl')).toContainText('36:')});
+test('dark mode + Urdu UI',async({page})=>{await page.goto('./');await page.click('#theme');const th=await page.evaluate(()=>document.documentElement.dataset.theme);await page.click('#lang');await expect(page.locator('html')).toHaveAttribute('dir','rtl');await page.reload();await expect(page.locator('html')).toHaveAttribute('data-theme',th);await expect(page.locator('nav')).toContainText('قرآن')});
+test('prayer: GPS Karachi, method switch, alerts, hijri adjust',async({page})=>{await page.goto('./#/prayer');await page.click('#gps');await expect(page.locator('.card b').filter({hasText:'GPS'}).first()).toBeVisible();
+ const t1=await page.locator('.ptimes li').nth(5).innerText();await page.selectOption('#meth','MuslimWorldLeague');const t2=await page.locator('.ptimes li').nth(5).innerText();expect(t1).not.toBe(t2);
+ await page.selectOption('#city','Karachi');await page.selectOption('#meth','Karachi');await expect(page.locator('.ptimes li').nth(3)).toContainText(/4:2\d PM/);
+ await page.locator('[data-al="fajr"]').uncheck();await expect(page.locator('#smsg')).toContainText(/alerts scheduled|Alerts:/);await page.reload();await expect(page.locator('[data-al="fajr"]')).not.toBeChecked();
+ const h=await page.locator('.hij').innerText();await page.click('#hp');await expect(page.locator('.hij')).not.toHaveText(h);await page.click('#hm')});
+test('qibla bearing + compass with mocked orientation',async({page})=>{await page.goto('./#/prayer');await page.selectOption('#city','Karachi');await page.goto('./#/qibla');await expect(page.locator('.deg')).toHaveText('267.7°');await page.click('#cmp');
+ await page.evaluate(()=>{window.__q=setInterval(()=>{for(const t of ['deviceorientationabsolute','deviceorientation'])dispatchEvent(new DeviceOrientationEvent(t,{alpha:360-267.7,beta:0,gamma:0,absolute:true}))},50)});await expect(page.locator('#hd')).toContainText('Facing Qibla')});
+test('settings toggles',async({page})=>{await page.goto('./#/settings');await expect(page.locator('#s_cont')).toBeChecked();await page.locator('#s_size').fill('40');await page.reload();await expect(page.locator('#s_size')).toHaveValue('40')});
+test('manifest valid',async({page,request})=>{await page.goto('./');const href=await page.locator('link[rel=manifest]').getAttribute('href');const m=await (await request.get(new URL(href,page.url()).href)).json();expect(m.name).toBeTruthy();expect(m.display).toBe('standalone');expect(m.icons.some(i=>i.sizes==='512x512')).toBe(true);for(const i of m.icons){expect((await request.get(new URL(i.src,page.url()).href)).status()).toBe(200)}});
+test('offline: Quran reading works with no network after first load',async({page,context})=>{await page.goto('./');await page.evaluate(async()=>{await navigator.serviceWorker.ready});await page.reload();await page.waitForTimeout(1500);
+ await context.setOffline(true);await page.reload();await page.goto('./#/surah/18');await expect(page.locator('.ayah')).toHaveCount(110,{timeout:20000});await expect(page.locator('#a1 .tr')).not.toBeEmpty();
+ await page.goto('./#/juz/30');await expect(page.locator('.ayah')).toHaveCount(564);await page.goto('./#/prayer');await expect(page.locator('.ptimes li')).toHaveCount(6);await context.setOffline(false)});
+test('AUDIO whole-surah mode advances to next surah; unsupported reciter falls back to ayah mode',async({page})=>{
+ await page.goto('./');await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('settings')||'{}');s.surahAudio=true;s.reciter='ar.alafasy';localStorage.setItem('settings',JSON.stringify(s))});await page.reload();
+ await page.goto('./#/surah/112');await page.waitForSelector('.ayah');
+ await page.evaluate(()=>{window.__log=[];const a=window.__audio;a.muted=true;let done='';a.addEventListener('timeupdate',()=>{if(done!==a.src&&isFinite(a.duration)&&a.duration>2){done=a.src;window.__log.push(a.src);a.currentTime=a.duration-0.5}})});
+ await page.click('#playAll');await expect.poll(()=>page.evaluate(()=>window.__log.join()),{timeout:60000}).toContain('audio-surah/128/ar.alafasy/113.mp3');
+ await page.click('#pClose');await page.selectOption('#rc','ar.husary');await page.click('#playAll');await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/audio\/\d+\/ar\.husary\/\d+\.mp3/)});

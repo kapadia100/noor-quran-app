@@ -1,4 +1,4 @@
-:root{--bg:#f7f5ef;--fg:#1f2937;--card:#fff;--mut:#6b7280;--pri:#0f766e;--hl:#fef3c7;--bd:#e5e7eb;--ar:30px}
+:root{--bg:#f7f5ef;--fg:#1f2937;--card:#fff;--mut:#556070;--pri:#0f766e;--hl:#fef3c7;--bd:#e5e7eb;--ar:30px}
 [data-theme=dark]{--bg:#0b1220;--fg:#e5e7eb;--card:#111a2e;--mut:#94a3b8;--pri:#2dd4bf;--hl:#1e3a3a;--bd:#1f2a44}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 Inter,system-ui,sans-serif;padding:56px 0 76px}
 [lang=ur] body{font-family:'Noto Nastaliq Urdu',Inter,sans-serif;line-height:2.2}
@@ -40,3 +40,6 @@ mark{background:#fde68a;color:#000}.pager{display:flex;justify-content:space-bet
 [data-theme=dark] .dial{background:radial-gradient(circle,#1f2937 60%,#111827)}.dial>span{position:absolute;font-weight:700;color:#0f766e}.dial .n{top:6px;left:50%;transform:translateX(-50%);color:#dc2626}.dial .s{bottom:6px;left:50%;transform:translateX(-50%)}.dial .e{right:10px;top:50%;transform:translateY(-50%)}.dial .w{left:10px;top:50%;transform:translateY(-50%)}
 .needle{position:absolute;left:50%;top:50%;width:4px;height:120px;margin-left:-2px;margin-top:-120px;background:linear-gradient(#0f766e,#14b8a6);transform-origin:50% 100%;border-radius:2px}.needle span{position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:28px}
 .deg{font-size:44px;font-weight:700;color:#0f766e}
+#toast{position:fixed;left:50%;bottom:calc(140px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111c;color:#fff;padding:8px 14px;border-radius:20px;z-index:99;font-size:14px;max-width:90vw}
+/* a11y: minimum 44px touch targets */
+header button{min-width:44px;height:44px}nav button{min-height:52px;min-width:44px}.tools button{min-width:40px;min-height:40px}#player button{min-width:44px;min-height:44px}
