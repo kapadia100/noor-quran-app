@@ -78,3 +78,11 @@ test('analytics: GoatCounter page per route + feature/share/open events (stubbed
 test('analytics: Do Not Track disables counting; tests never load count.js by default',async({page})=>{let req=0;await page.route('https://gc.zgo.at/count.js',r=>{req++;r.abort()});
  await page.goto('./#/');await page.waitForTimeout(600);expect(req).toBe(0);
  await page.addInitScript(()=>{localStorage.setItem('gcDebug','1');Object.defineProperty(navigator,'doNotTrack',{get:()=>'1'})});await page.goto('./#/prayer');await page.reload();await page.waitForTimeout(600);expect(req).toBe(0)});
+test('translation-only audio with language picker plays continuously',async({page})=>{const got=[];
+ await page.route(/\.mp3(\?|$)/,r=>{got.push(r.request().url());r.abort()});
+ await page.goto('./#/surah/1');await page.waitForSelector('.ayah');await expect(page.locator('#r_talW')).toBeHidden();
+ await page.selectOption('#r_am','tr');await expect(page.locator('#r_tal')).toBeVisible();await page.selectOption('#r_tal','ur');
+ await page.click('#playAll');await expect.poll(()=>got.join(' '),{timeout:15000}).toMatch(/ur\.khan\/2\.mp3/);
+ expect(got.some(u=>/ur\.khan\/1\.mp3/.test(u))).toBe(true);expect(got.some(u=>/alafasy/.test(u))).toBe(false);
+ await page.goto('./#/settings');await expect(page.locator('#s_am')).toHaveValue('tr');await expect(page.locator('#s_tal')).toHaveValue('ur');
+ const ui=await page.locator('#r_abar, #s_abar').first().innerText();expect(ui).not.toMatch(/khan|walk|islamic|everyayah/i)});

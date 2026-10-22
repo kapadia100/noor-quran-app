@@ -30,3 +30,10 @@ describe('bundled v2 data',()=>{
   const h=J('x/hisn.json');expect(h.length).toBe(132);expect(h.reduce((a,c)=>a+c.items.length,0)).toBe(267);expect(h.every(c=>c.au.startsWith('https://')));
   const n=J('x/names.json');expect(n.length).toBe(99);expect(n.every(x=>x.ar&&x.en&&x.ur&&x.tr)).toBe(true)});
 });
+describe('translation audio (v2.6.0)',()=>{
+ it('global ayah numbers',()=>{expect(L.globalAyah(1,1)).toBe(1);expect(L.globalAyah(2,255)).toBe(262);expect(L.globalAyah(114,6)).toBe(6236)});
+ it('clips per mode',()=>{expect(L.ayahClips('ar','A',  'ur',1,1).map(c=>c.u)).toEqual(['A']);
+  const tr=L.ayahClips('tr','A','ur',2,255);expect(tr).toHaveLength(1);expect(tr[0].u).toContain('/ur.khan/262.mp3');expect(tr[0].alt).toContain('/002255.mp3');
+  const b=L.ayahClips('both','A','en',114,6);expect(b.map(c=>c.u)).toEqual(['A',expect.stringContaining('/en.walk/6236.mp3')]);
+  expect(L.TRANS_AUDIO.filter(v=>v.lang==='ur').length).toBeGreaterThanOrEqual(2);expect(L.TRANS_AUDIO.some(v=>v.lang==='en')).toBe(true)});
+});

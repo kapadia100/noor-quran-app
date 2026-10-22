@@ -85,3 +85,24 @@ export function malikRef(map,h){const r=map&&map[String(h.hadithnumber)];return 
 export function hadithIntl(book,h){if(book==='muslim'){const a=h.arabicnumber;if(a===undefined||a===null||a==='')return '';const [n,s]=String(a).split('.');const i=s?parseInt(s,10):0;return n+(i>1?String.fromCharCode(96+i):'')}
  // hadith-api splits some long narrations into x.2, x.3 parts; sunnah.com cites them all as x
  return String(Math.floor(h.hadithnumber))}
+
+// ---------- Translation audio (v2.6.0) ----------
+const IN_=(br,id)=>(s,a,g)=>`https://cdn.islamic.network/quran/audio/${br}/${id}/${g}.mp3`;
+const EA_=f=>(s,a)=>`https://everyayah.com/data/${f}/${String(s).padStart(3,'0')}${String(a).padStart(3,'0')}.mp3`;
+/** Per-ayah translation audio voices. Labels are neutral (no source names in UI). */
+export const TRANS_AUDIO=[
+ {id:'ur',lang:'ur',en:'Urdu',ur:'اردو',url:IN_(64,'ur.khan'),alt:EA_('translations/urdu_shamshad_ali_khan_46kbps')},
+ {id:'ur2',lang:'ur',en:'Urdu (voice 2)',ur:'اردو (دوسری آواز)',url:EA_('translations/urdu_farhat_hashmi')},
+ {id:'en',lang:'en',en:'English',ur:'انگریزی',url:IN_(192,'en.walk'),alt:EA_('English/Sahih_Intnl_Ibrahim_Walk_192kbps')},
+ {id:'fr',lang:'fr',en:'French',ur:'فرانسیسی',url:IN_(128,'fr.leclerc')},
+ {id:'tr',lang:'tr',en:'Turkish',ur:'ترکی',url:IN_(128,'tr.vakfi-audio')},
+ {id:'fa',lang:'fa',en:'Persian',ur:'فارسی',url:IN_(40,'fa.hedayatfarfooladvand')},
+ {id:'ru',lang:'ru',en:'Russian',ur:'روسی',url:IN_(128,'ru.kuliev-audio')},
+ {id:'zh',lang:'zh',en:'Chinese',ur:'چینی',url:IN_(128,'zh.chinese')},
+ {id:'uz',lang:'uz',en:'Uzbek',ur:'ازبک',url:IN_(128,'uz.sodik-audio')}];
+export const AUDIO_MODES=[['ar','Arabic only','صرف عربی'],['tr','Translation only','صرف ترجمہ'],['both','Arabic + Translation','عربی + ترجمہ']];
+export const globalAyah=(s,a)=>{let g=a;for(let k=0;k<s-1;k++)g+=AYAH_COUNTS[k];return g};
+/** Ordered clips for ayah (s, a 1-based): [{u, alt?}] by mode. */
+export function ayahClips(mode,arUrl,taId,s,a){const v=TRANS_AUDIO.find(x=>x.id===taId)||TRANS_AUDIO[0];const g=globalAyah(s,a);
+ const tr={u:v.url(s,a,g),alt:v.alt?.(s,a,g),tr:true};const ar={u:arUrl};
+ return mode==='tr'?[tr]:mode==='both'?(arUrl?[ar,tr]:[tr]):[ar]}
