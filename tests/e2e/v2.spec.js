@@ -38,3 +38,11 @@ test('v2.1: SVG icon nav, ibadat + FAQ screens, no emoji in home grid',async({pa
  await page.click('nav button[data-r="#/ibadat"]');await expect(page).toHaveURL(/ibadat/);await expect(page.locator('nav button.on')).toHaveAttribute('data-r','#/ibadat');await expect(page.locator('.fcard,.ccard')).toHaveCount(10);
  await page.goto('./#/help');await expect(page.locator('details.faq')).toHaveCount(4)});
 test('v2.2: app is named Quran Safar (EN + UR)',async({page})=>{await page.goto('./');await expect(page).toHaveTitle(/Quran Safar/);await expect(page.locator('.appname')).toHaveText('Quran Safar');const m=await (await page.request.get('./manifest.webmanifest')).json();expect(m.name).toBe('Quran Safar');await page.click('#lang');await expect(page.locator('.appname')).toHaveText('قرآن سفر')});
+test('share: hadith (text, WhatsApp, copy, image), duas and 99 names',async({page,context})=>{await context.grantPermissions(['clipboard-read','clipboard-write']).catch(()=>{});
+ await page.goto('./#/hadith/bukhari/1');const b=page.locator('.ayah [data-shr]').first();await b.waitFor({timeout:30000});await b.click();
+ const t=page.locator('#shTxt');await expect(t).toContainText('Bukhari 1');await expect(t).toContainText('via Quran Safar');await expect(t).toContainText('#/hadith/bukhari/1');
+ await expect(page.locator('#shWa')).toHaveAttribute('href',/^https:\/\/wa\.me\/\?text=.*Quran%20Safar/);
+ await page.evaluate(()=>{navigator.share=undefined;navigator.canShare=undefined});await page.click('#shCopy');const clip=await page.evaluate(()=>navigator.clipboard.readText().catch(()=>''));if(clip)expect(clip).toContain('via Quran Safar');
+ await page.click('#shImg');await expect(page.locator('#cardImg')).toBeVisible();const w=await page.locator('#cardImg').evaluate(i=>i.naturalWidth);expect(w).toBe(1080);
+ await page.goto('./#/duas/morning-dhikr');await page.locator('[data-shr]').first().click();await expect(page.locator('#shTxt')).toContainText('via Quran Safar');
+ await page.goto('./#/names');await page.locator('.name').first().click();await page.locator('#sheet [data-shr]').click();await expect(page.locator('#shTxt')).toContainText('99 Names of Allah · 1.')});

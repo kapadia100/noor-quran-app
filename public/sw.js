@@ -1,4 +1,4 @@
-const C='qsafar-v7';
+const C='qsafar-v8';
 const EDS=['ar','en.sahih','ur.jalandhry'];
 const SHELL0=['./','./index.html','./manifest.webmanifest','./icon.svg','./icon-192.png','./offline/surahs.json','./offline/ed.json','./offline/translations.json','./offline/x/duas.json','./offline/x/hisn.json','./offline/x/names.json','./offline/x/pages.json','./icon-512.png','./img/st-ayah.webp','./img/st-dua.webp','./img/st-names.webp','./img/st-tasbeeh.webp','./img/st-ramadan.webp'];
 const SHELL=[...SHELL0,...EDS.flatMap(e=>Array.from({length:114},(_,i)=>`./offline/s/${e}/${i+1}.json`))];

@@ -66,6 +66,28 @@ export async function shareAyah(s,a){const cv=await ayahCard(s,a);const blob=awa
  if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:`Quran ${s}:${a}`});return 'shared'}catch(e){if(e.name==='AbortError')return 'cancelled'}}
  const u=URL.createObjectURL(blob);const sh=$('#sheet');sh.hidden=false;$('#sheetBody').innerHTML=`<h2 class="h3">${tt('Ayah image','آیت کی تصویر')}</h2><img id="cardImg" src="${u}" alt="Ayah ${s}:${a}" style="width:100%;border-radius:12px"><p><a class="btn" download="ayah-${s}-${a}.png" href="${u}">⬇ ${tt('Download','ڈاؤن لوڈ')}</a></p>`;return 'download'}
 
+// ---------- universal share (hadith, duas, 99 names) ----------
+const SH=[];export const shareBtn=item=>{SH.push(item);return `<button class="shr" data-shr="${SH.length-1}" aria-label="${tt('Share','شیئر')}">${I_('share')}</button>`};
+export const shareText=it=>[it.ar,it.tr,`— ${it.ref}`,'via Quran Safar',it.url].filter(Boolean).join('\n\n');
+async function nativeShare(o){try{const {Capacitor}=await import('@capacitor/core');if(Capacitor.isNativePlatform()){const {Share}=await import('@capacitor/share');await Share.share(o);return true}}catch{}return false}
+export async function textCard(it){const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
+ try{await Promise.all([document.fonts.load('48px "Amiri Quran"'),document.fonts.load('32px "Noto Nastaliq Urdu"')])}catch{}
+ const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#1d6b47');gr.addColorStop(1,'#0b2e22');g.fillStyle=gr;g.fillRect(0,0,W,H);g.strokeStyle='rgba(217,178,95,.7)';g.lineWidth=4;g.strokeRect(40,40,W-80,H-80);g.textAlign='center';g.fillStyle='#fff';
+ let y=120,fs=it.ar.length>400?40:58,lines;g.direction='rtl';do{g.font=`${fs}px "Amiri Quran", serif`;lines=L.wrapText(it.ar,W-200,x=>g.measureText(x).width);fs-=3}while(lines.length*fs*1.8>(it.tr?560:900)&&fs>22);lines.forEach(l=>g.fillText(l,W/2,y+=fs*1.8));
+ if(it.tr){const rtl=/[\u0600-\u06ff]/.test(it.tr.slice(0,40));g.direction=rtl?'rtl':'ltr';let f2=36,l2;do{g.font=`${f2}px ${rtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(it.tr,W-200,x=>g.measureText(x).width);f2-=2}while(l2.length*f2*(rtl?2:1.5)>H-y-280&&f2>16);g.fillStyle='rgba(255,255,255,.92)';y+=40;l2.forEach(l=>g.fillText(l,W/2,y+=f2*(rtl?2:1.5)))}
+ g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(it.ref,W/2,H-140);g.font='28px Inter, sans-serif';g.fillStyle='rgba(255,255,255,.7)';g.fillText('Quran Safar',W/2,H-90);return cv}
+export function openShare(it){const txt=shareText(it);$('#sheet').hidden=false;
+ $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share','شیئر کریں')}</h2><pre class="shtxt" id="shTxt">${esc(txt)}</pre>
+ <div class="shgrid"><button class="btn" id="shText">${I_('share')} ${tt('Share text','متن شیئر')}</button><a class="btn wa" id="shWa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${I_('whatsapp')} WhatsApp</a>
+ <button class="btn ghost" id="shCopy">${I_('copy')} ${tt('Copy','کاپی')}</button><button class="btn ghost" id="shImg">${I_('image')} ${tt('Share image','تصویر شیئر')}</button></div><div id="shOut"></div>`;
+ $('#shText').onclick=async()=>{if(await nativeShare({title:it.ref,text:txt}))return;if(navigator.share){try{await navigator.share({title:it.ref,text:txt})}catch{}}else copy()};
+ const copy=async()=>{try{await navigator.clipboard.writeText(txt)}catch{const t=document.createElement('textarea');t.value=txt;document.body.append(t);t.select();document.execCommand('copy');t.remove()}C.toast(tt('Copied','کاپی ہو گیا'))};$('#shCopy').onclick=copy;
+ $('#shImg').onclick=async()=>{const cv=await textCard(it);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const name=it.ref.replace(/\W+/g,'-')+'.png';const file=new File([blob],name,{type:'image/png'});
+  if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:it.ref});return}catch(e){if(e.name==='AbortError')return}}
+  const u=URL.createObjectURL(blob);$('#shOut').innerHTML=`<img id="cardImg" src="${u}" alt="${esc(it.ref)}" style="width:100%;border-radius:14px;margin-top:10px"><p><a class="btn" download="${name}" href="${u}">${tt('Download','ڈاؤن لوڈ')}</a></p>`}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-shr]');if(b){e.stopPropagation();openShare(SH[+b.dataset.shr])}},true);
+export const siteUrl=h=>location.origin+location.pathname+h;
+
 // ---------- tasbeeh ----------
 const DHIKR=[['سُبْحَانَ ٱللَّٰهِ','SubhanAllah'],['ٱلْحَمْدُ لِلَّٰهِ','Alhamdulillah'],['ٱللَّٰهُ أَكْبَرُ','Allahu Akbar'],['لَا إِلَٰهَ إِلَّا ٱللَّٰهُ','La ilaha illallah'],['أَسْتَغْفِرُ ٱللَّٰهَ','Astaghfirullah'],['ٱللَّٰهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ','Salawat']];
 export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get('tasbeeh',{i:0,count:0,target:33,custom:[],hist:[]});const all=[...DHIKR,...st.custom.map(c=>[c,c])];if(st.i>=all.length)st.i=0;
@@ -93,7 +115,7 @@ export async function duas(tab='morning-dhikr',ch){C.setTitle(tt('Duas & Azkar',
  const D=await X('duas.json');return items(head,(D[tab]||[]).map((x,i)=>({...x,key:tab+i})))}
 function items(head,list,chAudio){const k='azkar_'+ymd(new Date());const prog=LS.get(k,{});
  app().innerHTML=head+(chAudio?`<button class="btn" data-au="${esc(chAudio)}">${I_('speaker')} ${tt('Play chapter audio','باب کی آڈیو')}</button>`:'')+`<p class="muted">${tt('Translation: English (open dataset). Tap the counter each time you recite.','ترجمہ: انگریزی۔ ہر بار پڑھنے پر کاؤنٹر دبائیں۔')}</p>`+list.map(x=>{const done=prog[x.key]||0;return `<article class="ayah dua ${done>=x.n?'done':''}">${x.t?`<b>${esc(x.t)}</b>`:''}<p class="ar" dir="rtl" lang="ar">${esc(x.ar)}</p>${x.lat?`<p class="muted lat">${esc(x.lat)}</p>`:''}<p class="tr">${esc(x.en)}</p>${x.note?`<small class="muted">${esc(x.note)}</small>`:''}${x.src?`<small class="muted">— ${esc(x.src)}</small>`:''}
- <div class="tools"><button class="btn cnt" data-k="${x.key}" data-n="${x.n}">${done}/${x.n}</button>${x.au?`<button data-au="${esc(x.au)}" aria-label="Play audio">${I_('speaker')}</button>`:''}</div></article>`}).join('');
+ <div class="tools"><button class="btn cnt" data-k="${x.key}" data-n="${x.n}">${done}/${x.n}</button>${x.au?`<button data-au="${esc(x.au)}" aria-label="Play audio">${I_('speaker')}</button>`:''}${shareBtn({ar:x.ar,tr:x.en,ref:(x.t||x.src||tt('Dua','دعا')).toString().slice(0,60),url:siteUrl(location.hash)})}</div></article>`}).join('');
  app().onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k){const p=LS.get(k,{});const n=+b.dataset.n;p[b.dataset.k]=Math.min(n,(p[b.dataset.k]||0)+1);LS.set(k,p);b.textContent=`${p[b.dataset.k]}/${n}`;if(p[b.dataset.k]>=n){b.closest('.dua').classList.add('done');vib([60,40,60])}else vib(15)}
   if(b.dataset.au)C.playUrl(b.dataset.au,tt('Dua','دعا'))}}
 
@@ -101,8 +123,8 @@ function items(head,list,chAudio){const k='azkar_'+ymd(new Date());const prog=LS
 export async function names(){C.setTitle(tt('99 Names of Allah','اسماء الحسنیٰ'));const N=await X('names.json');
  app().innerHTML=`<input id="nf" class="inp" aria-label="Filter" placeholder="${tt('Search names…','نام تلاش کریں…')}"><div class="names" id="nl">${N.map(n=>`<button class="name" data-n="${n.n}" data-q="${esc((n.tr+' '+n.en+' '+n.ur+' '+n.ar).toLowerCase())}"><small>${n.n}</small><span class="ar">${esc(n.ar)}</span><b>${esc(n.tr)}</b><small>${esc(ur()?n.ur:n.en)}</small></button>`).join('')}</div>
  <p class="muted">${tt('Meanings: AlAdhan (English); Urdu meanings from a public dataset, pending scholarly review.','معانی: انگریزی AlAdhan؛ اردو عوامی ڈیٹا سے، نظرثانی درکار۔')}</p>`;
- $('#nf').oninput=e=>{const q=e.target.value.toLowerCase();app().querySelectorAll('.name').forEach(b=>b.hidden=!b.dataset.q.includes(q))};
- app().onclick=e=>{const b=e.target.closest('.name');if(!b)return;const n=N[+b.dataset.n-1];$('#sheet').hidden=false;$('#sheetBody').innerHTML=`<div class="c"><div class="ar big">${esc(n.ar)}</div><h2 class="h3">${n.n}. ${esc(n.tr)}</h2><p><b>${esc(n.en)}</b></p><p class="ur" dir="rtl"><b>${esc(n.ur)}</b></p></div><p>${esc(n.enD||'')}</p><p class="ur" dir="rtl">${esc(n.urD||'')}</p>`}}
+ $('#nf').oninput=e=>{const q=e.target.value.toLowerCase();const nz=x=>x.replace(/[-'`’ ]/g,'').replace(/(.)\1+/g,'$1');app().querySelectorAll('.name').forEach(b=>b.hidden=!nz(b.dataset.q).includes(nz(q)))};
+ app().onclick=e=>{const b=e.target.closest('.name');if(!b)return;const n=N[+b.dataset.n-1];$('#sheet').hidden=false;$('#sheetBody').innerHTML=`<div class="c"><div class="ar big">${esc(n.ar)}</div><h2 class="h3">${n.n}. ${esc(n.tr)}</h2><p><b>${esc(n.en)}</b></p><p class="ur" dir="rtl"><b>${esc(n.ur)}</b></p></div><p>${esc(n.enD||'')}</p><p class="ur" dir="rtl">${esc(n.urD||'')}</p><div class="c">${shareBtn({ar:n.ar,tr:`${n.tr} — ${ur()?n.ur:n.en}${(ur()?n.urD:n.enD)?'\n'+(ur()?n.urD:n.enD):''}`,ref:`${tt('99 Names of Allah','اسماء الحسنیٰ')} · ${n.n}. ${n.tr}`,url:siteUrl('#/names')})}</div>`}}
 
 // ---------- prayer tracker + qaza ----------
 const FIVE=['fajr','dhuhr','asr','maghrib','isha'];
@@ -143,7 +165,7 @@ export async function mushaf(p){p=Math.max(1,Math.min(604,+p||LS.get('mushafPage
   const txt=indo?.[`${s}:${a}`]?.replace(/[\u200f\u06DD]|[٠-٩۰-۹]+\s*$/g,'').trim()||L.ayahText(s,a,AR[s-1][a-1]);h+=`<span class="mv" data-r="${s}:${a}">${esc(txt)} <span class="end">﴿${ar(a)}﴾</span></span> `}
  app().innerHTML=`<div class="bar"><select id="msc" aria-label="Script"><option value="uthmani">${tt('Uthmani','عثمانی')}</option><option value="indopak" ${S().script==='indopak'?'selected':''}>${tt('Indo-Pak','انڈو پاک')}</option></select><input type="number" id="mpg" min="1" max="604" value="${p}" aria-label="Page"><button class="btn" id="mgo">${tt('Go','جائیں')}</button></div>
  <div class="mushaf ${indo?'indopak':''}" dir="rtl" lang="ar"><div class="mh"><span>${esc(list[ays[0][0]-1].englishName)}</span><span>${tt('Juz','پارہ')} ${juz}</span></div><p class="mt">${h}</p><div class="mf">${ar(p)}</div></div>
- <div class="pager"><a class="btn" href="#/mushaf/${Math.min(604,p+1)}" ${p>=604?'hidden':''}>‹ ${p+1}</a><a class="btn" href="#/mushaf/${Math.max(1,p-1)}" ${p<=1?'hidden':''}>${p-1} ›</a></div>`;
+ <div class="pager"><a class="btn" href="#/mushaf/${Math.min(604,p+1)}" ${p>=604?'style="visibility:hidden"':''}>‹ ${p+1}</a><a class="btn" href="#/mushaf/${Math.max(1,p-1)}" ${p<=1?'style="visibility:hidden"':''}>${p-1} ›</a></div>`;
  $('#msc').onchange=e=>{S().script=e.target.value;C.save();mushaf(p)};$('#mgo').onclick=()=>location.hash='#/mushaf/'+$('#mpg').value;
  app().onclick=e=>{const v=e.target.closest('.mv');if(v)location.hash='#/surah/'+v.dataset.r.replace(':','/')};
  // swipe (RTL book: swipe right = next page)
