@@ -1,0 +1,1 @@
+export const ROUTES=['','quran','juz','surah/2','juz/30','mushaf/1','mushaf/2','mushaf/604','search','bookmarks','notes','hadith','prayer','qibla','ibadat','more','help','settings','duas','tasbeeh','names','tracker','khatam','hifz','calendar','ramadan','zakat','mosques'];

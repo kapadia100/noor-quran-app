@@ -1,6 +1,5 @@
 import {test,expect} from '@playwright/test';
-export const ROUTES=['','quran','juz','surah/2','juz/30','mushaf/1','mushaf/2','mushaf/604','search','bookmarks','notes','hadith','prayer','qibla','ibadat','more','help','settings','duas','tasbeeh','names','tracker','khatam','hifz','calendar','ramadan','zakat','mosques'];
-export const _r=1;
+import {ROUTES} from '../routes.js';
 // Layout guard for every route: fixed nav at identical bottom offset, header never covers content, no horizontal overflow.
 export async function audit(page){return page.evaluate(()=>{const W=innerWidth,H=innerHeight,nav=document.querySelector('nav .pill').getBoundingClientRect(),hd=document.querySelector('header').getBoundingClientRect();
  const home=document.body.classList.contains('is-home');const first=document.querySelector('#app>div>*');const ft=first?first.getBoundingClientRect().top+scrollY:999;

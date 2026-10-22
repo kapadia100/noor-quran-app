@@ -1,2 +1,4 @@
 import {defineConfig} from 'vite'
-export default defineConfig({base: process.env.BASE || './'})
+import {readFileSync} from 'fs'
+const pkg=JSON.parse(readFileSync(new URL('./package.json',import.meta.url)))
+export default defineConfig({base: process.env.BASE || './',define:{__APP_VERSION__:JSON.stringify(pkg.version)}})

@@ -46,7 +46,7 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
  </section>`;
  $('#aShare').onclick=()=>shareAyah(s,a);$('#hs').onsubmit=e=>{e.preventDefault();location.hash='#/search/'+encodeURIComponent($('#hq').value)};
  app().querySelector('a[href="#aotd"]').onclick=e=>{e.preventDefault();$('#aotd').scrollIntoView({behavior:'smooth',block:'center'})};C.tick()}
-export function more(){C.setTitle(tt('More','مزید'));app().innerHTML=`<section class="dsec">${grid(TILES)}</section>`}
+export function more(){C.setTitle(tt('More','مزید'));app().innerHTML=`<section class="dsec">${grid(TILES)}</section><p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`}
 export function ibadat(){C.setTitle(tt('Ibadat','عبادات'));const k=['#/prayer','#/qibla','#/tasbeeh','#/duas','#/tracker','#/ramadan','#/calendar','#/zakat','#/mosques','#/names'];app().innerHTML=`<section class="dsec">${grid(k.map((h,i)=>{const x=TILES.find(t=>t[0]===h);return i<4?[...x.slice(0,4),'L']:x.slice(0,4)}))}</section>`}
 export function help(){C.setTitle(tt('FAQ & Help','سوالات و مدد'));const Q=[['Does it work offline?','The full Quran text, English & Urdu translations, duas, 99 Names and mushaf pages are bundled. Audio, tafsir and hadith need internet the first time.','کیا یہ آف لائن کام کرتی ہے؟','مکمل قرآن، ترجمہ، دعائیں اور مصحف صفحات ایپ میں شامل ہیں۔ آڈیو، تفسیر اور حدیث کے لیے انٹرنیٹ درکار ہے۔'],['How are prayer times calculated?','Locally with the Adhan library using your city or GPS and the method you choose in Prayer settings.','نماز کے اوقات کیسے نکلتے ہیں؟','آپ کے شہر یا GPS اور منتخب طریقے کے مطابق ایپ میں حساب ہوتا ہے۔'],['How do I enable alerts?','Open Prayer times and tap “Enable prayer alerts”, then allow notifications.','الرٹس کیسے فعال کریں؟','نماز کے صفحے پر “الرٹس فعال کریں” دبائیں اور اجازت دیں۔'],['Is my data private?','Bookmarks, notes and trackers stay on your device. No account, no tracking.','کیا میرا ڈیٹا محفوظ ہے؟','نشانیاں، نوٹس اور ٹریکر صرف آپ کے فون پر رہتے ہیں۔']];
  app().innerHTML=Q.map(([q,a,uq,ua])=>`<details class="card faq"><summary>${I.icon('help')} <b>${tt(q,uq)}</b></summary><p>${tt(a,ua)}</p></details>`).join('')}
@@ -169,7 +169,7 @@ export async function mushaf(p){p=Math.max(1,Math.min(604,+p||LS.get('mushafPage
  $('#msc').onchange=e=>{S().script=e.target.value;C.save();mushaf(p)};$('#mgo').onclick=()=>location.hash='#/mushaf/'+$('#mpg').value;
  app().onclick=e=>{const v=e.target.closest('.mv');if(v)location.hash='#/surah/'+v.dataset.r.replace(':','/')};
  // swipe (RTL book: swipe right = next page)
- let x0=null;const m=app().querySelector('.mushaf');m.ontouchstart=e=>x0=e.touches[0].clientX;m.ontouchend=e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>70)location.hash='#/mushaf/'+Math.max(1,Math.min(604,p+(dx>0?1:-1)));x0=null};scrollTo(0,0)}
+ let x0=null;const m=app().querySelector('.mushaf');m.ontouchstart=e=>x0=e.touches[0].clientX;m.ontouchend=e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>70)location.hash='#/mushaf/'+Math.max(1,Math.min(604,p+(dx>0?1:-1)));x0=null};document.getElementById('app').scrollTo(0,0)}
 
 // ---------- notes ----------
 export const getNotes=()=>LS.get('notes',{});
