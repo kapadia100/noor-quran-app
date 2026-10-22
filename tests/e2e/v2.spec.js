@@ -65,3 +65,16 @@ test('no source names/domains on content screens (credits only in About)',async(
  await page.goto('./#/surah/1');await page.locator('[data-taf="1:1"]').click();await page.waitForTimeout(2000);expect((await page.locator('#tfx').innerText()).match(bad)).toBeNull();
  await page.goto('./#/names');await page.locator('.name').first().click();await page.locator('#sheet [data-shr]').click();expect((await page.locator('#shTxt').innerText()).match(bad)).toBeNull();
  await page.goto('./#/help');await expect(page.locator('#credits')).toContainText('Tanzil');await expect(page.locator('#credits')).toContainText('OpenStreetMap')});
+test('analytics: GoatCounter page per route + feature/share/open events (stubbed, no real hits)',async({page})=>{
+ await page.route('https://gc.zgo.at/count.js',r=>r.fulfill({contentType:'text/javascript',body:'window.goatcounter.count=function(o){(window.__gcStub=window.__gcStub||[]).push(o)}'}));
+ await page.route('**/quransafar.goatcounter.com/**',r=>r.fulfill({status:204}));
+ await page.addInitScript(()=>localStorage.setItem('gcDebug','1'));await page.goto('./#/');await page.waitForTimeout(800);
+ for(const r of ['tasbeeh','prayer','qibla','hsearch/nawawi/migration']){await page.goto('./#/'+r);await page.waitForTimeout(500)}
+ await page.goto('./#/names');await page.locator('.name').first().click();await page.locator('#sheet [data-shr]').click();await page.click('#shCopy');await page.waitForTimeout(300);
+ const L=await page.evaluate(()=>window.__gcStub||[]);const paths=L.map(o=>o.path);
+ for(const p of ['app-open-browser','/home','/tasbeeh','feature-tasbeeh','/prayer','feature-prayer','feature-qibla','feature-hadith-search','share-copy'])expect(paths,p).toContain(p);
+ expect(L.find(o=>o.path==='feature-qibla').event).toBe(true);expect(L.find(o=>o.path==='/prayer').event).toBeFalsy();
+ const s=await page.evaluate(()=>window.goatcounter);expect(s.no_onload).toBe(true);expect(s.allow_local).toBe(false)});
+test('analytics: Do Not Track disables counting; tests never load count.js by default',async({page})=>{let req=0;await page.route('https://gc.zgo.at/count.js',r=>{req++;r.abort()});
+ await page.goto('./#/');await page.waitForTimeout(600);expect(req).toBe(0);
+ await page.addInitScript(()=>{localStorage.setItem('gcDebug','1');Object.defineProperty(navigator,'doNotTrack',{get:()=>'1'})});await page.goto('./#/prayer');await page.reload();await page.waitForTimeout(600);expect(req).toBe(0)});

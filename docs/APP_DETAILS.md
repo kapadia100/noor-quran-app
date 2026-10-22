@@ -57,6 +57,13 @@ Summary: no personal data is collected. Settings, bookmarks and last-read positi
 **Apple App Privacy ("nutrition label"):** **Data Not Collected**.
 Note: if you add analytics, Crashlytics, ads or login later, you must update both forms.
 
+
+### Update v2.5.0: anonymous analytics (GoatCounter)
+- **Play Data Safety:** declare **"App activity → App interactions"** (and "Other actions" for events). Collected: **Yes**, **Shared: No**, **Processed ephemerally: No**, **Required: No**, since users can opt out with Do Not Track / Global Privacy Control. **Purpose: Analytics**. Not linked to the user's identity. No device or other IDs, no location, no personal info.
+- **Apple App Privacy:** "Data Used to Track You": **None**. "Data Not Linked to You": **Usage Data → Product Interaction (Analytics)**.
+- Details: page and event counts only (e.g. `/prayer`, `feature-tasbeeh`, `share-whatsapp`, `pwa-installed`, `app-open-standalone`). No cookies, no localStorage IDs, no personal data. IPs are used by GoatCounter only to deduplicate sessions and are not stored. Dashboard: https://quransafar.goatcounter.com
+- Privacy policy (`privacy.html`) and the in-app FAQ are updated to match.
+
 ## 6. Licensing & attribution (read before publishing)
 - **Quran Arabic text: Tanzil.net** (CC BY 3.0). The text must stay unmodified, you must credit Tanzil and link to tanzil.net, and you must include the license note.
 - **Translations:** many Tanzil and AlQuran.cloud translations are licensed for **non-commercial use only** or require permission from the translator or publisher (for example, some Urdu and English editions). A free app with no ads is the safest choice. If you plan to charge money or show ads, first check each translation's license and remove any that don't allow commercial use.

@@ -58,8 +58,13 @@ if(mode==='ios'){document.getElementById('arrow').hidden=false;var li=document.q
 document.getElementById('copy').onclick=function(){var b=this,done=function(){b.textContent=document.documentElement.lang==='ur'?'کاپی ہو گیا ✓':'Copied ✓'};if(navigator.clipboard)navigator.clipboard.writeText(link).then(done,fallback);else fallback();function fallback(){var t=document.createElement('textarea');t.value=link;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done()}};
 var dp;addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;document.getElementById('installBtn').hidden=false;document.getElementById('andManual').hidden=true});
 document.getElementById('installBtn').onclick=function(){if(!dp)return;dp.prompt();dp.userChoice.then(function(c){if(c.outcome==='accepted')location.href='../'})};
-addEventListener('appinstalled',function(){location.href='../'});
+addEventListener('appinstalled',function(){try{localStorage.setItem('gcInstalled','1');window.goatcounter&&window.goatcounter.count&&window.goatcounter.count({path:'pwa-installed',title:'pwa-installed',event:true})}catch(e){}setTimeout(function(){location.href='../'},400)});
 var lang=localStorage.getItem('installLang')||(/^ur/.test(navigator.language)?'ur':'en');function setLang(l){lang=l;localStorage.setItem('installLang',l);document.documentElement.lang=l;document.documentElement.dir=l==='ur'?'rtl':'ltr';document.querySelectorAll('[data-'+l+']').forEach(function(e){e.textContent=e.getAttribute('data-'+l)});document.getElementById('lang').textContent=l==='ur'?'EN':'اردو'}
 setLang(lang);document.getElementById('lang').onclick=function(){setLang(lang==='ur'?'en':'ur')};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('../sw.js',{scope:'../'}).catch(function(){})})();
+</script>
+<script>/* Anonymous cookie-free counts (GoatCounter). Skipped with Do Not Track and in automated browsers. */
+(function(){if(navigator.webdriver&&localStorage.getItem('gcDebug')!=='1')return;if(navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;
+window.goatcounter={path:'/install/'};var s=document.createElement('script');s.async=true;s.src='https://gc.zgo.at/count.js';s.setAttribute('data-goatcounter','https://quransafar.goatcounter.com/count');
+s.onload=function(){try{window.goatcounter.count({path:'install-page-view',title:'install-page-view',event:true});window.goatcounter.count({path:'install-mode-'+document.documentElement.dataset.mode,title:'install mode',event:true})}catch(e){}};document.head.appendChild(s)})();
 </script></body></html>

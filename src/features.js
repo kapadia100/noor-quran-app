@@ -2,6 +2,7 @@
 import * as L from './lib.js';
 import * as PR from './prayer.js';
 import * as I from './icons.js';
+import * as GC from './analytics.js';
 const I_=I.icon;
 const {esc,ymd}=L;
 let C,PAGES=null;export const init=ctx=>{C=ctx;X('pages.json').then(p=>PAGES=p).catch(()=>{})};
@@ -48,11 +49,11 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
  app().querySelector('a[href="#aotd"]').onclick=e=>{e.preventDefault();$('#aotd').scrollIntoView({behavior:'smooth',block:'center'})};C.tick()}
 export function more(){C.setTitle(tt('More','مزید'));app().innerHTML=`<section class="dsec">${grid(TILES)}</section><p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`}
 export function ibadat(){C.setTitle(tt('Ibadat','عبادات'));const k=['#/prayer','#/qibla','#/tasbeeh','#/duas','#/tracker','#/ramadan','#/calendar','#/zakat','#/mosques','#/names'];app().innerHTML=`<section class="dsec">${grid(k.map((h,i)=>{const x=TILES.find(t=>t[0]===h);return i<4?[...x.slice(0,4),'L']:x.slice(0,4)}))}</section>`}
-export function help(){C.setTitle(tt('FAQ & Help','سوالات و مدد'));const Q=[['Does it work offline?','The full Quran text, English & Urdu translations, duas, 99 Names and mushaf pages are bundled. Audio, tafsir and hadith need internet the first time.','کیا یہ آف لائن کام کرتی ہے؟','مکمل قرآن، ترجمہ، دعائیں اور مصحف صفحات ایپ میں شامل ہیں۔ آڈیو، تفسیر اور حدیث کے لیے انٹرنیٹ درکار ہے۔'],['How are prayer times calculated?','On your phone, from your city or GPS location and the calculation method you choose in Prayer settings.','نماز کے اوقات کیسے نکلتے ہیں؟','آپ کے شہر یا GPS اور منتخب طریقے کے مطابق ایپ میں حساب ہوتا ہے۔'],['How do I enable alerts?','Open Prayer times and tap “Enable prayer alerts”, then allow notifications.','الرٹس کیسے فعال کریں؟','نماز کے صفحے پر “الرٹس فعال کریں” دبائیں اور اجازت دیں۔'],['Is my data private?','Bookmarks, notes and trackers stay on your device. No account, no tracking.','کیا میرا ڈیٹا محفوظ ہے؟','نشانیاں، نوٹس اور ٹریکر صرف آپ کے فون پر رہتے ہیں۔']];
+export function help(){C.setTitle(tt('FAQ & Help','سوالات و مدد'));const Q=[['Does it work offline?','The full Quran text, English & Urdu translations, duas, 99 Names and mushaf pages are bundled. Audio, tafsir and hadith need internet the first time.','کیا یہ آف لائن کام کرتی ہے؟','مکمل قرآن، ترجمہ، دعائیں اور مصحف صفحات ایپ میں شامل ہیں۔ آڈیو، تفسیر اور حدیث کے لیے انٹرنیٹ درکار ہے۔'],['How are prayer times calculated?','On your phone, from your city or GPS location and the calculation method you choose in Prayer settings.','نماز کے اوقات کیسے نکلتے ہیں؟','آپ کے شہر یا GPS اور منتخب طریقے کے مطابق ایپ میں حساب ہوتا ہے۔'],['How do I enable alerts?','Open Prayer times and tap “Enable prayer alerts”, then allow notifications.','الرٹس کیسے فعال کریں؟','نماز کے صفحے پر “الرٹس فعال کریں” دبائیں اور اجازت دیں۔'],['Is my data private?','Bookmarks, notes and trackers stay on your device. No account, no ads, no cookies. We only count anonymous, aggregate usage (e.g. how many times the prayer screen is opened) with GoatCounter, with no personal data. Turn on Do Not Track to switch this off.','کیا میرا ڈیٹا محفوظ ہے؟','نشانیاں، نوٹس اور ٹریکر صرف آپ کے فون پر رہتے ہیں۔ کوئی اکاؤنٹ، اشتہار یا کوکی نہیں۔ ہم صرف گمنام مجموعی استعمال (مثلاً نماز کا صفحہ کتنی بار کھلا) GoatCounter سے گنتے ہیں، کوئی ذاتی معلومات نہیں۔ Do Not Track آن کرنے سے یہ بند ہو جاتا ہے۔']];
  app().innerHTML=Q.map(([q,a,uq,ua])=>`<details class="card faq"><summary>${I.icon('help')} <b>${tt(q,uq)}</b></summary><p>${tt(a,ua)}</p></details>`).join('')+`<section class="card" id="credits"><h2 class="h3">${tt('About & Credits','تعارف و حوالہ جات')}</h2><p class="muted">Quran Safar v${__APP_VERSION__}</p><ul class="credits">
  <li>Quran text: Tanzil Project (tanzil.net), CC BY 3.0, unmodified text</li><li>Quran translations & tafsir editions via AlQuran.cloud; word-by-word & Indo-Pak script via Quran.com API</li><li>Recitation audio: Islamic Network CDN (EveryAyah reciters)</li>
  <li>Hadith collections: fawazahmed0/hadith-api; reference numbers cross-checked with sunnah.com</li><li>Duas: fitrahive/dua-dhikr (MIT), Hisn al-Muslim JSON (MIT); Hisn al-Muslim audio: hisnmuslim.com</li><li>99 Names: AlAdhan API</li>
- <li>Prayer times: Adhan library (MIT) · Maps: © OpenStreetMap contributors (ODbL), Overpass API, Nominatim, Leaflet</li><li>Fonts: Amiri Quran, Scheherazade New, Noto Nastaliq Urdu, Inter (SIL OFL)</li></ul></section>`}
+ <li>Prayer times: Adhan library (MIT) · Maps: © OpenStreetMap contributors (ODbL), Overpass API, Nominatim, Leaflet</li><li>Anonymous usage counts: GoatCounter (no cookies)</li><li>Fonts: Amiri Quran, Scheherazade New, Noto Nastaliq Urdu, Inter (SIL OFL)</li></ul></section>`}
 
 // ---------- share ayah as image ----------
 export async function ayahCard(s,a){const [AR,tr,list]=await Promise.all([C.arabic([s]),C.transFor(s),C.surahs()]);const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
@@ -65,7 +66,7 @@ export async function ayahCard(s,a){const [AR,tr,list]=await Promise.all([C.arab
  g.fillStyle='rgba(255,255,255,.92)';y+=50;l2.forEach(l=>g.fillText(l,W/2,y+=fs2*(isRtl?2:1.5)));
  g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(`${list[s-1].englishName} ${s}:${a}`,W/2,H-140);g.font='28px Inter, sans-serif';g.fillStyle='rgba(255,255,255,.7)';g.fillText('Quran Safar',W/2,H-90);
  return cv}
-export async function shareAyah(s,a){const cv=await ayahCard(s,a);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const file=new File([blob],`ayah-${s}-${a}.png`,{type:'image/png'});
+export async function shareAyah(s,a){GC.event('share-ayah-image');const cv=await ayahCard(s,a);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const file=new File([blob],`ayah-${s}-${a}.png`,{type:'image/png'});
  if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:`Quran ${s}:${a}`});return 'shared'}catch(e){if(e.name==='AbortError')return 'cancelled'}}
  const u=URL.createObjectURL(blob);const sh=$('#sheet');sh.hidden=false;$('#sheetBody').innerHTML=`<h2 class="h3">${tt('Ayah image','آیت کی تصویر')}</h2><img id="cardImg" src="${u}" alt="Ayah ${s}:${a}" style="width:100%;border-radius:12px"><p><a class="btn" download="ayah-${s}-${a}.png" href="${u}">⬇ ${tt('Download','ڈاؤن لوڈ')}</a></p>`;return 'download'}
 
@@ -81,14 +82,15 @@ export async function textCard(it){const W=1080,H=1350,cv=document.createElement
  g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(it.ref,W/2,H-140);g.font='28px Inter, sans-serif';g.fillStyle='rgba(255,255,255,.7)';g.fillText('Quran Safar',W/2,H-90);return cv}
 export function openShare(it){const txt=shareText(it);$('#sheet').hidden=false;
  $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share','شیئر کریں')}</h2><pre class="shtxt" id="shTxt">${esc(txt)}</pre>
- <div class="shgrid"><button class="btn" id="shText">${I_('share')} ${tt('Share text','متن شیئر')}</button><a class="btn wa" id="shWa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${I_('whatsapp')} WhatsApp</a>
+ <div class="shgrid"><button class="btn" id="shText">${I_('share')} ${tt('Share text','متن شیئر')}</button><a class="btn wa" id="shWa" onclick="window.__gcShare&&window.__gcShare('share-whatsapp')" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${I_('whatsapp')} WhatsApp</a>
  <button class="btn ghost" id="shCopy">${I_('copy')} ${tt('Copy','کاپی')}</button><button class="btn ghost" id="shImg">${I_('image')} ${tt('Share image','تصویر شیئر')}</button></div><div id="shOut"></div>`;
- $('#shText').onclick=async()=>{if(await nativeShare({title:it.ref,text:txt}))return;if(navigator.share){try{await navigator.share({title:it.ref,text:txt})}catch{}}else copy()};
- const copy=async()=>{try{await navigator.clipboard.writeText(txt)}catch{const t=document.createElement('textarea');t.value=txt;document.body.append(t);t.select();document.execCommand('copy');t.remove()}C.toast(tt('Copied','کاپی ہو گیا'))};$('#shCopy').onclick=copy;
- $('#shImg').onclick=async()=>{const cv=await textCard(it);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const name=it.ref.replace(/\W+/g,'-')+'.png';const file=new File([blob],name,{type:'image/png'});
+ $('#shText').onclick=async()=>{GC.event('share-text');if(await nativeShare({title:it.ref,text:txt}))return;if(navigator.share){try{await navigator.share({title:it.ref,text:txt})}catch{}}else copy()};
+ const copy=async()=>{GC.event('share-copy');try{await navigator.clipboard.writeText(txt)}catch{const t=document.createElement('textarea');t.value=txt;document.body.append(t);t.select();document.execCommand('copy');t.remove()}C.toast(tt('Copied','کاپی ہو گیا'))};$('#shCopy').onclick=copy;
+ $('#shImg').onclick=async()=>{GC.event('share-image');const cv=await textCard(it);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const name=it.ref.replace(/\W+/g,'-')+'.png';const file=new File([blob],name,{type:'image/png'});
   if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:it.ref});return}catch(e){if(e.name==='AbortError')return}}
   const u=URL.createObjectURL(blob);$('#shOut').innerHTML=`<img id="cardImg" src="${u}" alt="${esc(it.ref)}" style="width:100%;border-radius:14px;margin-top:10px"><p><a class="btn" download="${name}" href="${u}">${tt('Download','ڈاؤن لوڈ')}</a></p>`}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-shr]');if(b){e.stopPropagation();openShare(SH[+b.dataset.shr])}},true);
+window.__gcShare=n=>GC.event(n);
 export const siteUrl=h=>location.origin+location.pathname+h;
 
 // ---------- tasbeeh ----------

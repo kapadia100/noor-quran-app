@@ -12,6 +12,7 @@ const t=k=>T[S.ui][k]||k;
 import {esc} from './lib.js';
 import * as F from './features.js';
 import {icon} from './icons.js';
+import * as GC from './analytics.js';
 const I_=icon;
 document.querySelectorAll('[data-i]').forEach(b=>b.insertAdjacentHTML('afterbegin',icon(b.dataset.i)));
 import * as L2 from './lib.js';
@@ -229,7 +230,7 @@ async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Pro
  $('#s_size').oninput=e=>{S.size=+e.target.value;save();applyUI()};$('#s_dark').onchange=e=>{S.dark=e.target.checked;save();applyUI()};[['cont','continuous'],['next','autoNext'],['sa','surahAudio']].forEach(([id,k])=>$('#s_'+id).onchange=e=>{S[k]=e.target.checked;save()})}
 
 // Each navigation renders into a fresh container, so a slow, stale render (e.g. a surah still loading) can never overwrite the newer screen.
-async function route(){$('#sheet').hidden=true;document.body.classList.remove('is-home');const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
+async function route(){$('#sheet').hidden=true;try{GC.route(location.hash.replace(/^#\/?/,'').split('/'))}catch{/* analytics never breaks the app */}document.body.classList.remove('is-home');const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
  $('#back').style.visibility=p[0]?'visible':'hidden';
  const sec={hsearch:'hadith',surah:'quran',juz:'quran',mushaf:'quran',search:'quran',bookmarks:'quran',notes:'quran',khatam:'quran',hifz:'quran',prayer:'ibadat',qibla:'ibadat',tracker:'ibadat',ramadan:'ibadat',calendar:'ibadat',tasbeeh:'ibadat',duas:'ibadat',zakat:'ibadat',mosques:'ibadat',names:'ibadat'}[p[0]]??p[0];document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
  const FR={quran:()=>home(),more:F.more,ibadat:F.ibadat,help:F.help,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:F.names,tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz};
@@ -259,4 +260,5 @@ export function showDebug(){document.getElementById('dbg')?.remove();const mk=c=
 {const ua=navigator.userAgent,iOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),saf=/Safari\//.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|FBAN|FBAV|Instagram|WhatsApp|Grok/.test(ua);
  const sa=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
  if(iOS&&saf&&!sa&&!localStorage.getItem('instBanner')){const b=document.createElement('div');b.id='instBanner';b.innerHTML=`<img src="${import.meta.env.BASE_URL}icon-192.png" alt="" width="36" height="36"><span><b>${S.ui==='ur'?'قرآن سفر انسٹال کریں':'Install Quran Safar'}</b><small>${S.ui==='ur'?'ہوم اسکرین پر شامل کریں':'Add it to your Home Screen'}</small></span><a class="btn" href="${import.meta.env.BASE_URL}install/">${S.ui==='ur'?'طریقہ':'How'}</a><button aria-label="Dismiss">✕</button>`;b.querySelector('button').onclick=()=>{localStorage.setItem('instBanner','1');b.remove()};document.body.append(b)}}
+GC.startup();
 // v2.4.1: shell is position:fixed inset:0 in CSS — never sized from JS (iOS standalone under-reports innerHeight).
