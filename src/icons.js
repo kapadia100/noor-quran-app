@@ -1,0 +1,48 @@
+// Original outline icon set (24×24, stroke = currentColor). Drawn for Noor Quran.
+const P={
+ quran:'<path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z"/><path d="M12 6v13.5"/><path d="M7 9.5h2.5M14.5 9.5H17M7 12.5h2.5M14.5 12.5H17"/>',
+ mushaf:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 3v18"/><path d="M11 8h5M11 11h5M11 14h3"/><circle cx="16" cy="17.5" r="1"/>',
+ duas:'<path d="M7 21v-4.5L4.5 12V6.5a1.3 1.3 0 0 1 2.6 0V11"/><path d="M7.1 9.5V4.8a1.3 1.3 0 0 1 2.6 0V12"/><path d="M17 21v-4.5l2.5-4.5V6.5a1.3 1.3 0 0 0-2.6 0V11"/><path d="M16.9 9.5V4.8a1.3 1.3 0 0 0-2.6 0V12"/>',
+ tasbeeh:'<circle cx="12" cy="4.5" r="1.6"/><circle cx="17.3" cy="6.7" r="1.6"/><circle cx="19.5" cy="12" r="1.6"/><circle cx="17.3" cy="17.3" r="1.6"/><circle cx="6.7" cy="6.7" r="1.6"/><circle cx="4.5" cy="12" r="1.6"/><circle cx="6.7" cy="17.3" r="1.6"/><path d="M12 18v4M10.5 22h3"/><circle cx="12" cy="17" r="1.4"/>',
+ names:'<path d="M12 2.5l2.6 3.7 4.4-.9-.9 4.4 3.7 2.6-3.7 2.6.9 4.4-4.4-.9L12 21.5l-2.6-3.7-4.4.9.9-4.4L2.2 12l3.7-2.6-.9-4.4 4.4.9z"/><circle cx="12" cy="12" r="3.2"/>',
+ tracker:'<rect x="4" y="4" width="16" height="17" rx="2.5"/><path d="M8 2.5v3M16 2.5v3M4 9h16"/><path d="M8.5 14.5l2.3 2.3 4.7-4.8"/>',
+ khatam:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2"/><path d="M12 3v2M21 12h-2"/>',
+ hifz:'<path d="M9 3.5a3 3 0 0 0-3 3 3 3 0 0 0-2 5.3A3 3 0 0 0 6.5 17 3 3 0 0 0 12 18.5V5a2.5 2.5 0 0 0-3-1.5z"/><path d="M15 3.5a3 3 0 0 1 3 3 3 3 0 0 1 2 5.3 3 3 0 0 1-2.5 5.2A3 3 0 0 1 12 18.5"/><path d="M12 21v-2.5"/>',
+ calendar:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M14.5 13.2a2.6 2.6 0 1 0 0 4.1 3.2 3.2 0 1 1 0-4.1z"/>',
+ ramadan:'<path d="M15.5 3.5a8.5 8.5 0 1 0 5 13.6A7 7 0 0 1 15.5 3.5z"/><path d="M17.5 7.5l.6 1.3 1.4.2-1 1 .2 1.4-1.2-.7-1.2.7.2-1.4-1-1 1.4-.2z"/>',
+ zakat:'<ellipse cx="9" cy="7" rx="5.5" ry="2.5"/><path d="M3.5 7v4c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V7"/><path d="M9.5 16.9C10.5 18.1 12.6 19 15 19c3 0 5.5-1.1 5.5-2.5v-4c0-1.4-2.5-2.5-5.5-2.5"/><path d="M20.5 12.5"/>',
+ mosques:'<path d="M12 3c-.1 1.5 1.2 2 1.2 2"/><path d="M6 12a6 6 0 0 1 12 0"/><path d="M4.5 12h15v8.5h-15z"/><path d="M10 20.5v-3a2 2 0 0 1 4 0v3"/><path d="M2 20.5V9.5l.8-1.5.7 1.5v11M22 20.5V9.5l-.8-1.5-.7 1.5v11"/>',
+ qibla:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/><path d="M12 3v1.5M12 19.5V21M3 12h1.5M19.5 12H21"/>',
+ hadith:'<path d="M6 4h11a2 2 0 0 1 2 2v12.5a2.5 2.5 0 0 1-2.5 2.5H7.5A2.5 2.5 0 0 1 5 18.5V5a1 1 0 0 1 1-1z"/><path d="M5 18.5A2.5 2.5 0 0 1 7.5 16H19"/><path d="M9 8h6M9 11h4"/>',
+ notes:'<path d="M14.5 4.5l5 5L9 20H4v-5z"/><path d="M12.5 6.5l5 5"/>',
+ bookmarks:'<path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/>',
+ search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20.5 20.5"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.3 14H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+ home:'<path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 9.5v11h13v-11"/><path d="M10 20.5v-5.5h4v5.5"/>',
+ ibadat:'<path d="M6 21V9.5a6 6 0 0 1 12 0V21z"/><path d="M9 21v-8.5a3 3 0 0 1 6 0V21"/><path d="M4 21h16"/>',
+ more:'<circle cx="12" cy="12" r="9"/><circle cx="8" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="16" cy="12" r=".6" fill="currentColor"/>',
+ menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+ heart:'<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',
+ help:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.7"/><circle cx="12" cy="17" r=".6" fill="currentColor"/>',
+ prayer:'<path d="M12 3l1.5 3h-3z"/><path d="M7 21v-8a5 5 0 0 1 10 0v8"/><path d="M4 21h16M12 6v2"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ back:'<path d="M15 5l-7 7 7 7"/>',
+ share:'<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/>',
+ tafsir:'<path d="M4 5.5h6a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H4z"/><path d="M20 5.5h-6a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H20z"/>',
+ pin:'<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+ bell:'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+ gps:'<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>',
+ trash:'<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13.5h9l1-13.5"/>',
+ speaker:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+ eyeoff:'<path d="M3 3l18 18"/><path d="M10.6 6.1A9.8 9.8 0 0 1 12 6c5.5 0 9 6 9 6a15.6 15.6 0 0 1-3 3.6M6.6 6.6C4.3 8.1 3 12 3 12s3.5 6 9 6a8.8 8.8 0 0 0 4.4-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+ letters:'<path d="M3.5 18L8 6l4.5 12M5.2 14h5.6"/><path d="M15 10.5h5.5M17.75 8.5v2M14.5 18c3.5-1 5.5-3.8 6-7.5"/>',
+ kaaba:'<path d="M4 7.5L12 4l8 3.5v10L12 21l-8-3.5z"/><path d="M4 7.5L12 11l8-3.5M12 11v10"/><path d="M4 10.5l8 3.5 8-3.5"/>',
+ check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16.3 9.5"/>',
+ party:'<path d="M4 20l4.5-12 7.5 7.5z"/><path d="M14 4.5l.5 2M18.5 6l-1.5 1.5M19.5 10.5l-2 .5M12 8c1-1.5 1-3 .3-4.3"/>',
+};
+export const icon=(k,cls='')=>`<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]||P.more}</svg>`;
+/** Ornamental corner (original arabesque) used on feature cards. */
+export const corner=`<svg class="orn" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1"><path d="M48 0v30M18 0h30"/><path d="M48 12a12 12 0 0 1-12-12M48 22a22 22 0 0 1-22-22"/><path d="M38 10l4-4M38 10l-3.5 1M38 10l1-3.5" /><path d="M41 3.5l3.5 3.5-3.5 3.5-3.5-3.5z"/><circle cx="48" cy="0" r="5"/></svg>`;
+/** Original mosque line-art for the prayer card. */
+export const mosqueArt=`<svg class="mosque-art" viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M8 78V30l3-6 3 6v48M8 30h6M11 18v6"/><circle cx="11" cy="16" r="1.5"/><path d="M30 78V54a22 22 0 0 1 44 0v24"/><path d="M52 32v-6"/><path d="M50 24a3 3 0 1 0 4 0"/><path d="M44 78V66a8 8 0 0 1 16 0v12"/><path d="M76 78V60a10 10 0 0 1 20 0v18"/><path d="M86 50v-4"/><path d="M104 78V36l3-6 3 6v42M104 36h6M107 24v6"/><path d="M2 78h116"/></svg>`;

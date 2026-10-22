@@ -1,6 +1,8 @@
 // v2 feature screens. Everything stays in the same visual system (cards, lists, .btn) and supports EN/UR + dark mode.
 import * as L from './lib.js';
 import * as PR from './prayer.js';
+import * as I from './icons.js';
+const I_=I.icon;
 const {esc,ymd}=L;
 let C,PAGES=null;export const init=ctx=>{C=ctx;X('pages.json').then(p=>PAGES=p).catch(()=>{})};
 export const pageFor=(s,a)=>PAGES?L.pageOf(PAGES,s,a):'';
@@ -16,21 +18,38 @@ export function markRead(){const d=LS.get('readDays',[]),k=ymd(new Date());if(!d
 export const readStreak=()=>L.streak(LS.get('readDays',[]));
 
 // ---------- dashboard ----------
-const TILES=[['#/quran','📖','Quran','قرآن'],['#/mushaf','📄','Mushaf','مصحف'],['#/duas','🤲','Duas & Azkar','دعائیں و اذکار'],['#/tasbeeh','📿','Tasbeeh','تسبیح'],['#/names','✨','99 Names','اسماء الحسنیٰ'],['#/tracker','✅','Prayer tracker','نماز ٹریکر'],
- ['#/khatam','🎯','Khatam planner','ختم پلانر'],['#/hifz','🧠','Hifz','حفظ'],['#/calendar','🗓️','Calendar','اسلامی کیلنڈر'],['#/ramadan','🌙','Ramadan','رمضان'],['#/zakat','💰','Zakat','زکوٰۃ'],['#/mosques','🕌','Mosques','قریبی مساجد'],
- ['#/qibla','🧭','Qibla','قبلہ'],['#/hadith','📜','Hadith','حدیث'],['#/notes','📝','Notes','نوٹس'],['#/bookmarks','🔖','Bookmarks','نشانیاں'],['#/search','🔍','Search','تلاش'],['#/settings','⚙️','Settings','ترتیبات']];
-const tiles=list=>`<div class="tiles">${list.map(([h,i,e,u])=>`<a class="tile" href="${h}"><span class="ti">${i}</span><span>${tt(e,u)}</span></a>`).join('')}</div>`;
-export async function dashboard(){C.setTitle('Noor Quran');const [AR,tr,list]=await Promise.all([C.arabic([L.ayahOfDay().s]),C.transFor(L.ayahOfDay().s),C.surahs()]);
- const {s,a}=L.ayahOfDay(),lr=LS.get('lastRead'),st=readStreak(),kp=LS.get('khatam');const nx=PR.next();const plan=kp?L.khatamPlan({current:kp.page,end:kp.end}):null;
- app().innerHTML=`${C.dateCard(nx)}
- <div class="row2">${lr?`<a class="card hl grow" href="#/surah/${lr.s}/${lr.a}">▶ ${C.t('lastRead')}<br><b>${esc(lr.name)} ${lr.s}:${lr.a}</b></a>`:`<a class="card hl grow" href="#/surah/1">▶ ${tt('Start reading','پڑھنا شروع کریں')}</a>`}
- <div class="card streak"><b>🔥 ${st}</b><small>${tt('day streak','دن مسلسل')}</small></div></div>
- ${plan?`<a class="card" href="#/khatam">🎯 ${tt('Khatam','ختم')}: <b>${plan.pct}%</b> · ${tt('today','آج')} ${plan.perDay} ${tt('pages','صفحات')}<div class="prog"><i style="width:${plan.pct}%"></i></div></a>`:''}
- <div class="card aotd"><small class="muted">${tt('Ayah of the day','آج کی آیت')} · ${esc(list[s-1].englishName)} ${s}:${a}</small><p class="ar" dir="rtl" lang="ar">${esc(L.ayahText(s,a,AR[s-1][a-1]))}</p><p class="tr" dir="${tr.edition.direction==='rtl'?'rtl':'ltr'}">${esc(tr.texts[a-1]||'')}</p>
- <div class="bar"><a class="btn" href="#/surah/${s}/${a}">📖 ${tt('Open','کھولیں')}</a><button class="btn" id="aShare">📤 ${tt('Share image','تصویر شیئر')}</button></div></div>
- ${tiles(TILES)}`;
- $('#aShare').onclick=()=>shareAyah(s,a);C.tick()}
-export function more(){C.setTitle(tt('More','مزید'));app().innerHTML=tiles(TILES)}
+// [route, icon, EN, UR, size] — 'L' = large 2-column card, otherwise compact
+const TILES=[['#/quran','quran','Quran','قرآن','L'],['#/mushaf','mushaf','Mushaf','مصحف','L'],['#/duas','duas','Duas & Azkar','دعائیں و اذکار','L'],['#/prayer','prayer','Prayer times','اوقاتِ نماز','L'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح','L'],['#/qibla','qibla','Qibla','قبلہ','L'],
+ ['#/names','names','99 Names','اسماء الحسنیٰ'],['#/tracker','tracker','Prayer tracker','نماز ٹریکر'],['#/khatam','khatam','Khatam','ختم پلانر'],['#/hifz','hifz','Hifz','حفظ'],['#/calendar','calendar','Calendar','اسلامی کیلنڈر'],['#/ramadan','ramadan','Ramadan','رمضان'],
+ ['#/zakat','zakat','Zakat','زکوٰۃ'],['#/mosques','mosques','Mosques','قریبی مساجد'],['#/hadith','hadith','Hadith','حدیث'],['#/notes','notes','Notes','نوٹس'],['#/search','search','Search','تلاش'],['#/settings','settings','Settings','ترتیبات']];
+const SUB={quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس']};
+const grid=list=>{const big=list.filter(x=>x[4]),sm=list.filter(x=>!x[4]);
+ return `<div class="fgrid">${big.map(([h,i,e,u])=>`<a class="fcard" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
+ <div class="cgrid">${sm.map(([h,i,e,u])=>`<a class="ccard" href="${h}"><span class="fi">${I.icon(i)}</span><span>${tt(e,u)}</span></a>`).join('')}</div>`};
+function nowPrayer(){const n=new Date(),pt=PR.times(n);let cur='isha';for(const k of PR.PRAYERS)if(pt[k]<=n)cur=k;return cur}
+const STORIES=[['#aotd','st-ayah','Ayah of day','آج کی آیت'],['#/duas/daily-dua','st-dua','Dua of day','آج کی دعا'],['#/names','st-names','99 Names','اسماء'],['#/tasbeeh','st-tasbeeh','Tasbeeh','تسبیح'],['#/ramadan','st-ramadan','Ramadan','رمضان']];
+export async function dashboard(){C.setTitle('Noor Quran');document.body.classList.add('is-home');const [AR,tr,list]=await Promise.all([C.arabic([L.ayahOfDay().s]),C.transFor(L.ayahOfDay().s),C.surahs()]);
+ const {s,a}=L.ayahOfDay(),lr=LS.get('lastRead'),st=readStreak(),kp=LS.get('khatam');const nx=PR.next();const plan=kp?L.khatamPlan({current:kp.page,end:kp.end}):null;const B=import.meta.env.BASE_URL;
+ app().innerHTML=`<section class="hero">
+  <div class="htop"><a class="round" href="#/more" aria-label="${tt('Menu','مینو')}">${I.icon('menu')}</a><div class="htitle"><b>Noor Quran</b><small>${PR.hijri(new Date(),S().ui)} · <span class="streak" id="streak"><b>${st}</b> ${tt('day streak','دن مسلسل')}</span></small></div></div>
+  <a class="pcard" href="#/prayer">${I.mosqueArt}<div class="pnow"><small>${tt('Now','اب')}</small><b>${C.pn(nowPrayer())}</b></div>${nx?`<span class="parr">→</span><div class="pnext"><small>${tt('Next','اگلی')} · ${PR.fmt12(nx.time)}</small><b>${C.pn(nx.key)}</b><span class="cd" data-at="${+nx.time}"></span></div>`:''}</a>
+  <div class="stories">${STORIES.map(([h,img,e,u])=>`<a class="story" href="${h}"><img src="${B}img/${img}.webp" alt="" width="68" height="68" loading="lazy"><span>${tt(e,u)}</span></a>`).join('')}</div>
+  <div class="srow"><form class="sbar" id="hs">${I.icon('search')}<input id="hq" aria-label="${tt('Search','تلاش')}" placeholder="${C.t('q')}"></form><a class="round heart" href="#/bookmarks" aria-label="${tt('Favourites','پسندیدہ')}">${I.icon('heart')}</a></div>
+ </section>
+ <div class="quick">${[['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/notes','notes','Notes','نوٹس'],['#/duas','duas','Duas','دعائیں'],['#/help','help','FAQ','سوالات']].map(([h,i,e,u])=>`<a href="${h}"><span class="fi">${I.icon(i)}</span>${tt(e,u)}</a>`).join('')}</div>
+ <section class="dsec">
+ ${lr?`<a class="card hl cont" href="#/surah/${lr.s}/${lr.a}">${I.icon('quran')}<span>${C.t('lastRead')}<br><b>${esc(lr.name)} ${lr.s}:${lr.a}</b></span></a>`:`<a class="card hl cont" href="#/surah/1">${I.icon('quran')}<span>${tt('Start reading','پڑھنا شروع کریں')}</span></a>`}
+ ${plan?`<a class="card kcard" href="#/khatam">${I.icon('khatam')} ${tt('Khatam','ختم')}: <b>${plan.pct}%</b> · ${tt('today','آج')} ${plan.perDay} ${tt('pages','صفحات')}<div class="prog"><i style="width:${plan.pct}%"></i></div></a>`:''}
+ ${grid(TILES)}
+ <div class="card aotd" id="aotd">${I.corner}<small class="muted">${tt('Ayah of the day','آج کی آیت')} · ${esc(list[s-1].englishName)} ${s}:${a}</small><p class="ar" dir="rtl" lang="ar">${esc(L.ayahText(s,a,AR[s-1][a-1]))}</p><p class="tr" dir="${tr.edition.direction==='rtl'?'rtl':'ltr'}">${esc(tr.texts[a-1]||'')}</p>
+ <div class="bar"><a class="btn" href="#/surah/${s}/${a}">${I.icon('quran')} ${tt('Open','کھولیں')}</a><button class="btn ghost" id="aShare">${I.icon('share')} ${tt('Share image','تصویر شیئر')}</button></div></div>
+ </section>`;
+ $('#aShare').onclick=()=>shareAyah(s,a);$('#hs').onsubmit=e=>{e.preventDefault();location.hash='#/search/'+encodeURIComponent($('#hq').value)};
+ app().querySelector('a[href="#aotd"]').onclick=e=>{e.preventDefault();$('#aotd').scrollIntoView({behavior:'smooth',block:'center'})};C.tick()}
+export function more(){C.setTitle(tt('More','مزید'));app().innerHTML=`<section class="dsec">${grid(TILES)}</section>`}
+export function ibadat(){C.setTitle(tt('Ibadat','عبادات'));const k=['#/prayer','#/qibla','#/tasbeeh','#/duas','#/tracker','#/ramadan','#/calendar','#/zakat','#/mosques','#/names'];app().innerHTML=`<section class="dsec">${grid(k.map((h,i)=>{const x=TILES.find(t=>t[0]===h);return i<4?[...x.slice(0,4),'L']:x.slice(0,4)}))}</section>`}
+export function help(){C.setTitle(tt('FAQ & Help','سوالات و مدد'));const Q=[['Does it work offline?','The full Quran text, English & Urdu translations, duas, 99 Names and mushaf pages are bundled. Audio, tafsir and hadith need internet the first time.','کیا یہ آف لائن کام کرتی ہے؟','مکمل قرآن، ترجمہ، دعائیں اور مصحف صفحات ایپ میں شامل ہیں۔ آڈیو، تفسیر اور حدیث کے لیے انٹرنیٹ درکار ہے۔'],['How are prayer times calculated?','Locally with the Adhan library using your city or GPS and the method you choose in Prayer settings.','نماز کے اوقات کیسے نکلتے ہیں؟','آپ کے شہر یا GPS اور منتخب طریقے کے مطابق ایپ میں حساب ہوتا ہے۔'],['How do I enable alerts?','Open Prayer times and tap “Enable prayer alerts”, then allow notifications.','الرٹس کیسے فعال کریں؟','نماز کے صفحے پر “الرٹس فعال کریں” دبائیں اور اجازت دیں۔'],['Is my data private?','Bookmarks, notes and trackers stay on your device. No account, no tracking.','کیا میرا ڈیٹا محفوظ ہے؟','نشانیاں، نوٹس اور ٹریکر صرف آپ کے فون پر رہتے ہیں۔']];
+ app().innerHTML=Q.map(([q,a,uq,ua])=>`<details class="card faq"><summary>${I.icon('help')} <b>${tt(q,uq)}</b></summary><p>${tt(a,ua)}</p></details>`).join('')}
 
 // ---------- share ayah as image ----------
 export async function ayahCard(s,a){const [AR,tr,list]=await Promise.all([C.arabic([s]),C.transFor(s),C.surahs()]);const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
@@ -73,8 +92,8 @@ export async function duas(tab='morning-dhikr',ch){C.setTitle(tt('Duas & Azkar',
   const c=H.find(x=>x.id===+ch);if(!c){location.hash='#/duas/hisn';return}C.setTitle(c.t);return items(head,c.items.map((x,i)=>({...x,key:'h'+c.id+'_'+i})),c.au)}
  const D=await X('duas.json');return items(head,(D[tab]||[]).map((x,i)=>({...x,key:tab+i})))}
 function items(head,list,chAudio){const k='azkar_'+ymd(new Date());const prog=LS.get(k,{});
- app().innerHTML=head+(chAudio?`<button class="btn" data-au="${esc(chAudio)}">🔊 ${tt('Play chapter audio','باب کی آڈیو')}</button>`:'')+`<p class="muted">${tt('Translation: English (open dataset). Tap the counter each time you recite.','ترجمہ: انگریزی۔ ہر بار پڑھنے پر کاؤنٹر دبائیں۔')}</p>`+list.map(x=>{const done=prog[x.key]||0;return `<article class="ayah dua ${done>=x.n?'done':''}">${x.t?`<b>${esc(x.t)}</b>`:''}<p class="ar" dir="rtl" lang="ar">${esc(x.ar)}</p>${x.lat?`<p class="muted lat">${esc(x.lat)}</p>`:''}<p class="tr">${esc(x.en)}</p>${x.note?`<small class="muted">${esc(x.note)}</small>`:''}${x.src?`<small class="muted">— ${esc(x.src)}</small>`:''}
- <div class="tools"><button class="btn cnt" data-k="${x.key}" data-n="${x.n}">${done}/${x.n}</button>${x.au?`<button data-au="${esc(x.au)}" aria-label="Play audio">🔊</button>`:''}</div></article>`}).join('');
+ app().innerHTML=head+(chAudio?`<button class="btn" data-au="${esc(chAudio)}">${I_('speaker')} ${tt('Play chapter audio','باب کی آڈیو')}</button>`:'')+`<p class="muted">${tt('Translation: English (open dataset). Tap the counter each time you recite.','ترجمہ: انگریزی۔ ہر بار پڑھنے پر کاؤنٹر دبائیں۔')}</p>`+list.map(x=>{const done=prog[x.key]||0;return `<article class="ayah dua ${done>=x.n?'done':''}">${x.t?`<b>${esc(x.t)}</b>`:''}<p class="ar" dir="rtl" lang="ar">${esc(x.ar)}</p>${x.lat?`<p class="muted lat">${esc(x.lat)}</p>`:''}<p class="tr">${esc(x.en)}</p>${x.note?`<small class="muted">${esc(x.note)}</small>`:''}${x.src?`<small class="muted">— ${esc(x.src)}</small>`:''}
+ <div class="tools"><button class="btn cnt" data-k="${x.key}" data-n="${x.n}">${done}/${x.n}</button>${x.au?`<button data-au="${esc(x.au)}" aria-label="Play audio">${I_('speaker')}</button>`:''}</div></article>`}).join('');
  app().onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k){const p=LS.get(k,{});const n=+b.dataset.n;p[b.dataset.k]=Math.min(n,(p[b.dataset.k]||0)+1);LS.set(k,p);b.textContent=`${p[b.dataset.k]}/${n}`;if(p[b.dataset.k]>=n){b.closest('.dua').classList.add('done');vib([60,40,60])}else vib(15)}
   if(b.dataset.au)C.playUrl(b.dataset.au,tt('Dua','دعا'))}}
 
@@ -106,10 +125,10 @@ export async function khatam(){C.setTitle(tt('Khatam planner','ختم پلانر
   app().querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{const d=new Date();d.setDate(d.getDate()+ +b.dataset.days);$('#kEnd').value=ymd(d)});
   $('#kGo').onclick=async()=>{K={start:ymd(new Date()),end:$('#kEnd').value,page:0,time:$('#kTime').value,log:{}};LS.set('khatam',K);await remind();khatam()};return}
  const p=L.khatamPlan({current:K.page,end:K.end});const nextP=Math.min(604,K.page+1);const [s,a]=pages[nextP-1];
- app().innerHTML=`<div class="card c"><div class="big"><b>${p.pct}%</b></div><div class="prog"><i style="width:${p.pct}%"></i></div><p>${tt('Page','صفحہ')} <b>${K.page}</b>/604 · ${p.remaining} ${tt('left','باقی')} · ${p.daysLeft} ${tt('days','دن')}</p><p>🎯 ${tt('Daily target','روزانہ ہدف')}: <b id="kTarget">${p.perDay}</b> ${tt('pages','صفحات')}</p>${p.done?`<p>🎉 ${tt('Khatam complete! May Allah accept it.','ختم مکمل! اللہ قبول فرمائے۔')}</p>`:''}</div>
- <div class="bar"><a class="btn pri" href="#/mushaf/${nextP}">📄 ${tt('Continue at page','صفحہ سے جاری')} ${nextP} (${s}:${a})</a></div>
+ app().innerHTML=`<div class="card c"><div class="big"><b>${p.pct}%</b></div><div class="prog"><i style="width:${p.pct}%"></i></div><p>${tt('Page','صفحہ')} <b>${K.page}</b>/604 · ${p.remaining} ${tt('left','باقی')} · ${p.daysLeft} ${tt('days','دن')}</p><p>${I_('khatam')} ${tt('Daily target','روزانہ ہدف')}: <b id="kTarget">${p.perDay}</b> ${tt('pages','صفحات')}</p>${p.done?`<p>${I_('party')} ${tt('Khatam complete! May Allah accept it.','ختم مکمل! اللہ قبول فرمائے۔')}</p>`:''}</div>
+ <div class="bar"><a class="btn pri" href="#/mushaf/${nextP}">${I_('mushaf')} ${tt('Continue at page','صفحہ سے جاری')} ${nextP} (${s}:${a})</a></div>
  <div class="form"><label>${tt('I have read up to page','میں نے صفحہ تک پڑھ لیا')}<input type="number" id="kPage" min="0" max="604" value="${K.page}"></label><button class="btn" id="kSave">✓ ${tt('Update','محفوظ')}</button><button class="btn" id="kPlus">+${p.perDay} ${tt('pages (today’s target)','صفحات (آج کا ہدف)')}</button>
- <label>${tt('Daily reminder','روزانہ یاددہانی')}<input type="time" id="kTime" value="${K.time||''}"></label><small id="kMsg" class="muted"></small><button class="btn" id="kDel">🗑 ${tt('Reset plan','منصوبہ ختم کریں')}</button></div>`;
+ <label>${tt('Daily reminder','روزانہ یاددہانی')}<input type="time" id="kTime" value="${K.time||''}"></label><small id="kMsg" class="muted"></small><button class="btn" id="kDel">${I_('trash')} ${tt('Reset plan','منصوبہ ختم کریں')}</button></div>`;
  const upd=v=>{K.page=Math.max(0,Math.min(604,v));K.log[ymd(new Date())]=K.page;LS.set('khatam',K);markRead();khatam()};
  $('#kSave').onclick=()=>upd(+$('#kPage').value);$('#kPlus').onclick=()=>upd(K.page+p.perDay);$('#kTime').onchange=async e=>{K.time=e.target.value;LS.set('khatam',K);const r=await remind();$('#kMsg').textContent=r.ok?`✓ ${r.count} ${tt('reminders','یاددہانیاں')}`:r.reason};
  $('#kDel').onclick=()=>{if(confirm(tt('Reset khatam plan?','منصوبہ ختم کریں؟'))){localStorage.removeItem('khatam');PR.setReminders('khatam',[]);khatam()}};
@@ -132,11 +151,11 @@ export async function mushaf(p){p=Math.max(1,Math.min(604,+p||LS.get('mushafPage
 
 // ---------- notes ----------
 export const getNotes=()=>LS.get('notes',{});
-export function editNote(ref,onSave){const N=getNotes();$('#sheet').hidden=false;$('#sheetBody').innerHTML=`<h2 class="h3">📝 ${tt('Note','نوٹ')} ${ref}</h2><textarea id="nt" rows="6" class="inp" aria-label="Note">${esc(N[ref]?.text||'')}</textarea><div class="bar"><button class="btn pri" id="ntSave">${tt('Save','محفوظ')}</button>${N[ref]?`<button class="btn" id="ntDel">🗑</button>`:''}</div>`;
+export function editNote(ref,onSave){const N=getNotes();$('#sheet').hidden=false;$('#sheetBody').innerHTML=`<h2 class="h3">${I_('notes')} ${tt('Note','نوٹ')} ${ref}</h2><textarea id="nt" rows="6" class="inp" aria-label="Note">${esc(N[ref]?.text||'')}</textarea><div class="bar"><button class="btn pri" id="ntSave">${tt('Save','محفوظ')}</button>${N[ref]?`<button class="btn" id="ntDel">${I_('trash')}</button>`:''}</div>`;
  $('#ntSave').onclick=()=>{const v=$('#nt').value.trim();const N2=getNotes();if(v)N2[ref]={text:v,at:Date.now()};else delete N2[ref];LS.set('notes',N2);$('#sheet').hidden=true;C.toast(tt('Note saved','نوٹ محفوظ'));onSave?.(!!v)};
  const d=$('#ntDel');if(d)d.onclick=()=>{const N2=getNotes();delete N2[ref];LS.set('notes',N2);$('#sheet').hidden=true;onSave?.(false)}}
 export function notes(){C.setTitle(tt('My notes','میرے نوٹس'));const N=Object.entries(getNotes()).sort((a,b)=>b[1].at-a[1].at);
- app().innerHTML=N.length?N.map(([r,n])=>`<a class="card" href="#/surah/${r.replace(':','/')}"><span class="badge">${r}</span><p>${esc(n.text)}</p><small class="muted">${new Date(n.at).toLocaleString()}</small></a>`).join(''):`<p class="muted c">${tt('No notes yet. Tap 📝 on any ayah.','ابھی کوئی نوٹ نہیں۔ کسی آیت پر 📝 دبائیں۔')}</p>`}
+ app().innerHTML=N.length?N.map(([r,n])=>`<a class="card" href="#/surah/${r.replace(':','/')}"><span class="badge">${r}</span><p>${esc(n.text)}</p><small class="muted">${new Date(n.at).toLocaleString()}</small></a>`).join(''):`<p class="muted c">${tt('No notes yet. Tap the note icon on any ayah.','ابھی کوئی نوٹ نہیں۔ کسی آیت پر نوٹ آئیکن دبائیں۔')}</p>`}
 
 // ---------- Islamic calendar + events ----------
 export function calendar(off=0){C.setTitle(tt('Islamic calendar','اسلامی کیلنڈر'));const adj=+PR.P.hijriAdj||0;const now=new Date();const base=new Date(now.getFullYear(),now.getMonth()+ +off,1);
@@ -155,7 +174,7 @@ export function calendar(off=0){C.setTitle(tt('Islamic calendar','اسلامی �
 export function ramadan(){C.setTitle(tt('Ramadan','رمضان'));const adj=+PR.P.hijriAdj||0;const R=L.nextRamadan(new Date(),adj);const F=LS.get('fasts_'+R.hy,{});const today=ymd(new Date());
  const rows=R.days.map(({date,hd})=>{const pt=PR.times(date);return `<tr class="${ymd(date)===today?'on':''}"><th>${hd}</th><td>${date.toLocaleDateString(ur()?'ur-PK':'en-GB',{day:'numeric',month:'short',weekday:'short'})}</td><td>${PR.fmt12(pt.fajr)}</td><td>${PR.fmt12(pt.maghrib)}</td><td><input type="checkbox" data-f="${hd}" aria-label="Fasted day ${hd}" ${F[hd]?'checked':''}></td></tr>`}).join('');
  const n=Object.values(F).filter(Boolean).length;const start=R.days[0]?.date;const inD=start?Math.ceil((start-new Date())/864e5):0;
- app().innerHTML=`<div class="card c"><b>🌙 Ramadan ${R.hy} AH</b><br><small class="muted">${inD>0?tt(`Starts in ~${inD} days (${start.toDateString()})`,`تقریباً ${inD} دن میں`):tt('Ramadan Mubarak','رمضان مبارک')} · 📍 ${esc(PR.P.city)}</small><p>${tt('Fasts kept','روزے رکھے')}: <b id="fN">${n}</b>/${R.days.length}</p><div class="prog"><i style="width:${n/R.days.length*100}%"></i></div></div>
+ app().innerHTML=`<div class="card c"><b>${I_('ramadan')} Ramadan ${R.hy} AH</b><br><small class="muted">${inD>0?tt(`Starts in ~${inD} days (${start.toDateString()})`,`تقریباً ${inD} دن میں`):tt('Ramadan Mubarak','رمضان مبارک')} · ${I_('pin')} ${esc(PR.P.city)}</small><p>${tt('Fasts kept','روزے رکھے')}: <b id="fN">${n}</b>/${R.days.length}</p><div class="prog"><i style="width:${n/R.days.length*100}%"></i></div></div>
  <p class="muted">${tt('Sehri ends at Fajr; Iftar at Maghrib (your prayer settings). Many people stop eating a few minutes earlier for caution.','سحری فجر پر ختم؛ افطار مغرب پر (آپ کی نماز کی ترتیبات کے مطابق)۔')}</p>
  <table class="grid rt"><thead><tr><th>#</th><th>${tt('Date','تاریخ')}</th><th>${tt('Sehri ends','سحری')}</th><th>${tt('Iftar','افطار')}</th><th>✓</th></tr></thead><tbody>${rows}</tbody></table>`;
  app().querySelectorAll('[data-f]').forEach(c=>c.onchange=()=>{F[c.dataset.f]=c.checked;LS.set('fasts_'+R.hy,F);$('#fN').textContent=Object.values(F).filter(Boolean).length})}
@@ -183,7 +202,7 @@ async function overpass(q){const ck='ovp_'+q.length+'_'+q.slice(-60);for(const u
  try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});if(!r.ok)throw new Error(r.status);const d=await r.json();try{localStorage.setItem(ck,JSON.stringify(d))}catch{}return d}catch{}finally{clearTimeout(tm)}}
  const c=localStorage.getItem(ck);if(c)return JSON.parse(c);throw new Error('overpass unavailable')}
 export async function mosques(){C.setTitle(tt('Nearby mosques','قریبی مساجد'));const P=PR.P;
- app().innerHTML=`<div class="bar"><button class="btn" id="mGps">📡 ${tt('Use my location','میری لوکیشن')}</button><select id="mRad" aria-label="Radius">${[1000,2000,5000].map(r=>`<option value="${r}" ${r===2000?'selected':''}>${r/1000} km</option>`).join('')}</select></div><small class="muted">📍 ${esc(P.city)}</small>
+ app().innerHTML=`<div class="bar"><button class="btn" id="mGps">${I_('gps')} ${tt('Use my location','میری لوکیشن')}</button><select id="mRad" aria-label="Radius">${[1000,2000,5000].map(r=>`<option value="${r}" ${r===2000?'selected':''}>${r/1000} km</option>`).join('')}</select></div><small class="muted">${I_('pin')} ${esc(P.city)}</small>
  <div id="map" class="map"></div><ul class="list" id="ml"><li class="muted">${C.t('loading')}</li></ul><p class="muted">© OpenStreetMap contributors · data via Overpass API</p>`;
  let map,layer;const Lf=await import('leaflet');await import('leaflet/dist/leaflet.css');
  const run=async()=>{const lat=PR.P.lat,lng=PR.P.lng,rad=+$('#mRad').value;if(!map){map=Lf.map('map',{zoomControl:true}).setView([lat,lng],14);Lf.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map)}else map.setView([lat,lng],14);
@@ -192,7 +211,7 @@ export async function mosques(){C.setTitle(tt('Nearby mosques','قریبی مس�
   try{let list;try{const d=await overpass(q);list=d.elements.map(e=>({name:e.tags?.name||e.tags?.['name:en']||tt('Mosque','مسجد'),lat:e.lat??e.center?.lat,lng:e.lon??e.center?.lon}))}catch{list=await nominatim(lat,lng,rad)}
    const ms=list.filter(m=>m.lat).filter(m=>L.distM(lat,lng,m.lat,m.lng)<=rad*1.2).map(m=>({...m,d:L.distM(lat,lng,m.lat,m.lng)})).sort((a,b)=>a.d-b.d);
    ms.forEach(m=>Lf.circleMarker([m.lat,m.lng],{radius:6,color:'#0f766e',fillOpacity:.8}).addTo(layer).bindPopup(esc(m.name)));
-   $('#ml').innerHTML=ms.length?ms.map(m=>`<li class="row"><span class="grow"><b>🕌 ${esc(m.name)}</b><small>${m.d<1000?Math.round(m.d)+' m':(m.d/1000).toFixed(1)+' km'}</small></span><a class="btn" target="_blank" rel="noopener" href="https://www.openstreetmap.org/directions?route=${lat}%2C${lng}%3B${m.lat}%2C${m.lng}">${tt('Directions','راستہ')}</a></li>`).join(''):`<li class="muted">${tt('No mosques found in this radius.','اس دائرے میں کوئی مسجد نہیں ملی۔')}</li>`}
+   $('#ml').innerHTML=ms.length?ms.map(m=>`<li class="row"><span class="grow"><b>${I_('mosques')} ${esc(m.name)}</b><small>${m.d<1000?Math.round(m.d)+' m':(m.d/1000).toFixed(1)+' km'}</small></span><a class="btn" target="_blank" rel="noopener" href="https://www.openstreetmap.org/directions?route=${lat}%2C${lng}%3B${m.lat}%2C${m.lng}">${tt('Directions','راستہ')}</a></li>`).join(''):`<li class="muted">${tt('No mosques found in this radius.','اس دائرے میں کوئی مسجد نہیں ملی۔')}</li>`}
   catch{$('#ml').innerHTML=`<li class="muted">${tt('Could not load mosques. Check your connection.','مساجد لوڈ نہیں ہو سکیں۔')}</li>`}};
  $('#mGps').onclick=async()=>{try{await PR.locate();run()}catch(e){C.toast('GPS: '+e.message)}};$('#mRad').onchange=run;run()}
 
