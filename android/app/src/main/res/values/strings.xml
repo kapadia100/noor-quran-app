@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Noor Quran</string>
-    <string name="title_activity_main">Noor Quran</string>
+    <string name="app_name">Quran Safar</string>
+    <string name="title_activity_main">Quran Safar</string>
     <string name="package_name">com.aamir.quranapp</string>
     <string name="custom_url_scheme">com.aamir.quranapp</string>
 </resources>

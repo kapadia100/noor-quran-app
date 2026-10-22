@@ -1,4 +1,4 @@
-# Noor Quran: QA Report (v1.0.0, 20 Oct 2026)
+# Quran Safar: QA Report (v1.0.0, 20 Oct 2026)
 
 Tested against the local production build and the live site https://kapadia100.github.io/noor-quran-app/.
 I used Playwright (headless Chrome) with an **iPhone 14** profile (390×844, touch, mobile UA) and a **Pixel 7** profile, with geolocation mocked to Karachi and the timezone set to Asia/Karachi.

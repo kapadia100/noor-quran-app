@@ -1,4 +1,4 @@
-# Noor Quran
+# Quran Safar
 
 Quran, translations, tafsir, recitation audio, hadith, prayer times with alerts, Qibla compass and Hijri date.
 It's a Vite PWA, wrapped for Android and iOS with Capacitor 8.
@@ -79,3 +79,6 @@ docs/APP_DETAILS.md  store listing + launch checklist
 Arabic text: Tanzil (credit required, text must not be modified; corrections are documented in QA_REPORT.md).
 Translations and tafsir come via AlQuran.cloud. Many are **non-commercial only**, so check each one before monetising.
 Hadith: fawazahmed0/hadith-api. Word-by-word + Indo-Pak: quran.com API v4. Azkar: fitrahive/dua-dhikr (MIT). Hisn al-Muslim text: wafaaelmaandy/Hisn-Muslim-Json (MIT); its audio streams from hisnmuslim.com (confirm permission before commercial release). 99 Names: AlAdhan API (English); the Urdu meanings come from asmaul-husna-api (licence not stated, so confirm or replace). Maps: © OpenStreetMap contributors (ODbL), Leaflet (BSD-2). Audio: cdn.islamic.network / everyayah. Fonts: Amiri Quran, Noto Nastaliq Urdu (OFL).
+
+
+> App ID suggestion before first store upload: `com.aamir.quransafar` (current `com.aamir.quranapp` is a placeholder). Live URL stays https://kapadia100.github.io/noor-quran-app/.

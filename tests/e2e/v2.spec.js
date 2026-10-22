@@ -37,3 +37,4 @@ test('v2.1: SVG icon nav, ibadat + FAQ screens, no emoji in home grid',async({pa
  const txt=await page.locator('.dsec .fgrid, .dsec .cgrid, nav, .quick').allInnerTexts();expect(/\p{Extended_Pictographic}/u.test(txt.join(''))).toBe(false);
  await page.click('nav button[data-r="#/ibadat"]');await expect(page).toHaveURL(/ibadat/);await expect(page.locator('nav button.on')).toHaveAttribute('data-r','#/ibadat');await expect(page.locator('.fcard,.ccard')).toHaveCount(10);
  await page.goto('./#/help');await expect(page.locator('details.faq')).toHaveCount(4)});
+test('v2.2: app is named Quran Safar (EN + UR)',async({page})=>{await page.goto('./');await expect(page).toHaveTitle(/Quran Safar/);await expect(page.locator('.appname')).toHaveText('Quran Safar');const m=await (await page.request.get('./manifest.webmanifest')).json();expect(m.name).toBe('Quran Safar');await page.click('#lang');await expect(page.locator('.appname')).toHaveText('قرآن سفر')});

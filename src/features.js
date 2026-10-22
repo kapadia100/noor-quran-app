@@ -28,10 +28,10 @@ const grid=list=>{const big=list.filter(x=>x[4]),sm=list.filter(x=>!x[4]);
  <div class="cgrid">${sm.map(([h,i,e,u])=>`<a class="ccard" href="${h}"><span class="fi">${I.icon(i)}</span><span>${tt(e,u)}</span></a>`).join('')}</div>`};
 function nowPrayer(){const n=new Date(),pt=PR.times(n);let cur='isha';for(const k of PR.PRAYERS)if(pt[k]<=n)cur=k;return cur}
 const STORIES=[['#aotd','st-ayah','Ayah of day','آج کی آیت'],['#/duas/daily-dua','st-dua','Dua of day','آج کی دعا'],['#/names','st-names','99 Names','اسماء'],['#/tasbeeh','st-tasbeeh','Tasbeeh','تسبیح'],['#/ramadan','st-ramadan','Ramadan','رمضان']];
-export async function dashboard(){C.setTitle('Noor Quran');document.body.classList.add('is-home');const [AR,tr,list]=await Promise.all([C.arabic([L.ayahOfDay().s]),C.transFor(L.ayahOfDay().s),C.surahs()]);
+export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر'));document.body.classList.add('is-home');const [AR,tr,list]=await Promise.all([C.arabic([L.ayahOfDay().s]),C.transFor(L.ayahOfDay().s),C.surahs()]);
  const {s,a}=L.ayahOfDay(),lr=LS.get('lastRead'),st=readStreak(),kp=LS.get('khatam');const nx=PR.next();const plan=kp?L.khatamPlan({current:kp.page,end:kp.end}):null;const B=import.meta.env.BASE_URL;
  app().innerHTML=`<section class="hero">
-  <div class="htop"><a class="round" href="#/more" aria-label="${tt('Menu','مینو')}">${I.icon('menu')}</a><div class="htitle"><b>Noor Quran</b><small>${PR.hijri(new Date(),S().ui)} · <span class="streak" id="streak"><b>${st}</b> ${tt('day streak','دن مسلسل')}</span></small></div></div>
+  <div class="htop"><a class="round" href="#/more" aria-label="${tt('Menu','مینو')}">${I.icon('menu')}</a><div class="htitle"><b class="appname">${tt('Quran Safar','قرآن سفر')}</b><small>${PR.hijri(new Date(),S().ui)} · <span class="streak" id="streak"><b>${st}</b> ${tt('day streak','دن مسلسل')}</span></small></div></div>
   <a class="pcard" href="#/prayer">${I.mosqueArt}<div class="pnow"><small>${tt('Now','اب')}</small><b>${C.pn(nowPrayer())}</b></div>${nx?`<span class="parr">→</span><div class="pnext"><small>${tt('Next','اگلی')} · ${PR.fmt12(nx.time)}</small><b>${C.pn(nx.key)}</b><span class="cd" data-at="${+nx.time}"></span></div>`:''}</a>
   <div class="stories">${STORIES.map(([h,img,e,u])=>`<a class="story" href="${h}"><img src="${B}img/${img}.webp" alt="" width="68" height="68" loading="lazy"><span>${tt(e,u)}</span></a>`).join('')}</div>
   <div class="srow"><form class="sbar" id="hs">${I.icon('search')}<input id="hq" aria-label="${tt('Search','تلاش')}" placeholder="${C.t('q')}"></form><a class="round heart" href="#/bookmarks" aria-label="${tt('Favourites','پسندیدہ')}">${I.icon('heart')}</a></div>
@@ -60,7 +60,7 @@ export async function ayahCard(s,a){const [AR,tr,list]=await Promise.all([C.arab
  let y=170;lines.forEach(l=>{g.fillText(l,W/2,y+=fs*1.9)});
  const trT=tr.texts[a-1]||'',isRtl=tr.edition.direction==='rtl';g.direction=isRtl?'rtl':'ltr';let fs2=38,l2;do{g.font=`${fs2}px ${isRtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(trT,W-200,x=>g.measureText(x).width);fs2-=2}while(l2.length*fs2*1.6>H-y-260&&fs2>18);
  g.fillStyle='rgba(255,255,255,.92)';y+=50;l2.forEach(l=>g.fillText(l,W/2,y+=fs2*(isRtl?2:1.5)));
- g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(`${list[s-1].englishName} ${s}:${a}`,W/2,H-140);g.font='28px Inter, sans-serif';g.fillStyle='rgba(255,255,255,.7)';g.fillText('Noor Quran',W/2,H-90);
+ g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(`${list[s-1].englishName} ${s}:${a}`,W/2,H-140);g.font='28px Inter, sans-serif';g.fillStyle='rgba(255,255,255,.7)';g.fillText('Quran Safar',W/2,H-90);
  return cv}
 export async function shareAyah(s,a){const cv=await ayahCard(s,a);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const file=new File([blob],`ayah-${s}-${a}.png`,{type:'image/png'});
  if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:`Quran ${s}:${a}`});return 'shared'}catch(e){if(e.name==='AbortError')return 'cancelled'}}

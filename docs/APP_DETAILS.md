@@ -1,9 +1,11 @@
-# Noor Quran: Store Listing & Publishing Pack
-App ID (placeholder): `com.aamir.quranapp` · Project: `/workspace/quran-app` (Vite PWA + Capacitor Android/iOS)
+# Quran Safar: Store Listing & Publishing Pack
+App ID (placeholder): `com.aamir.quranapp` (suggested final ID: **`com.aamir.quransafar`**) · Project: `/workspace/quran-app` (Vite PWA + Capacitor Android/iOS)
 
-## 1. App name ideas
+## 1. App name
+**Chosen name: Quran Safar** (Urdu: قرآن سفر). Suggested store title: **"Quran Safar: Quran, Prayer & Duas"** (33 chars; Play allows 30 — use "Quran Safar: Quran & Prayer" there if it is rejected; iOS name limit is also 30, so use the subtitle for "Prayer & Duas").
+
+Earlier ideas:
 "Islam 360" is a trademark, so don't use it or anything that looks like it.
-- **Noor Quran**: Read, Listen & Tafsir (current working name)
 - Huda: Quran & Hadith
 - Al-Furqan Reader
 - Quran Companion: Tafsir & Hadith
@@ -17,7 +19,7 @@ Quran with 100+ translations, tafsir, 30+ reciters and hadith. Ad-free.
 **iOS subtitle (30 chars):** Quran, Tafsir, Audio & Hadith
 
 **Full description:**
-Noor Quran gives you the Holy Quran with a clean, distraction-free reader.
+Quran Safar gives you the Holy Quran with a clean, distraction-free reader.
 
 • All 114 surahs in clear Uthmani Arabic script
 • 100+ translations in 40+ languages, including Urdu, English, Hindi, Bengali, Indonesian, Turkish, French and more
@@ -134,8 +136,8 @@ Note: if you add analytics, Crashlytics, ads or login later, you must update bot
 ## 10. Launch checklist (v1.0.0)
 
 ### Decide before the first upload (permanent)
-- [ ] **Final app ID.** `com.aamir.quranapp` is a placeholder (see README › App ID). It can't be changed after publishing.
-- [ ] Final app name / icon (currently "Noor Quran").
+- [ ] **Final app ID.** `com.aamir.quranapp` is a placeholder (see README › App ID); suggested: `com.aamir.quransafar`. It can't be changed after publishing.
+- [ ] Final app name / icon (currently "Quran Safar").
 
 ### Accounts
 - [ ] Google Play Console ($25 one-time). New personal accounts need **12 testers for 14 days** of closed testing before production.
