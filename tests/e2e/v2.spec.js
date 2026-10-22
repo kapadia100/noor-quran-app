@@ -54,3 +54,14 @@ test('hadith: search by international number (EN/UR), picker+number, keyword (EN
  await page.goto('./#/hadith/malik/n/3%2F22');await expect(page.locator('.hd .badge').first()).toContainText('Book 3, Hadith 22',{timeout:30000});
  await page.goto('./#/hsearch/nawawi/migration');await expect(page.locator('#hsm')).toContainText('results',{timeout:60000});await expect(page.locator('#hsr mark').first()).toBeVisible();
  await page.goto('./#/hsearch/nawawi/'+encodeURIComponent('بالنيات'));await expect(page.locator('#hsr .hd').first()).toBeVisible({timeout:60000});await expect(page.locator('#hsr mark').first()).toBeVisible()});
+test('hadith cards have no external sunnah.com link; credits live in FAQ/About',async({page})=>{await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('.hd .badge').first()).toHaveText('Sahih al-Bukhari 1',{timeout:30000});
+ await expect(page.locator('.hd')).not.toContainText('sunnah.com');await expect(page.locator('.hd a[href*="sunnah.com"]')).toHaveCount(0);await expect(page.locator('.hd small').first()).toContainText(/Book \d+, Hadith \d+/);
+ await page.locator('.hd [data-shr]').first().click();await expect(page.locator('#shTxt')).not.toContainText('sunnah.com');
+ await page.goto('./#/help');await expect(page.locator('#credits')).toContainText('sunnah.com')});
+test('no source names/domains on content screens (credits only in About)',async({page})=>{test.setTimeout(240000);const bad=/sunnah\.com|alquran\.cloud|tanzil|quran\.com|hisnmuslim|everyayah|islamic\.network|overpass|nominatim|hadith-api|fawazahmed|dua-dhikr|aladhan|open dataset|Data:/i;
+ const R=['','quran','surah/1','surah/2/255','juz/30','mushaf/2','hadith','hadith/bukhari/1','hadith/bukhari/n/1','hsearch/nawawi/migration','duas','duas/hisn/1','names','tasbeeh','prayer','qibla','calendar','ramadan','zakat','khatam','hifz','tracker','notes','bookmarks','search','settings','more','ibadat','mosques'];
+ for(const r of R){await page.goto('./#/'+r);await page.waitForTimeout(/hadith|hsearch|surah|mosques/.test(r)?2500:600);const txt=await page.locator('#app').innerText();const links=await page.locator('#app a[href]').evaluateAll(a=>a.map(x=>x.href).filter(h=>!h.includes(location.host)&&!/openstreetmap\.org\/directions|leafletjs|openstreetmap\.org\/copyright/.test(h)));
+  expect.soft(txt.match(bad)?.[0]??null,`${r} text`).toBeNull();expect.soft(links,`${r} external links`).toEqual([])}
+ await page.goto('./#/surah/1');await page.locator('[data-taf="1:1"]').click();await page.waitForTimeout(2000);expect((await page.locator('#tfx').innerText()).match(bad)).toBeNull();
+ await page.goto('./#/names');await page.locator('.name').first().click();await page.locator('#sheet [data-shr]').click();expect((await page.locator('#shTxt').innerText()).match(bad)).toBeNull();
+ await page.goto('./#/help');await expect(page.locator('#credits')).toContainText('Tanzil');await expect(page.locator('#credits')).toContainText('OpenStreetMap')});
