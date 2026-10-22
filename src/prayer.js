@@ -35,3 +35,16 @@ export async function schedule(){const now=new Date();const items=[];
  webTimers.forEach(clearTimeout);webTimers=items.filter(x=>x.at-now<2**31-1).map(x=>setTimeout(()=>{new Notification(`${PNAME[x.k][0]} · ${PNAME[x.k][1]}`,{body:`It's time for ${PNAME[x.k][0]} — ${P.city}`,icon:import.meta.env.BASE_URL+'icon.svg'});if(P.adhan&&x.k!=='sunrise')new Audio(import.meta.env.BASE_URL+'adhan.wav').play().catch(()=>{})},x.at-now));
  return {ok:true,count:webTimers.length,mode:'web (while app is open)'}}
 export async function cancelAll(){webTimers.forEach(clearTimeout);webTimers=[];if(native()){const p=await LocalNotifications.getPending();if(p.notifications.length)await LocalNotifications.cancel({notifications:p.notifications.map(n=>({id:n.id}))})}}
+// ---- generic reminders (khatam, ayah of the day, calendar events) ----
+// group: string key; items: [{at:Date,title,body}]. Native ids: 5000 + group slot*200 + i.
+const GROUPS=['khatam','aotd','events','ramadan'];let webRem={};
+export async function setReminders(group,items){const now=new Date();items=items.filter(x=>x.at>now).slice(0,group==='events'?20:14);const base=5000+GROUPS.indexOf(group)*200;
+ if(native()){const perm=await LocalNotifications.requestPermissions();if(perm.display!=='granted')return {ok:false,reason:'permission denied'};
+  const pend=await LocalNotifications.getPending();const mine=pend.notifications.filter(n=>n.id>=base&&n.id<base+200);if(mine.length)await LocalNotifications.cancel({notifications:mine.map(n=>({id:n.id}))});
+  if(items.length)await LocalNotifications.schedule({notifications:items.map((x,i)=>({id:base+i,title:x.title,body:x.body,schedule:{at:x.at,allowWhileIdle:true},channelId:'prayer'}))});return {ok:true,count:items.length,mode:'native'}}
+ (webRem[group]||[]).forEach(clearTimeout);webRem[group]=[];if(!items.length)return {ok:true,count:0};
+ if(!('Notification' in window))return {ok:false,reason:'notifications unsupported'};
+ const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();if(perm!=='granted')return {ok:false,reason:'permission denied'};
+ webRem[group]=items.filter(x=>x.at-now<2**31-1).map(x=>setTimeout(()=>new Notification(x.title,{body:x.body,icon:import.meta.env.BASE_URL+'icon-192.png'}),x.at-now));return {ok:true,count:webRem[group].length,mode:'web (while app is open)'}}
+/** Daily times at HH:MM for the next n days. */
+export function dailyAt(hhmm,n=7,from=new Date()){const [h,m]=hhmm.split(':').map(Number);const out=[];for(let i=0;i<=n;i++){const d=new Date(from.getFullYear(),from.getMonth(),from.getDate()+i,h,m);if(d>from)out.push(d)}return out.slice(0,n)}

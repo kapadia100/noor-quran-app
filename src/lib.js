@@ -28,3 +28,40 @@ export function highlight(text,q){if(!q)return esc(text);const r=new RegExp(q.re
 /** Fuzzy key for transliterated surah names: 'Yaseen'/'Yasin'/'Ya-Sin' -> 'ysn'. */
 export const skel=s=>String(s).toLowerCase().replace(/^a[a-z]{0,2}-/,'').replace(/[^a-z0-9]/g,'').replace(/[aeiou]/g,'').replace(/(.)\1+/g,'$1');
 export function surahMatch(s,q){q=String(q).trim().toLowerCase();if(!q)return true;const hay=(s.number+' '+s.englishName+' '+s.englishNameTranslation+' '+s.name).toLowerCase();if(hay.includes(q))return true;if(/^\d+$/.test(q))return String(s.number)===q;const k=skel(q);return k.length>1&&skel(s.englishName).startsWith(k)}
+
+// ===== v2 feature logic =====
+export const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const DAY=864e5;
+/** Hijri {y,m,d} (Umm al-Qura) for a date, with ±day adjustment. */
+export function hijriParts(date=new Date(),adj=0){const x=new Date(date.getTime()+adj*DAY);const p=new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{year:'numeric',month:'numeric',day:'numeric'}).formatToParts(x);const g=k=>parseInt(p.find(v=>v.type===k).value);return {y:g('year'),m:g('month'),d:g('day')}}
+export const HMONTHS=['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Ula','Jumada al-Akhirah','Rajab',"Sha'ban",'Ramadan','Shawwal',"Dhu al-Qa'dah",'Dhu al-Hijjah'];
+export const HMONTHS_UR=['محرم','صفر','ربیع الاول','ربیع الثانی','جمادی الاول','جمادی الثانی','رجب','شعبان','رمضان','شوال','ذوالقعدہ','ذوالحجہ'];
+export const EVENTS=[[1,1,'Islamic New Year','اسلامی نیا سال'],[1,10,'Day of Ashura','یوم عاشور'],[3,12,'Mawlid an-Nabi','عید میلاد النبی'],[7,27,"Isra & Mi'raj",'شب معراج'],[8,15,"Shab-e-Barat (15 Sha'ban)",'شب برات'],[9,1,'Ramadan begins','آغاز رمضان'],[9,27,'Laylat al-Qadr (27th night)','شب قدر (27ویں شب)'],[10,1,'Eid al-Fitr','عید الفطر'],[12,8,'Hajj begins (Yawm at-Tarwiyah)','آغاز حج'],[12,9,'Day of Arafah','یوم عرفہ'],[12,10,'Eid al-Adha','عید الاضحی']];
+/** Upcoming Islamic events from `from` within `days` days: [{date,hm,hd,en,ur,inDays}]. */
+export function upcomingEvents(from=new Date(),days=400,adj=0){const out=[];const base=new Date(from.getFullYear(),from.getMonth(),from.getDate());
+ for(let i=0;i<days;i++){const d=new Date(base.getTime()+i*DAY+12*36e5);const h=hijriParts(d,adj);const e=EVENTS.find(e=>e[0]===h.m&&e[1]===h.d);if(e)out.push({date:new Date(base.getTime()+i*DAY),hy:h.y,hm:h.m,hd:h.d,en:e[2],ur:e[3],inDays:i})}return out}
+/** Gregorian dates of a Hijri month (default: next/current Ramadan). */
+export function hijriMonthDays(hy,hm,adj=0,from=new Date()){const out=[];const base=new Date(from.getFullYear(),from.getMonth(),from.getDate());for(let i=-40;i<420&&out.length<31;i++){const d=new Date(base.getTime()+i*DAY+12*36e5);const h=hijriParts(d,adj);if(h.y===hy&&h.m===hm)out.push({date:new Date(base.getTime()+i*DAY),hd:h.d});else if(out.length)break}return out}
+export function nextRamadan(from=new Date(),adj=0){const h=hijriParts(from,adj);const y=h.m<=9?h.y:h.y+1;return {hy:y,days:hijriMonthDays(y,9,adj,from)}}
+/** Zakat. All money in the same currency. Nisab: 87.48 g gold or 612.36 g silver (default silver, the lower threshold). */
+export const NISAB_GOLD_G=87.48,NISAB_SILVER_G=612.36;
+export function zakat({cash=0,gold_g=0,silver_g=0,goldPrice=0,silverPrice=0,business=0,receivables=0,debts=0,basis='silver'}){const n=v=>Math.max(0,+v||0);
+ const assets=n(cash)+n(gold_g)*n(goldPrice)+n(silver_g)*n(silverPrice)+n(business)+n(receivables);const net=Math.max(0,assets-n(debts));
+ const nisab=basis==='gold'?NISAB_GOLD_G*n(goldPrice):NISAB_SILVER_G*n(silverPrice);const due=nisab>0&&net>=nisab?net*0.025:0;return {assets,net,nisab,eligible:due>0,due:Math.round(due*100)/100}}
+/** Khatam plan: pages remaining and pages/day needed to finish by `end`. */
+export function khatamPlan({start=1,current,end,today=new Date(),total=604}){const cur=Math.min(total,Math.max(current??start-1,0));const remaining=total-cur;
+ const daysLeft=Math.max(1,Math.ceil((new Date(end).setHours(23,59,59)-new Date(today).setHours(0,0,0))/DAY));return {remaining,daysLeft,perDay:remaining?Math.ceil(remaining/daysLeft):0,pct:Math.round(cur/total*100),done:remaining===0}}
+/** Page (1..604) containing surah:ayah, given page start table [[s,a],...]. */
+export function pageOf(pages,s,a){let lo=0,hi=pages.length-1;const key=(x)=>x[0]*1000+x[1],k=s*1000+a;while(lo<hi){const m=(lo+hi+1)>>1;if(key(pages[m])<=k)lo=m;else hi=m-1}return lo+1}
+/** All [s,a] on page p. */
+export function pageAyahs(pages,p){const [s0,a0]=pages[p-1],end=pages[p]||[115,1];const out=[];let s=s0,a=a0;while(s<end[0]||(s===end[0]&&a<end[1])){out.push([s,a]);if(a<AYAH_COUNTS[s-1])a++;else{s++;a=1;if(s>114)break}}return out}
+/** Deterministic ayah of the day (same for everyone on a date). */
+export function ayahOfDay(date=new Date()){const k=ymd(date);let h=2166136261;for(const c of k){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}let g=h%6236;for(let s=1;s<=114;s++){if(g<AYAH_COUNTS[s-1])return {s,a:g+1};g-=AYAH_COUNTS[s-1]}}
+/** Consecutive-day streak ending today (or yesterday if today not yet done). */
+export function streak(days,today=new Date()){const set=new Set(days);let d=new Date(today.getFullYear(),today.getMonth(),today.getDate());if(!set.has(ymd(d)))d=new Date(d.getTime()-DAY);let n=0;while(set.has(ymd(d))){n++;d=new Date(d.getFullYear(),d.getMonth(),d.getDate()-1)}return n}
+/** Hifz repeat engine. cfg {s,from,to,each,range}; pos {a,c,r} (ayah, repetition of ayah, repetition of range). Returns next pos or null when finished. */
+export function hifzNext(cfg,pos){if(pos.c+1<cfg.each)return {a:pos.a,c:pos.c+1,r:pos.r};if(pos.a<cfg.to)return {a:pos.a+1,c:0,r:pos.r};if(pos.r+1<cfg.range)return {a:cfg.from,c:0,r:pos.r+1};return null}
+/** Distance in metres (haversine). */
+export function distM(a,b,c,d){const R=6371e3,r=x=>x*Math.PI/180;const x=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+/** Wrap text into lines that fit maxW using measure(str)->px. */
+export function wrapText(text,maxW,measure){const words=String(text).split(/\s+/);const lines=[];let cur='';for(const w of words){const t=cur?cur+' '+w:w;if(measure(t)>maxW&&cur){lines.push(cur);cur=w}else cur=t}if(cur)lines.push(cur);return lines}

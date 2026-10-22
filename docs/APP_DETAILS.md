@@ -166,3 +166,18 @@ Note: if you add analytics, Crashlytics, ads or login later, you must update bot
 - [ ] Android phone: GPS, compass, alerts at the exact prayer minute, adhan sound, reboot keeps alerts.
 - [ ] iPhone: continuous recitation with the screen locked, lock-screen controls, alerts (iOS 64-notification limit means 7 days are scheduled, so open the app weekly).
 - [ ] Airplane mode: reading Juz 1–30 and switching between Urdu and English.
+
+
+---
+## 11. v2.0 feature set (added 22 Oct 2026)
+Tasbeeh · Duas & azkar + Hisn al-Muslim · 99 Names · Prayer tracker + qaza · Word-by-word · Hifz mode · Khatam planner · Mushaf (Uthmani / Indo-Pak) · Ayah notes · Islamic calendar + reminders · Ramadan sehri/iftar + fasting tracker · Zakat calculator · Nearby mosques (OSM) · Ayah of the day + share image · Reading streaks · Redesigned home dashboard.
+
+### Roadmap: Android home-screen widget
+Capacitor has no widget API, so this needs native code: a Kotlin `AppWidgetProvider` in `android/app/src/main/java/...` with a RemoteViews layout (next prayer + ayah of the day).
+The web app would write the data into SharedPreferences through a small Capacitor plugin, and a `WorkManager` job would refresh it every 30 minutes. Estimate: about 1–2 days, plus testing on real devices.
+On iOS the equivalent is a WidgetKit extension (Swift) that reads an App Group.
+
+### Extra launch items for v2
+- [ ] Confirm the licences for the **Urdu 99-Names meanings** (asmaul-husna-api) and the **hisnmuslim.com audio**, or replace them. Dua translations are English only, because no openly licensed Urdu Hisn al-Muslim was found. Add Urdu once a licensed source exists.
+- [ ] Data Safety: the mosque search sends your approximate location to OpenStreetMap servers (Overpass/Nominatim). Declare this as "location shared with a service provider for app functionality".
+- [ ] OSM tile usage policy: for heavy production traffic, switch to a commercial or self-hosted tile provider (MapTiler, Stadia, etc.).

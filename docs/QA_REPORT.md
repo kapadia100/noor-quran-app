@@ -69,3 +69,68 @@ The long-reader performance scores are limited by DOM size (286–564 ayahs on o
 - iPhone: recitation with the screen locked or the app in the background, lock-screen controls, Add-to-Home-Screen notifications (iOS ≥16.4).
 - Android native: exact-time alerts, the adhan sound channel, alerts surviving a reboot, the real compass.
 - Arabic text: automated letter-by-letter checks against quran.com pass. A human proof-read is still recommended before release.
+
+---
+# v2.0: New features QA (22 Oct 2026)
+
+## Results summary (v2)
+| Suite | Result |
+|---|---|
+| ESLint | 0 errors |
+| Vitest unit | **36 / 36 pass** (22 v1 + 14 new: mushaf pages, Hijri events, Ramadan, zakat, khatam, streak, ayah of the day, hifz engine, distance/wrap, bundled data integrity) |
+| Playwright e2e, local | **68 / 68 pass** (34 tests × iPhone 14 + Pixel 7; 16 of the tests are new v2 ones) |
+| Playwright e2e, live site | **68 / 68 pass** (see the deploy check at the end) |
+| Console errors / horizontal overflow | 0 on every new screen |
+| Android debug APK + unsigned AAB (v2.0.0, versionCode 2) | built OK |
+
+## Lighthouse (mobile, v2 production build)
+| Screen | Perf | A11y | Best practices | SEO |
+|---|---|---|---|---|
+| Home dashboard | 96 | 100 | 100 | 100 |
+| **Al-Baqara reader** | **95** (was 78) | 100 | 100 | 100 |
+| Juz 30 | 81 | 100 | 100 | 100 |
+| Mushaf page 42 | 87 | 100 | 100 | 100 |
+| Duas | 87 | 100 | 100 | 100 |
+| Tasbeeh | 95 | 100 | 100 | 100 |
+| 99 Names | 99 | 100 | 100 | 100 |
+| Calendar | 94 | 100 | 100 | 100 |
+| Prayer tracker | 94 | 100 | 100 | 100 |
+| Nearby mosques | 85 | 100 | 93 | 100 |
+
+The mosques best-practices score of 93 comes from third-party OSM map tiles. Speed-ups:
+- Long surahs render progressively, 30 ayahs at a time, with more added as you scroll.
+- Quran data is split into 114 small per-surah files instead of one 1.4 MB file.
+- Leaflet is only loaded on the mosques screen.
+
+## Per-feature cross-check (v2)
+| # | Feature | Test done | Result | Notes |
+|---|---|---|---|---|
+| 32 | Home dashboard redesign | e2e: ayah of the day shown, 18 feature tiles, streak, khatam progress card appears once a plan exists | PASS | Bottom nav is now Home / Quran / Duas / Prayer / More. Smooth fade-in between screens, which respects reduce-motion. |
+| 33 | Tasbeeh | e2e: 33 taps hit the target, vibration + toast; preset 100; −1; save & reset writes history; custom dhikr persists after reload | PASS | `navigator.vibrate` on target (Android; iOS Safari has no vibration API). |
+| 34 | Morning/evening azkar, after salah, daily, selected duas | e2e: 19 morning + 19 evening; counter fills to n and the card is marked done | PASS | fitrahive/dua-dhikr (MIT): Arabic, transliteration, English, source. Counters reset daily. |
+| 35 | Hisn al-Muslim | e2e: 132 chapters, search "sleep", open chapter, audio button present. Unit: 267 duas, all https audio | PASS (partial) | Text is MIT (wafaaelmaandy). Audio streams from hisnmuslim.com; confirm permission. **No openly licensed Urdu translation found, so English only.** |
+| 36 | 99 Names | e2e: 99 cards, search, detail sheet with Urdu. Unit: all 99 have Arabic, transliteration, English and Urdu | PASS (partial) | English from AlAdhan. Urdu from asmaul-husna-api (licence not stated, so flagged). **No audio**: no openly licensed recording found. |
+| 37 | Prayer tracker + qaza | e2e: mark prayed (1/5); prayed → missed adds to qaza; +/− counters; persists after reload | PASS | |
+| 38 | Word-by-word | e2e: toggle loads words from quran.com, tap shows meaning + transliteration, plays word audio | PASS | Language: Auto (EN/UR follows the app) or choose hi/bn/id/tr in Settings. Needs internet the first time; cached afterwards. |
+| 39 | Hifz mode | e2e with real audio: 112:1–2, each ×2, range ×1, gives the exact sequence 1,1,2,2 then "complete"; hide-text blur on; memorised ayah marked and counted. Unit: hifzNext gives 1,1,2,2,1,1,2,2 for range ×2 | PASS | The player shows 🔁 repeat/range counters. |
+| 40 | Khatam planner | e2e: 30-day plan gives a 20–21 pages/day target; "+target" updates; dashboard card shows. Unit: plan math | PASS | Daily reminder (time picker) through native/web notifications. |
+| 41 | Mushaf 604 pages | Unit: 604 pages cover all 6,236 ayahs once and in order; 2:255 is on p.42, 18:1 p.293, 36:1 p.440, 67:1 p.562. e2e: p.1 has 7 ayahs, p.604 has 15, Indo-Pak switch, go-to-page | PASS | Uthmani works offline. Indo-Pak uses quran.com `text_indopak` + Scheherazade New. Swipe changes pages (book direction). |
+| 42 | Notes per ayah | e2e: add note, shown under the ayah and in the Notes list | PASS | Stored on device only. |
+| 43 | Islamic calendar + events + reminders | e2e: month grid with Hijri days, next month, upcoming events, reminder toggle. Unit: events in order; Ramadan → Eid al-Fitr is 29/30 days | PASS | Umm al-Qura, plus the user's Hijri ±2 adjustment for local moon sighting. |
+| 44 | Ramadan sehri/iftar + fasting tracker | e2e: 29-row table, tick fast, counter updates | PASS | Sehri = Fajr, Iftar = Maghrib, using the chosen method/city. Next Ramadan ≈ 8 Feb 2027. |
+| 45 | Zakat calculator | e2e: PKR default; silver 250/g + cash 200,000 gives due 5,000; 100,000 is below nisab; gold basis nisab 2,624,400 at 30,000/g. Unit: debts, holdings, negatives | PASS | The user enters current prices; no price API. |
+| 46 | Nearby mosques | e2e + screenshots: map + 46 mosques listed near Karachi centre with distance + OSM directions | **FIXED during QA** | Overpass returned HTTP 406 from the test network, so I added fallback mirrors and a Nominatim fallback (filtered to religion=muslim), plus a cached last result. |
+| 47 | Ayah of the day + share image | e2e: share opens a 1080×1350 PNG card (download fallback when Web Share with files is unsupported). Unit: deterministic per date, valid refs | PASS | Optional daily notification in Settings (time picker). |
+| 48 | Reading streak | e2e: opening a surah turns the streak to 1. Unit: streak math incl. "not yet today" | PASS | Counts days with reader or mushaf activity. |
+| 49 | Long-surah performance | e2e: Al-Baqara first render < 80 ayahs; deep link 2:250 lands in view | **FIXED** | Progressive rendering + per-surah data. Lighthouse 78 → 95. |
+| 50 | Urdu UI + dark mode on new screens | e2e: all 9 new screens RTL in Urdu; tiles translated; dark screenshots captured | PASS | |
+| 51 | Offline for new data | e2e: offline reload, then Hisn al-Muslim, 99 Names, Mushaf p.100, Tasbeeh, Zakat and Calendar all render | PASS | SW cache `noor-v5` precaches 342 per-surah files + the v2 datasets. |
+| 52 | Android home widget | Not implemented | **ROADMAP** | Needs native Kotlin AppWidget + a small plugin; design and estimate in APP_DETAILS §11. |
+| 53 | Bugs found while building v2 | e2e | **FIXED** | Stale note after editing (reader re-render); word-audio clip showed the main player; deep-link scroll drifted after fonts loaded; heading order / label-name a11y issues on new screens. |
+
+## Partial / needs you
+- Urdu translations for duas/Hisn: no open licensed source found, so English only (Urdu UI labels are done).
+- 99 Names audio: not added (no openly licensed audio found).
+- Licences to confirm: Urdu 99-Names meanings (asmaul-husna-api) and hisnmuslim.com audio.
+- Home-screen widget: roadmap.
+- Real-device checks: vibration, notifications, compass, locked-screen audio.

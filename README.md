@@ -5,8 +5,22 @@ It's a Vite PWA, wrapped for Android and iOS with Capacitor 8.
 
 Live web build: https://kapadia100.github.io/noor-quran-app/
 
+## Features (v2.0)
+- Quran reader with 118 translations, tafsir, recitation from 32 reciters. Audio plays continuously and auto-advances into the next surah, with lock-screen controls.
+- **Word-by-word** (tap a word for its meaning, transliteration and audio; quran.com API) and **Hifz mode**. Hifz mode repeats each ayah N times and the whole range R times, can hide the text (tap to peek), and tracks memorised ayahs.
+- **Mushaf** page view (604 pages, Uthmani offline; Indo-Pak script via quran.com), swipe between pages, Juz 1–30.
+- Personal **notes** per ayah, bookmarks, last read, **daily reading streak**, **ayah of the day** (home + optional daily notification), and **share ayah as an image** (canvas, Web Share API).
+- **Khatam planner** (finish-by date, daily page target, daily reminder).
+- **Duas & azkar**: morning, evening, after salah, daily and selected duas, plus the full **Hisn al-Muslim** (132 chapters / 267 duas) with counters and audio.
+- **Tasbeeh** counter (33/34/100/custom, vibration, multiple and custom dhikr, history). **99 Names of Allah** (English + Urdu meanings).
+- **Prayer**: times, alerts, Qibla, Hijri date, **prayer tracker with qaza** counts, **Ramadan** sehri/iftar table + fasting tracker, **Islamic calendar** with event reminders.
+- **Zakat calculator** (gold/silver nisab, your own prices, PKR default) and **nearby mosques** (OpenStreetMap map; Overpass, with Nominatim fallback).
+- English/Urdu UI, dark mode, offline-first.
+- Android home-screen widget: on the roadmap (needs a native Kotlin AppWidget; see docs/APP_DETAILS.md).
+
 ## What works offline
-The app bundles the verified Uthmani Arabic text (6,236 ayahs, with corrections applied), **Saheeh International (English)**, **Jalandhry (Urdu)** and the surah list (`public/offline/`, about 3.6 MB).
+The app bundles, per surah, the verified Uthmani Arabic text (6,236 ayahs, with corrections applied), **Saheeh International (English)** and **Jalandhry (Urdu)** (`public/offline/s/`). It also bundles the duas, Hisn al-Muslim, the 99 Names and the 604-page mushaf map (`public/offline/x/`).
+The tasbeeh, tracker, zakat, calendar, Ramadan, khatam and notes screens are fully local.
 After the first launch, surah, juz/para reading, bookmarks, prayer times, Qibla and the Hijri date all work without a network.
 Other translations, tafsir, hadith, search and audio load from the network. Anything already opened is cached by the service worker. If a non-bundled translation can't load, the reader falls back to the bundled English.
 
@@ -64,4 +78,4 @@ docs/APP_DETAILS.md  store listing + launch checklist
 ## Data sources & licences
 Arabic text: Tanzil (credit required, text must not be modified; corrections are documented in QA_REPORT.md).
 Translations and tafsir come via AlQuran.cloud. Many are **non-commercial only**, so check each one before monetising.
-Hadith: fawazahmed0/hadith-api. Audio: cdn.islamic.network / everyayah. Fonts: Amiri Quran, Noto Nastaliq Urdu (OFL).
+Hadith: fawazahmed0/hadith-api. Word-by-word + Indo-Pak: quran.com API v4. Azkar: fitrahive/dua-dhikr (MIT). Hisn al-Muslim text: wafaaelmaandy/Hisn-Muslim-Json (MIT); its audio streams from hisnmuslim.com (confirm permission before commercial release). 99 Names: AlAdhan API (English); the Urdu meanings come from asmaul-husna-api (licence not stated, so confirm or replace). Maps: © OpenStreetMap contributors (ODbL), Leaflet (BSD-2). Audio: cdn.islamic.network / everyayah. Fonts: Amiri Quran, Noto Nastaliq Urdu (OFL).

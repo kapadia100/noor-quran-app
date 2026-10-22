@@ -1,15 +1,17 @@
 import './style.css';
 import * as PR from './prayer.js';
-import {surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRanges,nextPos,clampAdj,highlight,turn,AYAH_COUNTS} from './lib.js';
+import {hifzNext,surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRanges,nextPos,clampAdj,highlight,turn,AYAH_COUNTS} from './lib.js';
 const API='https://api.alquran.cloud/v1', HAD='https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1';
 const $=s=>document.querySelector(s);let app=$('#app');
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const S=Object.assign({trans:'en.sahih',reciter:'ar.alafasy',tafsir:'ar.muyassar',ui:'en',dark:matchMedia('(prefers-color-scheme: dark)').matches,hlang:'eng',size:30,continuous:true,autoNext:true,surahAudio:false},LS.get('settings',{}));
 const save=()=>LS.set('settings',S);
-const T={en:{quran:'Quran',hadith:'Hadith',search:'Search',bookmarks:'Bookmarks',prayer:'Prayer',qibla:'Qibla',settings:'Settings',filter:'Search surah…',ayahs:'ayahs',translation:'Translation',reciter:'Reciter',tafsir:'Tafsir',lastRead:'Continue reading',none:'Nothing yet',play:'Play surah',lang:'Hadith language',size:'Arabic font size',q:'Search the Quran…',edition:'Search in',loading:'Loading…',err:'Could not load. Check your connection.',results:'results',books:'Books',uiLang:'App language',dark:'Dark mode',offlineTr:'Offline: showing the built-in English translation. Connect to load the selected translation.',cont:'Continuous play (auto-advance ayahs)',autoNext:'Continue into next surah',surahAudio:'Whole-surah audio files (best for locked screen, no ayah highlight)'},
- ur:{quran:'قرآن',hadith:'حدیث',search:'تلاش',bookmarks:'نشانیاں',prayer:'نماز',qibla:'قبلہ',settings:'ترتیبات',filter:'سورت تلاش کریں…',ayahs:'آیات',translation:'ترجمہ',reciter:'قاری',tafsir:'تفسیر',lastRead:'پڑھنا جاری رکھیں',none:'ابھی کچھ نہیں',play:'سورت سنیں',lang:'حدیث کی زبان',size:'عربی فونٹ سائز',q:'قرآن میں تلاش کریں…',edition:'تلاش بذریعہ',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',results:'نتائج',books:'کتب',uiLang:'ایپ کی زبان',dark:'ڈارک موڈ',offlineTr:'آف لائن: بلٹ اِن انگریزی ترجمہ دکھایا جا رہا ہے۔',cont:'مسلسل تلاوت',autoNext:'اگلی سورت جاری رکھیں',surahAudio:'پوری سورت کی آڈیو فائل (لاک اسکرین کے لیے بہتر)'}};
+const T={en:{home:'Home',duas:'Duas',more:'More',quran:'Quran',hadith:'Hadith',search:'Search',bookmarks:'Bookmarks',prayer:'Prayer',qibla:'Qibla',settings:'Settings',filter:'Search surah…',ayahs:'ayahs',translation:'Translation',reciter:'Reciter',tafsir:'Tafsir',lastRead:'Continue reading',none:'Nothing yet',play:'Play surah',lang:'Hadith language',size:'Arabic font size',q:'Search the Quran…',edition:'Search in',loading:'Loading…',err:'Could not load. Check your connection.',results:'results',books:'Books',uiLang:'App language',dark:'Dark mode',offlineTr:'Offline: showing the built-in English translation. Connect to load the selected translation.',cont:'Continuous play (auto-advance ayahs)',autoNext:'Continue into next surah',surahAudio:'Whole-surah audio files (best for locked screen, no ayah highlight)'},
+ ur:{home:'ہوم',duas:'دعائیں',more:'مزید',quran:'قرآن',hadith:'حدیث',search:'تلاش',bookmarks:'نشانیاں',prayer:'نماز',qibla:'قبلہ',settings:'ترتیبات',filter:'سورت تلاش کریں…',ayahs:'آیات',translation:'ترجمہ',reciter:'قاری',tafsir:'تفسیر',lastRead:'پڑھنا جاری رکھیں',none:'ابھی کچھ نہیں',play:'سورت سنیں',lang:'حدیث کی زبان',size:'عربی فونٹ سائز',q:'قرآن میں تلاش کریں…',edition:'تلاش بذریعہ',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',results:'نتائج',books:'کتب',uiLang:'ایپ کی زبان',dark:'ڈارک موڈ',offlineTr:'آف لائن: بلٹ اِن انگریزی ترجمہ دکھایا جا رہا ہے۔',cont:'مسلسل تلاوت',autoNext:'اگلی سورت جاری رکھیں',surahAudio:'پوری سورت کی آڈیو فائل (لاک اسکرین کے لیے بہتر)'}};
 const t=k=>T[S.ui][k]||k;
 import {esc} from './lib.js';
+import * as F from './features.js';
+import * as L2 from './lib.js';
 const mem={};
 async function j(url){if(mem[url])return mem[url];const r=await fetch(url);if(!r.ok)throw new Error(r.status);const d=await r.json();return mem[url]=d.data??d}
 const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(API+'/surah'));
@@ -30,7 +32,7 @@ const opt=(list,sel)=>list.map(e=>`<option value="${e.identifier}" ${e.identifie
 
 // ---------- Surah list ----------
 async function home(tab){setTitle(t('quran'));loading();const list=await surahs();const lr=LS.get('lastRead');
- const nx=PR.next();app.innerHTML=`${dateCard(nx)}<div class="tabs"><a href="#/" class="${tab?'':'on'}">Surah</a><a href="#/juz" class="${tab?'on':''}">Juz / Para</a><a href="#/bookmarks">🔖 ${t('bookmarks')}</a></div>${tab?juzList():''}`;tick();if(tab)return;
+ const nx=PR.next();app.innerHTML=`${dateCard(nx)}<div class="tabs"><a href="#/quran" class="${tab?'':'on'}">Surah</a><a href="#/mushaf">📄 Mushaf</a><a href="#/juz" class="${tab?'on':''}">Juz / Para</a><a href="#/bookmarks">🔖 ${t('bookmarks')}</a></div>${tab?juzList():''}`;tick();if(tab)return;
  app.insertAdjacentHTML('beforeend',`${lr?`<a class="card hl" href="#/surah/${lr.s}/${lr.a}">▶ ${t('lastRead')}: ${esc(lr.name)} ${lr.s}:${lr.a}</a>`:''}
  <input id="f" class="inp" aria-label="${t('filter')}" placeholder="${t('filter')}"><ul class="list" id="sl"></ul>`);
  const draw=q=>{q=q.toLowerCase();$('#sl').innerHTML=list.filter(s=>surahMatch(s,q)).map(s=>`<li><a href="#/surah/${s.number}"><b class="num">${s.number}</b><span><b>${esc(s.englishName)}</b><small>${esc(s.englishNameTranslation)} · ${s.numberOfAyahs} ${t('ayahs')} · ${s.revelationType}</small></span><span class="ar sm">${esc(s.name)}</span></a></li>`).join('')};
@@ -39,7 +41,7 @@ async function home(tab){setTitle(t('quran'));loading();const list=await surahs(
 
 // ---------- verified text corrections (Tanzil 1.1 / quran.com agree) ----------
 function juzList(){return `<ul class="list">${JUZ.map((r,i)=>`<li><a href="#/juz/${i+1}"><b class="num">${i+1}</b><span><b>Juz ${i+1} · ${JUZN[i]}</b><small>Starts ${r[0]}:${r[1]}${JUZ[i+1]?` · ends before ${JUZ[i+1][0]}:${JUZ[i+1][1]}`:' · ends 114:6'}</small></span><span class="ar">پارہ ${(i+1).toLocaleString('ar-EG')}</span></a></li>`).join('')}</ul>`}
-async function juzReader(n){if(!validJuz(n)){location.hash='#/juz';return}loading();setTitle('Juz '+n);const [AR,list,tj]=await Promise.all([arabic(),surahs(),transJuz(n)]);
+async function juzReader(n){if(!validJuz(n)){location.hash='#/juz';return}loading();setTitle('Juz '+n);const [AR,list,tj]=await Promise.all([arabic(juzRanges(n).map(r=>r[0])),surahs(),transJuz(n)]);
  const rs=juzRanges(n),total=rs.reduce((x,[,f,t])=>x+t-f+1,0),rtl=tj.edition.direction==='rtl',isUr=tj.edition.language==='ur';
  app.innerHTML=`<div class="head"><div class="ar big">الجزء ${n.toLocaleString('ar-EG')}</div><small>Juz ${n} · ${JUZN[n-1]} · ${total} ${t('ayahs')}</small></div>${tj.fallback?`<p class="card muted">${t('offlineTr')}</p>`:''}`+rs.map(([sn,f,to],k)=>{const m=list[sn-1];let h=`<a class="card hl" href="#/surah/${sn}/${f}"><b>${sn}. ${esc(m.englishName)}</b> <span class="ar">${esc(m.name)}</span></a>${f===1&&sn!==1&&sn!==9?'<div class="ar bism c">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>':''}`;
  for(let a=f;a<=to;a++)h+=`<article class="ayah"><div class="tools"><a class="badge" href="#/surah/${sn}/${a}">${sn}:${a}</a></div><p class="ar" dir="rtl" lang="ar">${esc(ayahText(sn,a,AR[sn-1][a-1]))} <span class="end">﴿${a.toLocaleString('ar-EG')}﴾</span></p><p class="tr ${isUr?'ur':''}" dir="${rtl?'rtl':'ltr'}">${esc(tj.parts[k].texts[a-1]??'')}</p></article>`;return h}).join('')+
@@ -73,14 +75,14 @@ function qibla(){setTitle(S.ui==='ur'?'قبلہ':'Qibla');const P=PR.P,q=PR.qibl
 // One persistent <audio> element (required for iOS to keep playing on auto-advance / locked screen),
 // plus a second element only used to preload the next file.
 const audio=new Audio();audio.preload='auto';const pre=new Audio();pre.preload='auto';
-let cur=null,errs=0;window.__audio=audio;
+let cur=null,errs=0,oneShot=false;window.__audio=audio;
 const urlsFor=async s=>(await j(`${API}/surah/${s}/${S.reciter}`)).ayahs.map(a=>a.audio);
 const surahUrl=(s,br)=>`https://cdn.islamic.network/quran/audio-surah/${br}/${S.reciter}/${s}.mp3`;
 async function surahName(s){try{return (await surahs())[s-1].englishName}catch{return 'Surah '+s}}
-function playerUI(){const p=$('#player');p.hidden=!cur;if(!cur)return;$('#pPlay').textContent=audio.paused?'▶':'⏸';$('#pPlay').setAttribute('aria-label',audio.paused?'Play':'Pause');
- $('#pInfo').textContent=`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`;markPlaying()}
+function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;$('#pPlay').textContent=audio.paused?'▶':'⏸';$('#pPlay').setAttribute('aria-label',audio.paused?'Play':'Pause');
+ $('#pInfo').textContent=cur.clip?cur.name:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`+(hifzCfg&&hifzPos?` · 🔁 ${hifzPos.c+1}/${hifzCfg.each}${hifzCfg.range>1?' · R'+(hifzPos.r+1)+'/'+hifzCfg.range:''}`:'');markPlaying()}
 function markPlaying(){document.querySelectorAll('.ayah.playing').forEach(e=>e.classList.remove('playing'));if(!cur||cur.whole)return;
- if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)el.scrollIntoView({block:'center',behavior:'smooth'})}}
+ if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;window.__ensureAyah?.(cur.i+1);const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)el.scrollIntoView({block:'center',behavior:'smooth'})}}
 function media(){if(!('mediaSession' in navigator)||!cur)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`,artist:S.reciterName||S.reciter,album:'Noor Quran',artwork:[{src:import.meta.env.BASE_URL+'icon-512.png',sizes:'512x512',type:'image/png'}]})}catch{}}
 if('mediaSession' in navigator){const ms=navigator.mediaSession,h=(a,f)=>{try{ms.setActionHandler(a,f)}catch{}};
  h('play',()=>{audio.play().catch(()=>{});playerUI()});h('pause',()=>{audio.pause();playerUI()});h('nexttrack',()=>advance(true));h('previoustrack',()=>prev())}
@@ -89,12 +91,16 @@ async function playPos(s,i,whole=S.surahAudio){if(!validSurah(s))return stop();c
  else{let urls;try{urls=await urlsFor(s)}catch{toast(t('err'));return stop()}if(!urls[i])return stop();cur={s,i,name,urls};audio.src=urls[i];
   const n=nextPos(s,i);if(n&&n.s===s)pre.src=urls[n.i];else if(n&&S.autoNext)urlsFor(n.s).then(u=>pre.src=u[0]).catch(()=>{})}
  try{await audio.play()}catch(e){if(e.name==='NotAllowedError'){toast('Tap ▶ to start audio')}}playerUI();media()}
-function advance(manual){if(!cur)return;if(cur.whole){if(S.autoNext&&cur.s<114||manual)return playPos(cur.s+1,0,true);return stop()}
+function advance(manual){if(!cur)return;
+ if(hifzCfg&&!manual&&!cur.whole&&cur.s===hifzCfg.s){const nx=hifzNextPos();if(!nx){hifzCfg=null;toast(S.ui==='ur'?'حفظ سیشن مکمل':'Hifz session complete ✓');audio.pause();return playerUI()}return playPos(hifzCfg.s,nx-1,false)}if(cur.whole){if(S.autoNext&&cur.s<114||manual)return playPos(cur.s+1,0,true);return stop()}
  if(!S.continuous&&!manual)return playerUI();const n=nextPos(cur.s,cur.i);if(!n)return stop();
  if(n.s!==cur.s){if(!S.autoNext&&!manual)return stop();const viewing=location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)'));playPos(n.s,n.i).then(()=>{if(viewing)location.hash=`#/surah/${n.s}`})}else playPos(n.s,n.i)}
 function prev(){if(!cur)return;if(cur.whole)return playPos(Math.max(1,cur.s-1),0,true);if(cur.i>0)return playPos(cur.s,cur.i-1);if(cur.s>1)playPos(cur.s-1,AYAH_COUNTS[cur.s-2]-1)}
-function stop(){audio.pause();cur=null;playerUI();if('mediaSession' in navigator)navigator.mediaSession.playbackState='none'}
-audio.onended=()=>advance(false);
+function stop(){audio.pause();cur=null;hifzCfg=null;playerUI();if('mediaSession' in navigator)navigator.mediaSession.playbackState='none'}
+audio.onended=()=>{if(oneShot){oneShot=false;cur=null;return playerUI()}advance(false)};
+/** Play a single clip (dua / word audio) through the same player. */
+function playUrl(url,label,quiet){hifzCfg=null;oneShot=true;cur={s:0,i:0,name:label||'Audio',whole:true,clip:true,quiet:!!quiet};audio.src=url;audio.play().catch(()=>{});if(!quiet)playerUI()}
+const hifzNextPos=()=>{const p=hifzNext(hifzCfg,hifzPos);hifzPos=p;return p?p.a:null};
 audio.onplay=()=>{if('mediaSession' in navigator)navigator.mediaSession.playbackState='playing';playerUI()};audio.onpause=()=>{if('mediaSession' in navigator)navigator.mediaSession.playbackState='paused';playerUI()};
 audio.onerror=()=>{if(!cur||!audio.src)return;if(cur.whole){if(cur.br===128){cur.br=64;audio.src=surahUrl(cur.s,64);audio.play().catch(()=>{});return}toast('Whole-surah audio unavailable for this reciter; playing ayah by ayah');return playPos(cur.s,0,false)}
  if(++errs>3){toast(t('err'));return stop()}advance(true)};
@@ -103,34 +109,56 @@ $('#pNext').onclick=()=>advance(true);$('#pPrev').onclick=prev;$('#pClose').oncl
 function toast(m){let e=$('#toast');if(!e){e=document.createElement('div');e.id='toast';e.setAttribute('role','status');document.body.append(e)}e.textContent=m;e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>e.hidden=true,3500)}
 
 const OFF=import.meta.env.BASE_URL+'offline/',BUNDLED=['en.sahih','ur.jalandhry'];
-async function arabic(){return j(OFF+'ar.json')}
+/** Bundled Uthmani text, loaded per surah (small files = fast first paint). Returns sparse array AR[s-1]. */
+async function arabic(list=[]){const A=[];await Promise.all([...new Set(list)].map(async s=>{A[s-1]=await j(OFF+'s/ar/'+s+'.json')}));return A}
 /** Translation for surah n: bundled offline editions first, then API, then bundled English fallback. */
-async function transFor(n,ed=S.trans){if(BUNDLED.includes(ed)){const d=await j(OFF+ed+'.json');return {edition:d.edition,texts:d.ayahs[n-1]}}
- try{const d=await j(`${API}/surah/${n}/${ed}`);return {edition:d.edition,texts:d.ayahs.map(a=>a.text)}}catch{const d=await j(OFF+'en.sahih.json');return {edition:d.edition,texts:d.ayahs[n-1],fallback:true}}}
+const bundledTr=async(n,ed)=>{const [m,t]=await Promise.all([j(OFF+'ed.json'),j(OFF+`s/${ed}/${n}.json`)]);return {edition:m[ed],texts:t}};
+async function transFor(n,ed=S.trans){if(BUNDLED.includes(ed))return bundledTr(n,ed);
+ try{const d=await j(`${API}/surah/${n}/${ed}`);return {edition:d.edition,texts:d.ayahs.map(a=>a.text)}}catch{return {...await bundledTr(n,'en.sahih'),fallback:true}}}
 async function transJuz(n){const rs=juzRanges(n);const parts=await Promise.all(rs.map(([s])=>transFor(s)));return {edition:parts[0].edition,fallback:parts.some(p=>p.fallback),parts}}
 
-async function reader(n,start){if(!validSurah(n)){location.hash='#/';return}loading();
- const [AR,tr,trs,recs,list]=await Promise.all([arabic(),transFor(n),editions('translation'),audioEds(),surahs()]);const meta=list[n-1];
- setTitle(`${n}. ${meta.englishName}`);const bm=LS.get('bookmarks',[]);const rtl=tr.edition.direction==='rtl';const isUr=tr.edition.language==='ur';
- const txts=AR[n-1].map((x,i)=>ayahText(n,i+1,x));
+// Long surahs render progressively (CHUNK ayahs at a time, more appended as you scroll) so Al-Baqara opens instantly.
+const CHUNK=30;let hifzCfg=null,hifzPos=null;
+function startHifz(c){hifzCfg=c;hifzPos={a:c.from,c:0,r:0};S.continuous=true;playPos(c.s,c.from-1,false);toast(S.ui==='ur'?'حفظ سیشن شروع':`Hifz: ${c.s}:${c.from}-${c.to} · ×${c.each} each · range ×${c.range}`)}
+async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return}loading();F.markRead();
+ const [AR,tr,trs,recs,list]=await Promise.all([arabic([n]),transFor(n),editions('translation'),audioEds(),surahs()]);const meta=list[n-1];
+ setTitle(`${n}. ${meta.englishName}`);const bm=LS.get('bookmarks',[]);let notes=F.getNotes();const rtl=tr.edition.direction==='rtl';const isUr=tr.edition.language==='ur';
+ const txts=AR[n-1].map((x,i)=>ayahText(n,i+1,x));let words=null;const view=app;
+ const one=i=>{const ref=`${n}:${i+1}`;const w=words?.[i+1];
+  return `<article class="ayah ${F.isMemorised(ref)?'mem':''}" id="a${i+1}"><div class="tools"><span class="badge">${ref}</span><button data-play="${i}" aria-label="Play from ${ref}">▶</button><button data-taf="${ref}" aria-label="${t('tafsir')} ${ref}">📘</button><button data-bm="${ref}" aria-label="Bookmark ${ref}">${bm.some(b=>b.ref===ref)?'★':'☆'}</button><button data-note="${ref}" aria-label="Note ${ref}" class="${notes[ref]?'has':''}">📝</button><button data-share="${i}" aria-label="Share ${ref}">📤</button><button data-mem="${ref}" aria-label="Memorised ${ref}">${F.isMemorised(ref)?'🧠':'○'}</button><button data-cp="${i}" aria-label="Copy ${ref}">⧉</button></div>
+  <p class="ar" dir="rtl" lang="ar">${w?w.map((x,k)=>`<span class="w" data-w="${i+1}.${k}">${esc(x.t)}</span>`).join(' '):esc(txts[i])} <span class="end">﴿${(i+1).toLocaleString('ar-EG')}﴾</span></p><p class="tr ${isUr?'ur':''}" dir="${rtl?'rtl':'ltr'}" lang="${esc(tr.edition.language)}">${esc(tr.texts[i]??'')}</p>${notes[ref]?`<p class="note">📝 ${esc(notes[ref].text)}</p>`:''}</article>`};
  app.innerHTML=`<div class="bar"><select id="tr" aria-label="${t('translation')}">${opt(trs,S.trans)}</select><select id="rc" aria-label="${t('reciter')}">${opt(recs,S.reciter)}</select><button class="btn" id="playAll">▶ ${t('play')}</button></div>
+ <div class="bar"><button class="btn ${S.wbw?'on':''}" id="wbwT" aria-pressed="${!!S.wbw}">🔤 ${S.ui==='ur'?'لفظ بہ لفظ':'Word by word'}</button><button class="btn ${S.hifzHide?'on':''}" id="hideT" aria-pressed="${!!S.hifzHide}">🙈 ${S.ui==='ur'?'متن چھپائیں':'Hide text'}</button><a class="btn" href="#/mushaf/${F.pageFor(n,+start||1)||''}" id="toMushaf">📄 Mushaf</a><a class="btn" href="#/hifz">🧠 Hifz</a></div>
  ${tr.fallback?`<p class="card muted">${t('offlineTr')}</p>`:''}
  <div class="head"><div class="ar big">${esc(meta.name)}</div><small>${esc(meta.englishNameTranslation)} · ${meta.numberOfAyahs} ${t('ayahs')}</small>${n!=1&&n!=9?'<div class="ar bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>':''}</div>
- ${txts.map((txt,i)=>{const ref=`${n}:${i+1}`;
- return `<article class="ayah" id="a${i+1}"><div class="tools"><span class="badge">${ref}</span><button data-play="${i}" aria-label="Play from ${ref}">▶</button><button data-taf="${ref}" aria-label="${t('tafsir')} ${ref}">📘</button><button data-bm="${ref}" aria-label="Bookmark ${ref}">${bm.some(b=>b.ref===ref)?'★':'☆'}</button><button data-cp="${i}" aria-label="Copy ${ref}">⧉</button></div>
- <p class="ar" dir="rtl" lang="ar">${esc(txt)} <span class="end">﴿${(i+1).toLocaleString('ar-EG')}﴾</span></p><p class="tr ${isUr?'ur':''}" dir="${rtl?'rtl':'ltr'}" lang="${esc(tr.edition.language)}">${esc(tr.texts[i]??'')}</p></article>`}).join('')}
+ <div id="ays" class="${S.hifzHide?'hide-ar':''}"></div><div id="more" class="muted c"></div>
  <div class="pager">${n>1?`<a class="btn" href="#/surah/${n-1}">‹ ${n-1}</a>`:'<span></span>'}${n<114?`<a class="btn" href="#/surah/${n+1}">${n+1} ›</a>`:''}</div>`;
+ let shown=0;const box=$('#ays');const io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting&&location.hash.startsWith('#/surah/'+n))LS.set('lastRead',{s:n,a:+x.target.id.slice(1),name:meta.englishName})}),{rootMargin:'-40% 0px -55% 0px'});
+ const ensure=upto=>{if(view!==app)return;upto=Math.min(txts.length,upto);if(upto<=shown)return;let h='';for(let i=shown;i<upto;i++)h+=one(i);box.insertAdjacentHTML('beforeend',h);for(let i=shown;i<upto;i++)io.observe(document.getElementById('a'+(i+1)));shown=upto;$('#more').textContent=shown<txts.length?t('loading'):''};
+ window.__ensureAyah=i=>{if(location.hash.match(new RegExp('^#/surah/'+n+'(/|$)')))ensure(i+CHUNK)};
+ ensure(Math.max(CHUNK,(+start||0)+10));
+ const sentinel=new IntersectionObserver(es=>{if(es[0].isIntersecting)ensure(shown+CHUNK)},{rootMargin:'1200px 0px'});sentinel.observe($('#more'));
+ const redraw=()=>{const keep=shown;box.innerHTML='';shown=0;ensure(keep);markPlaying()};
  $('#tr').onchange=e=>{S.trans=e.target.value;save();reader(n,lastVisible(n))};
  $('#rc').onchange=e=>{S.reciter=e.target.value;S.reciterName=e.target.selectedOptions[0].textContent;save();const was=cur&&!audio.paused?cur:null;stop();if(was)playPos(was.s,was.i);reader(n,lastVisible(n))};
- $('#playAll').onclick=()=>playPos(n,0);
- app.onclick=e=>{const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.play)playPos(n,+b.dataset.play,false);
+ $('#playAll').onclick=()=>{hifzCfg=null;playPos(n,0)};
+ const loadW=async()=>{try{words=await F.wbw(n);redraw()}catch{S.wbw=false;save();$('#wbwT').classList.remove('on');toast(S.ui==='ur'?'لفظ بہ لفظ کے لیے انٹرنیٹ درکار ہے':'Word-by-word needs an internet connection')}};
+ $('#wbwT').onclick=e=>{S.wbw=!S.wbw;save();e.currentTarget.classList.toggle('on',S.wbw);e.currentTarget.setAttribute('aria-pressed',S.wbw);if(S.wbw)loadW();else{words=null;redraw()}};
+ $('#hideT').onclick=e=>{S.hifzHide=!S.hifzHide;save();e.currentTarget.classList.toggle('on',S.hifzHide);box.classList.toggle('hide-ar',S.hifzHide)};
+ if(S.wbw)loadW();
+ app.onclick=e=>{const wEl=e.target.closest('.w');if(wEl&&words){const [a,k]=wEl.dataset.w.split('.').map(Number);const w=words[a][k];document.querySelectorAll('.w.on').forEach(x=>x.classList.remove('on'));wEl.classList.add('on');
+   let tip=$('#wtip');if(!tip){tip=document.createElement('div');tip.id='wtip';tip.setAttribute('role','status');document.body.append(tip)}tip.innerHTML=`<span class="ar">${esc(w.t)}</span> <i>${esc(w.tr)}</i><br><b>${esc(w.m)}</b>`;tip.hidden=false;clearTimeout(tip._t);tip._t=setTimeout(()=>tip.hidden=true,4000);if(w.au)playUrl(w.au,'',true);return}
+  const arP=e.target.closest('.hide-ar .ar');if(arP){arP.classList.toggle('peek');return}
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.play){hifzCfg=null;playPos(n,+b.dataset.play,false)}
   if(b.dataset.taf)tafsir(b.dataset.taf);
+  if(b.dataset.note)F.editNote(b.dataset.note,()=>{notes=F.getNotes();const a=+b.dataset.note.split(':')[1];const el=document.getElementById('a'+a);if(el){el.outerHTML=one(a-1);io.observe(document.getElementById('a'+a))}});
+  if(b.dataset.share)F.shareAyah(n,+b.dataset.share+1);
+  if(b.dataset.mem){const on=F.toggleMemorised(b.dataset.mem);b.textContent=on?'🧠':'○';b.closest('.ayah').classList.toggle('mem',on)}
   if(b.dataset.bm){let l=LS.get('bookmarks',[]);const r=b.dataset.bm;if(l.some(x=>x.ref===r)){l=l.filter(x=>x.ref!==r);b.textContent='☆'}else{l.unshift({ref:r,name:meta.englishName,text:(tr.texts[r.split(':')[1]-1]||'').slice(0,120)});b.textContent='★'}LS.set('bookmarks',l)}
   if(b.dataset.cp){const i=+b.dataset.cp;navigator.clipboard?.writeText(`${txts[i]}\n${tr.texts[i]}\n(${n}:${i+1})`).then(()=>toast('Copied'),()=>{})}};
- if(start){document.getElementById('a'+start)?.scrollIntoView({block:'start'})}else scrollTo(0,0);markPlaying();LS.set('lastRead',{s:n,a:+start||1,name:meta.englishName});
- const io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting&&location.hash.startsWith('#/surah/'+n))LS.set('lastRead',{s:n,a:+x.target.id.slice(1),name:meta.englishName})}),{rootMargin:'-40% 0px -55% 0px'});
- document.querySelectorAll('.ayah').forEach(el=>io.observe(el))}
+ if(start){const go=()=>{if(view===app)document.getElementById('a'+start)?.scrollIntoView({block:'start'})};go();document.fonts?.ready.then(go);setTimeout(go,400)}else scrollTo(0,0);markPlaying();LS.set('lastRead',{s:n,a:+start||1,name:meta.englishName})}
+async function scheduleAotd(){if(!S.aotd)return PR.setReminders('aotd',[]);const days=PR.dailyAt(S.aotdT||'07:00',7);const [AR,list]=await Promise.all([arabic(days.map(d=>L2.ayahOfDay(d).s)),surahs()]);return PR.setReminders('aotd',days.map(at=>{const {s,a}=L2.ayahOfDay(at);return {at,title:(S.ui==='ur'?'آج کی آیت · ':'Ayah of the day · ')+list[s-1].englishName+' '+s+':'+a,body:ayahText(s,a,AR[s-1][a-1]).slice(0,180)}})).catch(e=>({ok:false,reason:e.message}))}
 const lastVisible=n=>{const l=LS.get('lastRead',{});return l.s===n?l.a:undefined};
 async function tafsir(ref){$('#sheet').hidden=false;const body=$('#sheetBody');body.innerHTML=t('loading');
  let eds;try{eds=await editions('tafsir')}catch{eds=[]}if(!eds.length){body.textContent=t('err');return}const draw=async()=>{body.innerHTML=`<h3>${t('tafsir')} ${ref}</h3><select id="tf" aria-label="${t('tafsir')}">${opt(eds,S.tafsir)}</select><div id="tfx" class="muted">${t('loading')}</div>`;
@@ -166,18 +194,27 @@ async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Pro
  app.innerHTML=`<div class="form"><label>${t('uiLang')}<select id="s_ui"><option value="en">English</option><option value="ur" ${S.ui==='ur'?'selected':''}>اردو</option></select></label>
  <label>${t('translation')} (${trs.length})<select id="s_trans">${opt(trs,S.trans)}</select></label><label>${t('reciter')}<select id="s_reciter">${opt(recs,S.reciter)}</select></label><label>${t('tafsir')}<select id="s_tafsir">${opt(tfs,S.tafsir)}</select></label>
  <label>${t('size')} <input type="range" min="20" max="48" id="s_size" value="${S.size}"></label><label><input type="checkbox" id="s_dark" ${S.dark?'checked':''}> ${t('dark')}</label><label><input type="checkbox" id="s_cont" ${S.continuous?'checked':''}> ${t('cont')}</label><label><input type="checkbox" id="s_next" ${S.autoNext?'checked':''}> ${t('autoNext')}</label><label><input type="checkbox" id="s_sa" ${S.surahAudio?'checked':''}> ${t('surahAudio')}</label>
- <p class="muted">Data: AlQuran.cloud (Tanzil text), fawazahmed0/hadith-api. Fonts: Amiri Quran, Noto Nastaliq Urdu.</p></div>`;
+ <label>${S.ui==='ur'?'مصحف رسم الخط':'Mushaf script'}<select id="s_script"><option value="uthmani">Uthmani</option><option value="indopak" ${S.script==='indopak'?'selected':''}>Indo-Pak</option></select></label>
+ <label>${S.ui==='ur'?'لفظ بہ لفظ زبان':'Word-by-word language'}<select id="s_wbwLang"><option value="">Auto</option>${[['en','English'],['ur','اردو'],['hi','Hindi'],['bn','Bengali'],['id','Indonesian'],['tr','Turkish']].map(([v,l])=>`<option value="${v}" ${S.wbwLang===v?'selected':''}>${l}</option>`).join('')}</select></label>
+ <label><input type="checkbox" id="s_aotd" ${S.aotd?'checked':''}> ${S.ui==='ur'?'روزانہ آیت کی اطلاع':'Daily ayah-of-the-day notification'} <input type="time" id="s_aotdT" value="${S.aotdT||'07:00'}" aria-label="Time"></label><small id="aMsg" class="muted"></small>
+ <p class="muted">Data: AlQuran.cloud (Tanzil text), quran.com API (word-by-word, Indo-Pak), fawazahmed0/hadith-api, fitrahive/dua-dhikr (MIT), Hisn al-Muslim JSON (MIT, wafaaelmaandy) + hisnmuslim.com audio, AlAdhan (99 Names), OpenStreetMap/Overpass. Fonts: Amiri Quran, Scheherazade New, Noto Nastaliq Urdu.</p>
+ <p class="muted">Android home-screen widget: on the roadmap (native work).</p></div>`;
+ ['script','wbwLang'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;save()});
+ const aot=async()=>{S.aotd=$('#s_aotd').checked;S.aotdT=$('#s_aotdT').value||'07:00';save();const r=await scheduleAotd();$('#aMsg').textContent=r.ok?`✓ ${r.count}`:r.reason};$('#s_aotd').onchange=aot;$('#s_aotdT').onchange=aot;
  ['ui','trans','reciter','tafsir'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;save();applyUI();if(k==='ui')settings()});
  $('#s_size').oninput=e=>{S.size=+e.target.value;save();applyUI()};$('#s_dark').onchange=e=>{S.dark=e.target.checked;save();applyUI()};[['cont','continuous'],['next','autoNext'],['sa','surahAudio']].forEach(([id,k])=>$('#s_'+id).onchange=e=>{S[k]=e.target.checked;save()})}
 
 // Each navigation renders into a fresh container, so a slow, stale render (e.g. a surah still loading) can never overwrite the newer screen.
 async function route(){$('#sheet').hidden=true;const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
  $('#back').style.visibility=p[0]?'visible':'hidden';
- document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+(['surah','juz'].includes(p[0])?'':p[0]))===b.dataset.r));
- try{if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='hadith')p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
-  else if(p[0]==='search')await search(p[1]||'');else if(p[0]==='bookmarks')bookmarks();else if(p[0]==='prayer')prayer();else if(p[0]==='qibla')qibla();else if(p[0]==='juz')p[1]?await juzReader(+p[1]):await home('juz');else if(p[0]==='settings')await settings();else await home()}
+ const sec={surah:'quran',juz:'quran',mushaf:'quran',hadith:'more',qibla:'prayer',tracker:'prayer',ramadan:'prayer',calendar:'more',search:'quran',bookmarks:'quran'}[p[0]]??p[0];document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
+ const FR={quran:()=>home(),more:F.more,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:F.names,tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz};
+ try{document.body.classList.remove('enter');void document.body.offsetWidth;document.body.classList.add('enter');if(FR[p[0]])await FR[p[0]]();else if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='hadith')p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
+  else if(p[0]==='search')await search(p[1]||'');else if(p[0]==='bookmarks')bookmarks();else if(p[0]==='prayer')prayer();else if(p[0]==='qibla')qibla();else if(p[0]==='juz')p[1]?await juzReader(+p[1]):await home('juz');else if(p[0]==='settings')await settings();else await F.dashboard()}
  catch(e){if(v!==app)return;console.error(e);v.innerHTML=`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}}
+F.init({app:()=>app,S,save,t,setTitle,loading,toast,j,arabic,transFor,surahs,dateCard,tick,pn,playUrl,startHifz});
 addEventListener('hashchange',route);applyUI();route();
+if(S.aotd&&(PR.isNative()||('Notification' in window&&Notification.permission==='granted')))scheduleAotd();
 // Re-arm alerts on launch only if permission was already granted (no permission prompt without a user gesture).
 if(Object.values(PR.P.alerts).some(Boolean)&&localStorage.getItem('prayer')&&(PR.isNative()||('Notification' in window&&Notification.permission==='granted')))PR.schedule().catch(()=>{});
 if('serviceWorker' in navigator&&import.meta.env.PROD)addEventListener('load',()=>navigator.serviceWorker.register(import.meta.env.BASE_URL+'sw.js'));

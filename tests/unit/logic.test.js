@@ -4,9 +4,10 @@ vi.mock('@capacitor/core',()=>({Capacitor:{isNativePlatform:()=>false}}));
 vi.mock('@capacitor/local-notifications',()=>({LocalNotifications:{}}));
 globalThis.localStorage={getItem:()=>null,setItem:()=>{}};
 const L=await import('../../src/lib.js');const PR=await import('../../src/prayer.js');
-const AR=JSON.parse(fs.readFileSync(new URL('../../public/offline/ar.json',import.meta.url)));
-const EN=JSON.parse(fs.readFileSync(new URL('../../public/offline/en.sahih.json',import.meta.url)));
-const UR=JSON.parse(fs.readFileSync(new URL('../../public/offline/ur.jalandhry.json',import.meta.url)));
+const S_=(e,n)=>JSON.parse(fs.readFileSync(new URL(`../../public/offline/s/${e}/${n}.json`,import.meta.url)));const all=e=>Array.from({length:114},(_,i)=>S_(e,i+1));
+const AR=all('ar');
+const EN={ayahs:all('en.sahih')};
+const UR={ayahs:all('ur.jalandhry')};
 
 describe('Quran data + ayah corrections',()=>{
  it('114 surahs / 6236 ayahs matching standard counts',()=>{expect(AR.length).toBe(114);expect(AR.map(s=>s.length)).toEqual(L.AYAH_COUNTS);expect(AR.flat().length).toBe(6236)});
