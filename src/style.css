@@ -192,3 +192,14 @@ header{position:absolute!important}nav{position:absolute!important;left:0;right:
 #player{position:absolute}
 body.is-home .hero{padding-top:var(--st)}
 .tabs{overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tabs a{white-space:nowrap;flex:1 0 auto;padding:8px 10px;font-size:13.5px}
+
+/* ================= v2.4.1 docked nav; shell pinned to physical screen edges (no JS height) ================= */
+:root{--nh:calc(68px + var(--sb))}
+html,body{height:auto}
+body{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;height:auto!important}
+header{position:fixed!important}main#app{position:fixed!important;top:var(--hh);left:0;right:0;bottom:0}
+nav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;inset-inline:0!important;padding:6px max(8px,env(safe-area-inset-left,0px)) var(--sb)!important;
+ background:#14171dee;backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border-top:1px solid #ffffff14;border-radius:22px 22px 0 0;box-shadow:0 -8px 24px #0005;pointer-events:auto}
+nav .pill{background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:0 0 4px;border-radius:0;height:62px;max-width:560px}
+[data-theme=light] nav{background:#ffffffee;border-top-color:var(--bd);box-shadow:0 -6px 20px #1c1f2614}[data-theme=light] nav button{color:#5a6170}
+#player{position:fixed!important;bottom:calc(var(--nh) + 8px)}

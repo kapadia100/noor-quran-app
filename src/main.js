@@ -249,6 +249,4 @@ if('serviceWorker' in navigator&&import.meta.env.PROD){const had=!!navigator.ser
 const isField=e=>e&&e.matches?.('input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select');
 document.addEventListener('focusin',e=>{if(isField(e.target))document.body.classList.add('kb')});document.addEventListener('focusout',()=>setTimeout(()=>{if(!isField(document.activeElement))document.body.classList.remove('kb')},50));
 export const VERSION=__APP_VERSION__;
-// Size the app shell to the real visible height. iOS standalone can report a wrong initial-containing-block height, which made bottom:0 float.
-const setH=()=>{if(document.body.classList.contains('kb'))return;const h=Math.round(Math.max(window.innerHeight,document.documentElement.clientHeight));document.documentElement.style.setProperty('--app-h',h+'px')};
-setH();addEventListener('resize',setH);addEventListener('orientationchange',()=>setTimeout(setH,300));addEventListener('pageshow',setH);document.addEventListener('visibilitychange',()=>setTimeout(setH,100));
+// v2.4.1: shell is position:fixed inset:0 in CSS — never sized from JS (iOS standalone under-reports innerHeight).
