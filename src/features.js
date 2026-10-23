@@ -5,6 +5,7 @@ import * as I from './icons.js';
 import * as GC from './analytics.js';
 import {weakLoad,dueItems} from './coach.js';
 import {progressPage} from './progress-page.js';
+import {qaidaEntry} from './qaida-entry.js';
 const I_=I.icon;
 const {esc,ymd}=L;
 let C,PAGES=null;export const init=ctx=>{C=ctx;X('pages.json').then(p=>PAGES=p).catch(()=>{})};
@@ -67,6 +68,7 @@ const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))re
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
 const MORE_EXTRA=[['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
+export const qaida=id=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,id));
 export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=Object.keys(W).length,nD=dueItems(W).length;
  const row=(href,ic,en,u,sub,id)=>`<a class="mrc-row" href="${href}" id="${id}"><span class="mi">${ic}</span><span class="mt"><b>${tt(en,u)}</b><small>${sub}</small></span><span class="go">›</span></a>`;
  app().innerHTML=`<section class="dsec"><div class="mrc" id="moreRecite"><div class="mrc-h"><span class="ti">${I.icon('tutor')}</span><div><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Your live Quran tutor','آپ کا لائیو قرآنی ٹیوٹر')}</small></div></div>
@@ -82,6 +84,7 @@ export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=O
    <div class="mrc-sr"><span>${tt('Weak words saved','محفوظ کمزور الفاظ')}</span><b id="weakN">${nW}</b></div>
    <div class="bar"><button class="btn ghost" id="mdlDel" disabled>${I.icon('trash')} ${tt('Delete downloaded model','ڈاؤن لوڈ شدہ ماڈل حذف کریں')}</button><button class="btn ghost" id="weakClr" ${nW?'':'disabled'}>${I.icon('trash')} ${tt('Clear weak list','کمزور فہرست صاف کریں')}</button></div>
    <small class="muted" id="mrcMsg" role="status" aria-live="polite">${tt('The model (~19 MB) downloads once, the first time you use Recite & Learn. Your voice never leaves your phone.','ماڈل (~19 MB) پہلی بار تلاوت اور سیکھیں استعمال کرنے پر ایک بار ڈاؤن لوڈ ہوتا ہے۔ آپ کی آواز فون سے باہر نہیں جاتی۔')}</small></div></div>
+  ${qaidaEntry(tt,I,{big:true})}
   ${grid([...TILES,...MORE_EXTRA])}</section><p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`;
  const msg=x=>{const e=$('#mrcMsg');if(e)e.textContent=x};
  $('#mrcDrill').onclick=()=>{if(nW)C.weakDrill?.()};

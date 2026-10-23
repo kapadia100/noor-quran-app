@@ -30,14 +30,20 @@ export const withMark=(c,k)=>c+MARKS[k].m;
 /** Latin sound of letter + vowel: ba, bi, bu, ban, bin, bun. */
 export const sound=(L,k)=>{const b=L.tr.replace(/a$/,'');return b+MARKS[k].v};
 
-/** Where the recorded syllables live (public/qaida/<n>-<k>.mp3, n = 1..28). */
-export const clipOf=(idx,k)=>`qaida/${idx+1}-${k}.mp3`;
-/** Only letters 1..28 (everything except the hamza) have recorded syllables; the hamza uses the alif row (same sound with a carrier). */
-export const hasClip=idx=>idx<27||idx===28?true:false;
+/** Recorded syllables: public/qaida/<n>-<k>.mp3, n = 1..28 in the standard order WITHOUT the hamza (alif is recorded as أَ). The hamza uses the alif recording (same sound). */
+export const classOf=idx=>idx===27?1:idx===28?28:idx+1;
+export const clipOf=(idx,k)=>`qaida/${classOf(idx)}-${k}.mp3`;
+/** Letter rows shown in the vowel/tanween tables: the hamza row is left out because it is the same as the alif (أ) row. */
+export const ROW_IDX=LETTERS.map((_,i)=>i).filter(i=>i!==27);
+/** Alif carries a hamza when it takes a vowel, so its row shows أ / إ. */
+export const rowLetter=(i,k)=>i===0?(k==='i'||k==='in'?'إ':'أ'):LETTERS[i].c;
+
+/** Short surahs that match each lesson, for reading with the live tutor. */
+export const TUTOR={tanween:[112,'Al-Ikhlas','الاخلاص'],sukoon:[108,'Al-Kawthar','الکوثر'],shadda:[1,'Al-Fatiha','الفاتحہ'],madd:[113,'Al-Falaq','الفلق'],leen:[105,'Al-Fil','الفیل'],practice:[112,'Al-Ikhlas','الاخلاص']};
 
 // ---- Quranic example words (real words, each with its recitation word audio; text from the Quran word-by-word data) ----
 // k = "surah:ayah:word" (audio is wbw/SSS_AAA_WWW.mp3), t = Uthmani text, tr = plain transliteration, e = English meaning, u = Urdu meaning.
-const W=(k,t,tr,e,u)=>({k,t,tr,e,u,au:'https://audio.qurancdn.com/wbw/'+k.split(':').map((x,i)=>x.padStart(3,'0')).join('_')+'.mp3'});
+const W=(k,t,tr,e,u)=>({k,t,tr,e,u,au:'https://audio.qurancdn.com/wbw/'+k.split(':').map(x=>x.padStart(3,'0')).join('_')+'.mp3'});
 export const WORDS={
  tanween:[W('94:5:4','يُسْرًا','yusran','ease','آسانی'),W('100:5:3','جَمْعًا','jamʿan','together','اکٹھے'),W('95:6:7','أَجْرٌ','ajrun','a reward','اجر'),W('101:11:1','نَارٌ','nārun','a fire','آگ'),W('103:2:4','خُسْرٍ','khusrin','loss','گھاٹا')],
  sukoon:[W('112:1:1','قُلْ','qul','Say','کہہ دیجیے'),W('93:6:1','أَلَمْ','alam','Did not','کیا نہیں'),W('95:4:1','لَقَدْ','laqad','Indeed','بے شک'),W('94:1:2','نَشْرَحْ','nashraḥ','We expanded','ہم نے کھول دیا'),W('1:1:1','بِسْمِ','bismi','In the name','نام سے'),W('1:5:2','نَعْبُدُ','naʿbudu','we worship','ہم عبادت کرتے ہیں'),W('94:5:3','ٱلْعُسْرِ','al-ʿusri','the hardship','تنگی')],
