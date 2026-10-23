@@ -19,7 +19,7 @@ export function refine(E,H,j,aux,cfg=GOP_CFG){if(!cfg.on||!aux||!aux.lp||!j.mark
  const redThr=noisy?cfg.noisyRed:cfg.red;
  const marks=j.marks.map(m=>{const w=g.words[m.k];if(!w||!w.n)return m;
   if(m.st==='wrong'||m.st==='skip'){return w.mean<redThr&&w.min<redThr?{...m,gop:w.mean}:{...m,st:'unclear',vetoed:true,gop:w.mean}}
-  if(m.st==='ok'){if(!noisy&&m.s<0.999&&E[m.k].length>=4&&w.mean<cfg.sim)return {...m,st:'unclear',sim:true,gop:w.mean,heard:H[m.j]};return {...m,gop:w.mean}}
+  if(m.st==='ok'){if(!noisy&&m.s<0.999&&E[m.k].length>=(cfg.minLen??4)&&w.mean<cfg.sim)return {...m,st:'unclear',sim:true,gop:w.mean,heard:H[m.j]};return {...m,gop:w.mean}}
   if(m.st==='unclear'&&E[m.k].length>=3&&w.mean>cfg.rescue&&w.min>-2.5&&w.bad===0)return {...m,st:'ok',s:Math.max(m.s||0,0.6),rescued:true,gop:w.mean};
   return {...m,gop:w.mean}});
  return {marks,noisy}}
@@ -32,13 +32,14 @@ export function recoverRun(st,flat,cur,cfg=RECOVER){
  if(from===cur)return null;
  let to=from;while(st[to]&&st[to].st==='ok'&&(st[to].s??0)>=cfg.strong&&flat[to].length>=cfg.minLen)to++;
  return to-from>=cfg.minRun?{from,to}:null}
+export const START_N=3,START_S=0.85;
 export class Tracker{
- constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[]}
+ constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[];this.verified=false;this.startN=START_N}
  // decode from just before the last locked word so it is heard in full and serves as a strong left context
  get winStart(){return this.p>0?Math.max(0,this.lockedStart-(+globalThis.__WPAD||0.2)):0}
  /** H: [{w: normalized word, t0, t1}] (absolute seconds). Returns list of events [{type:'lock'|'prov', i, st}] */
  update(H,t,aux){const ev=[];const ci=this.p>0?this.p-1:0;const E=this.flat.slice(ci,ci+WIN);
-  const Hn=H.map(x=>x.w);const j0=judge(E,Hn);const rf=refine(E,Hn,j0,aux,this.cfg||GOP_CFG);const j={...j0,marks:rf.marks};this.noisy=rf.noisy;const st={};
+  const Hn=H.map(x=>x.w);const j0=judge(E,Hn,this.jopt);const rf=refine(E,Hn,j0,aux,this.cfg||GOP_CFG);const j={...j0,marks:rf.marks};this.noisy=rf.noisy;const st={};
   for(const m of j.marks){const i=ci+m.k;if(i<this.p)continue;st[i]=m}
   // provisional greens: a CONTIGUOUS prefix starting at the first not-yet-locked word. A matched word further ahead is
   // never painted while an earlier word is still undecided (that was the "said word 1, word 2 lit up" off-by-one: the
@@ -49,6 +50,12 @@ export class Tracker{
    if(m&&m.st==='ok'){prov[cur]=1;cur++;continue}
    const r=recoverRun(st,this.flat,cur);if(r){for(let q=r.from;q<r.to;q++)prov[q]=1;cur=r.to;continue}
    break}
+  // START VERIFICATION: nothing is painted or locked until the first words of a session are confirmed by a short
+  // CONTIGUOUS run of strong matches. A single or two lookalike words (English "ism wallah" ~ "bismi llah") can be hit by
+  // chance by unrelated speech; three strong consecutive words cannot (measured: see docs). A reciter who really reads gets
+  // the same greens a moment later, all at once.
+  if(!this.verified){let run=0,sum=0;for(let q=this.p;st[q]&&st[q].st==='ok';q++){run++;sum+=st[q].s??1}
+   if(run>=this.startN&&sum/run>=START_S)this.verified=true;else{this.prov={};this.cursor=this.p;return ev}}
   this.prov=prov;this.cursor=cur;
   // streaks
   const upd=(S,pred)=>{for(const k of Object.keys(S))if(!pred(+k))delete S[k]};

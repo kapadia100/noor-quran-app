@@ -87,6 +87,7 @@ export function createLive(o){
    const src=ac.createMediaStreamSource(stream),proc=ac.createScriptProcessor(4096,1,1);const rs=new Resampler(ac.sampleRate,SR),hp=new Conditioner({agc:false}),cond=new Conditioner();
    S.mic={stream,ac,src,proc};
    ac.onstatechange=()=>{if(S.mic&&S.mic.ac===ac&&ac.state!=='running'&&!S.stopped){api.stop();o.onStatus?.('interrupted')}};
+   stream.getAudioTracks().forEach(t=>{t.onended=()=>{if(S.mic&&S.mic.stream===stream&&!S.stopped){api.stop();o.onStatus?.('interrupted')}}});
    proc.onaudioprocess=e=>{if(S.stopped)return;const r=rs.push(e.inputBuffer.getChannelData(0));if(!r.length)return;ingest(hp.process(r),check?cond.process(r):null)};
    src.connect(proc);proc.connect(ac.destination);o.onStatus?.('warm');
    try{navigator.wakeLock?.request('screen').then(l=>{if(S.stopped)l.release();else S.wl=l}).catch(()=>{})}catch{/* optional */}

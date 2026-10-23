@@ -97,6 +97,7 @@ async function startMic(){if(st.listening)return;st.ctx.event?.();unlockAudio();
  const src=ac.createMediaStreamSource(stream),proc=ac.createScriptProcessor(4096,1,1);const rs=new Resampler(ac.sampleRate,SR),cond=new Conditioner();
  st.mic={stream,ac,src,proc};
  ac.onstatechange=()=>{if(st&&st.mic&&st.mic.ac===ac&&ac.state!=='running'&&st.listening){stopMic();chip('warn',L('The microphone was interrupted (a call or another app). Tap the mic to continue.','مائیک رک گیا (کال یا کوئی اور ایپ)۔ جاری رکھنے کے لیے مائیک دبائیں۔'))}};
+ try{stream.getAudioTracks().forEach(t=>{t.onended=()=>{if(st&&st.mic&&st.mic.ac===ac&&st.listening){stopMic();chip('warn',L('The microphone disconnected (headset or call). Tap the mic to continue.','مائیک بند ہو گیا (ہیڈسیٹ یا کال)۔ جاری رکھنے کے لیے مائیک دبائیں۔'))}}})}catch{/* optional */}
  proc.onaudioprocess=e=>{if(!st||!st.listening)return;ingest(cond.process(rs.push(e.inputBuffer.getChannelData(0))))};
  src.connect(proc);proc.connect(ac.destination);st.listening=true;armStuck(1500);micUI();
  try{navigator.wakeLock?.request('screen').then(l=>{if(st&&st.listening)st.wl=l;else l.release()}).catch(()=>{})}catch{/* optional */}}
