@@ -40,16 +40,18 @@ function chip(kind,text){if(!panel)return;const c=$('#rcChip');c.className='rc-c
 export function review(items,ctx){if(ctx.gc)ctx.gc('feature-recite-review');open(0,1,{...ctx,txts:[],review:items})}
 
 /** Open the panel for surah n starting at ayah a. ctx: {words, txts, ayahUrl(a), event} */
-export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,vs:null,vg:new VoiceGate(),gated:0,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,pronEvt:false,helpEvt:false,helping:false,hseq:0,progAt:0,sig:'',stuckDone:false,helpI:-1,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0,mode:ctx.review?'follow':PREF.mode,hint:{},first:{},hintN:0,t0:Date.now(),snap:{ok:0,bad:0,unc:0},nRun:0,P:PG.load(),rate:+localStorage.getItem('qsRate')||1,startA:a};
+export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,vs:null,vg:new VoiceGate(),gated:0,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,pronEvt:false,helpEvt:false,helping:false,hseq:0,progAt:0,sig:'',stuckDone:false,helpI:-1,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0,mode:ctx.review?'follow':ctx.hifz?'hifz':PREF.mode,hint:{},first:{},hintN:0,t0:Date.now(),snap:{ok:0,bad:0,unc:0},nRun:0,P:PG.load(),rate:+localStorage.getItem('qsRate')||1,startA:a};
  for(let i=a;!ctx.review&&i<=Math.min(ctx.txts.length,ctx.to||1e9)&&st.flat.length<FLAT_MAX;i++){const w=ctx.words?.[i];const list=w?w.map(x=>({t:x.t,tr:x.tr,m:x.m,au:x.au})):ctx.txts[i-1].split(/\s+/).filter(x=>norm(x)).map(t=>({t}));
   list.forEach((x,k)=>st.flat.push({...x,a:i,k,n:norm(x.t)}))}
  st.flat=st.flat.filter(x=>x.n);st.T=new Tracker(st.flat.map(x=>x.n));st.T.cfg=Q().gop;st.rangeA=a;st.rangeB=st.flat.length?st.flat[st.flat.length-1].a:a;
+ if(ctx.hifz){ctx.hs??={t0:Date.now(),list:[],okW:0,ayat:{}};st.hs=ctx.hs;st.locAt=0}
  panel=document.createElement('section');panel.id='recite';panel.className='recite';panel.setAttribute('aria-label','Recite and Learn');
- panel.innerHTML=`<div class="rc-h"><span class="rc-ic">${I.icon('tutor')}</span><div class="rc-t"><b>${L('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${L('Live tutor','لائیو ٹیوٹر')} · <span class="rc-ref"></span></small></div><button class="rc-x" aria-label="Close">✕</button></div>
+ panel.innerHTML=`<div class="rc-h"><span class="rc-ic">${I.icon('tutor')}</span><div class="rc-t"><b>${ctx.hifz?L('Hifz Test','حفظ ٹیسٹ'):L('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${ctx.hifz?L('From memory','یاد سے'):L('Live tutor','لائیو ٹیوٹر')} · <span class="rc-ref"></span></small></div><button class="rc-x" aria-label="Close">✕</button></div>
  <button class="rc-optb" id="rcOptB" aria-expanded="false" aria-controls="rcOpt"><span id="rcOptS"></span><i aria-hidden="true">⚙</i></button>
  <div class="rc-ocard" id="rcOpt" hidden></div>
  <div class="rc-onb" id="rcOnb" hidden></div>
  <div class="rc-line ar" dir="rtl" lang="ar" id="rcLine"></div>
+ <div class="rc-trl" id="rcTr" hidden></div>
  <div class="rc-tjk" id="rcTjk" hidden></div>
  <div class="rc-tjc" id="rcTjc" hidden></div>
  <div class="rc-nudge" id="rcNudge" hidden></div>
@@ -82,7 +84,7 @@ function wordClass(i){const T=st.T,m=T.marks[i];if(m)return 'rc-'+m+(st.fx?.[i]?
 function paint(){if(!st||!panel||st.drill)return;const T=st.T,fl=st.flat;const ci=st.listening?Math.min(T.cursor,fl.length-1):T.p;const cur=fl[ci];
  if(!cur){$('#rcLine').innerHTML=`<span class="rc-done">✓ ${L('Surah complete','سورت مکمل')}</span>`;return}
  if(st.lineA!==cur.a){st.lineA=cur.a;$('.rc-ref').textContent=`${st.n}:${cur.a}`;
-  $('#rcLine').innerHTML=fl.map((x,i)=>[x,i]).filter(([y])=>y.a===cur.a).map(([,i])=>`<span class="rc-w" data-i="${i}">${wordInner(i)}</span>`).join(' ');tjLegend();
+  hzTr(cur.a);$('#rcLine').innerHTML=fl.map((x,i)=>[x,i]).filter(([y])=>y.a===cur.a).map(([,i])=>`<span class="rc-w" data-i="${i}">${wordInner(i)}</span>`).join(' ');tjLegend();
   document.querySelectorAll('.ayah.reciting').forEach(e=>e.classList.remove('reciting'));const el=document.getElementById('a'+cur.a);if(el){el.classList.add('reciting');el.scrollIntoView({block:'center',behavior:'smooth'})}}
  for(const s of panel.querySelectorAll('.rc-w')){const i=+s.dataset.i;const c=wordClass(i)+(i===ci&&!T.marks[i]&&!T.prov[i]?' rc-cur':'')+(i===st.helpI?' rc-hl':'');const h=wordInner(i);if(s.dataset.c!==c||s.dataset.h!==h){if(s.dataset.h!==h){s.dataset.h=h;s.innerHTML=h}s.dataset.c=c;s.className='rc-w '+c+(revealed(i)?'':' rc-hid')}}}
 
@@ -136,10 +138,11 @@ function result(job,ws,ms,aux){autoQ(ms);if(!st.coach&&speechSecs(job.off,job.t)
  if(st.coach){coachEval(H.map(x=>x.w),job.t-st.lastVoice>=0.7&&st.coach.voiced);return}
  if(navigator.webdriver)(window.__rlog??=[]).push({t:Math.round(performance.now()),aud:job.t,ms,h:H.map(x=>x.w).join(' ')});
  step(H,job.t,aux)}
-function step(H,t,aux){const before=new Set(Object.keys(st.T.prov));const ev=st.T.update(H,t,aux);
+function step(H,t,aux){const before=new Set(Object.keys(st.T.prov));const pa=st.flat[st.T.p]?.a;const ev=st.T.update(H,t,aux);if(st.mode==='hifz'&&!st.T.verified)hzLocate(H,t,aux);
  if(navigator.webdriver)for(const k of Object.keys(st.T.prov))if(!before.has(k))(window.__rgreen??=[]).push({i:+k,wall:Math.round(performance.now()),aud:t});
  for(const e of ev){if(e.type==='lock')st.first[e.i]=e.st;if(e.st==='bad')flag(e.i,e.kind,e.heard);else if(e.st==='unc'&&!st.coach)nudge(e.i)}
  paint();if(st.mode==='lr'&&st.listening&&!st.coach&&!st.drill){const c=st.flat[Math.min(st.T.cursor,st.flat.length-1)];if(c&&c.a!==st.lrA&&st.T.p<st.flat.length)lrPlay()}
+ if(st.mode==='hifz')hzAyah(pa);
  if(st.T.p>=st.flat.length&&!st.coach&&!st.queue.length){buzz([20,40,20,40,80]);chip('ok',L(st.rangeB>=st.ctx.txts.length?'Surah complete ✓':'Range complete ✓',st.rangeB>=st.ctx.txts.length?'سورت مکمل ✓':'حصہ مکمل ✓'));stopMic();paint();showSummary(true)}}
 // ---------- coach: hear it, say it again; escalate after repeated misses ----------
 const SYL_RATE=0.6;
@@ -164,7 +167,7 @@ async function playWord(t,o={}){const r=await playPart(t.au,{...o,tag:'word'});i
 async function playPhrase(t,onWord){const ph=t.ph||[];
  if(ph.length&&ph.every(x=>x.au)){for(let j=0;j<ph.length;j++){onWord?.(j);const r=await playPart(ph[j].au,{tag:'phrase'});if(r==='cancel'||r==='blocked')return r;if(r==='error')break;if(j===ph.length-1)return 'end'}onWord?.(-1)}
  const u=await st.ctx.ayahUrl?.(t.a,t.sn);const lo=t.ci-t.pi;return u?playPart(u,{tag:'phrase-slice',slice:{cn:t.cn,i0:lo,i1:lo+Math.max(ph.length,1)-1,pad:0.15}}):'error'}
-function flag(i,kind,heard=''){const t=targetOf(i);(st.kinds??={})[kind]=(st.kinds[kind]||0)+1;buzz([30,40,30]);try{PG.addMistake(st.P,{ts:Date.now(),sn:st.n,a:t.a,t:t.t,nw:t.nw,type:kind,heard});PG.save(st.P)}catch{/* ignore */}st.flagged[t.key]=t;st.miss[t.key]=(st.miss[t.key]||0)+1;recMiss(st.weak,t);weakSave(st.weak);
+function flag(i,kind,heard=''){const t=targetOf(i);(st.kinds??={})[kind]=(st.kinds[kind]||0)+1;buzz([30,40,30]);try{PG.addMistake(st.P,{ts:Date.now(),sn:st.n,a:t.a,t:t.t,nw:t.nw,type:kind,heard});PG.save(st.P)}catch{/* ignore */}st.flagged[t.key]=t;if(st.hs)st.hs.list.push({...t,ph:[],kind,ts:Date.now()});st.miss[t.key]=(st.miss[t.key]||0)+1;recMiss(st.weak,t);weakSave(st.weak);
  if(st.coach)st.queue.push({t,kind});else coachStart(t,'bad',kind)}
 function nudge(i){(st.kinds??={}).unclear=(st.kinds.unclear||0)+1;const t=targetOf(i),el=$('#rcNudge');el.hidden=false;
  el.innerHTML=`<span class="ar" dir="rtl" lang="ar">${esc(t.t)}</span><span>${L('Not clear — say it again?','واضح نہیں — دوبارہ کہیں؟')}</span><button class="btn" id="nRep">${L('Repeat','دہرائیں')}</button>`;
@@ -175,16 +178,16 @@ function coachStart(t,kind,why){st.gen++;st.hold=true;st.fixOpen=true;hideNudge(
  const c=st.coach={t,kind,why,tries:0,esc:false,voiced:false,seq:0,done:false,sy:syllables(t.t)};c.sw=syllWeights(c.sy);
  if(!st.coachEvt){st.coachEvt=true;st.ctx.gc?.('feature-recite-coach')}
  const box=$('#rcFix');box.hidden=false;box.className='rc-fix rc-coach'+(kind==='unc'?' soft':'');
- const head=kind==='bad'?(why==='skip'?L('Skipped word','لفظ چھوٹ گیا'):L('Different word heard — let’s fix it','دوسرا لفظ سنائی دیا — آئیں درست کریں')):kind==='unc'?L('Say it once more','ایک بار پھر کہیں'):L('Practice','مشق');
+ const head=kind==='bad'&&st.mode==='hifz'?L('Mistake here','یہاں غلطی ہے')+' — '+(why==='skip'?L('word skipped','لفظ چھوٹ گیا'):L('different word','دوسرا لفظ')):kind==='bad'?(why==='skip'?L('Skipped word','لفظ چھوٹ گیا'):L('Different word heard — let’s fix it','دوسرا لفظ سنائی دیا — آئیں درست کریں')):kind==='unc'?L('Say it once more','ایک بار پھر کہیں'):L('Practice','مشق');
  box.innerHTML=`<div class="rc-fh">${head} · ${t.sn}:${t.a}</div><div class="ar rc-bigw" dir="rtl" lang="ar">${esc(t.t)}</div>
  <div class="rc-syl ar" id="rcSyl" dir="rtl" lang="ar" hidden>${c.sy.map(s=>`<span>${esc(s)}</span>`).join('')}</div>
 <div class="rc-let ar" id="rcLet" dir="rtl" lang="ar" hidden>${letters(t.t).map(u=>`<span class="${hardOf(u)?'hard':''}">${esc(u)}</span>`).join('')}</div>
  ${t.tr?`<div class="rc-ft"><i>${esc(t.tr)}</i>${t.m?` · ${esc(t.m)}`:''}</div>`:''}
  <div class="rc-phr ar" id="rcPhr" dir="rtl" lang="ar" hidden>${(t.ph||[]).map((x,j)=>`<span class="${j===t.pi?'me':''}">${esc(x.t)}</span>`).join(' ')}</div>
  <div class="rc-say" id="rcSay" role="status" aria-live="polite"></div>
- <div class="bar rc-cb"><button class="btn" id="cHear">▶ ${L('Hear','سنیں')}</button><button class="btn" id="cSlow">${L('Slow','آہستہ')}</button><button class="btn" id="cPhr">${L('In phrase','جملے میں')}</button><button class="btn ghost" id="cSkip">${L('Skip for now','ابھی چھوڑیں')}</button></div>
+ <div class="bar rc-cb"><button class="btn" id="cHear">▶ ${L('Hear','سنیں')}</button><button class="btn" id="cSlow">${L('Slow','آہستہ')}</button><button class="btn" id="cPhr">${L('In phrase','جملے میں')}</button><button class="btn ghost" id="cSkip">${L('Skip for now','ابھی چھوڑیں')}</button>${st.mode==='hifz'&&kind==='bad'?`<button class="btn" id="cRetry">⟲ ${L('Retry from this ayah','اس آیت سے دوبارہ')}</button>`:''}</div>
 <div class="rc-tips" id="rcTips" hidden></div>`;
- $('#cHear').onclick=()=>act('hear');$('#cSlow').onclick=()=>act('slow');$('#cPhr').onclick=()=>act('phrase');$('#cSkip').onclick=coachSkip;
+ $('#cHear').onclick=()=>act('hear');$('#cSlow').onclick=()=>act('slow');$('#cPhr').onclick=()=>act('phrase');$('#cSkip').onclick=coachSkip;const rt=$('#cRetry');if(rt)rt.onclick=()=>hzRetry(t.a);
  const esc2=kind==='bad'&&(st.miss[t.key]||0)>=ESCALATE_AT;
  if(esc2){c.esc=true;act('pron',L('Let’s practise just the sound of this word.','آئیں صرف اس لفظ کی آواز کی مشق کریں۔'))}else act('hear',kind==='drill'?L('Listen…','سنیں…'):L('Listen to the correct word…','درست لفظ سنیں…'))}
 function hl(f){const r=panel&&$('#rcSyl');if(!r||!st.coach)return;const k=f<0?-1:syllAt(st.coach.sw,f);[...r.children].forEach((e,i)=>e.classList.toggle('on',i===k))}
@@ -244,11 +247,11 @@ function stuckTick(t){if(!st.listening||st.hold||st.coach||st.fixOpen||st.helpin
  /* speech is being heard but nothing advances for a few seconds: reassure and re-align (never marks anything wrong) */
  if(hrd&&st.vSince!=null&&now-Math.max(st.progAt,st.vSince)>=(window.__speechStuckMs||SPEECH_STUCK_MS)&&now>=(st.krNext||0)&&ready){st.krNext=now+6000;st.krUntil=now+2500;st.T.forceAlign=true;chip('hear',L("Keep reading — I'm listening","پڑھتے رہیں — میں سن رہا ہوں"))}
  if(st.stuckDone||!ready&&!window.__reciteFake)return;
- if(now-st.progAt>=(window.__stuckMs||STUCK_MS)&&t-st.lastVoice>0.8&&!st.busy&&$('#rcSum').hidden)stuckHelp('auto')}
+ if(now-st.progAt>=(window.__stuckMs||(st.mode==='hifz'?4000:STUCK_MS))&&t-st.lastVoice>0.8&&!st.busy&&$('#rcSum').hidden)stuckHelp('auto')}
 function hideHelp(){if(!st)return;st.hseq++;st.helping=false;st.helpI=-1;if(panel){$('#rcHelpCard').hidden=true;paint()}}
 function helpTap(){if(!st)return;if(st.coach&&!st.coach.done){act('hear');return}if(st.drill||!$('#rcSum').hidden)return;stuckHelp('tap')}
 async function stuckHelp(src){if(!st||st.coach||st.helping||st.T.cursor>=st.flat.length)return;const i=st.T.cursor,t=targetOf(i),my=++st.hseq;
- st.helping=true;st.stuckDone=true;st.helpI=i;if(st.mode==='memory'||st.mode==='test'){st.hint[i]=2;st.hintN++}hideNudge();if(!st.helpEvt){st.helpEvt=true;st.ctx.gc?.('feature-recite-stuck')}
+ st.helping=true;st.stuckDone=true;st.helpI=i;if(hiddenMode()){st.hint[i]=2;st.hintN++;st.hs?.list.push({...t,ph:[],kind:'stuck',ts:Date.now()})}hideNudge();if(!st.helpEvt){st.helpEvt=true;st.ctx.gc?.('feature-recite-stuck')}
  const card=$('#rcHelpCard');card.hidden=false;
  card.innerHTML=`<button class="rc-hx" id="hX" aria-label="Close">✕</button><div class="rc-hh">${src==='tap'?L('Here is the next word','اگلا لفظ یہ ہے'):L('Stuck? Here is the next word','اٹک گئے؟ اگلا لفظ یہ ہے')}</div><div class="ar rc-hw" dir="rtl" lang="ar">${esc(t.t)}</div>${t.tr?`<div class="rc-ft"><i>${esc(t.tr)}</i>${t.m?` · ${esc(t.m)}`:''}</div>`:''}<div class="rc-hs" id="hS" role="status" aria-live="polite"></div><div class="bar"><button class="btn" id="hHear">▶ ${L('Hear again','دوبارہ سنیں')}</button></div>`;
  $('#hX').onclick=()=>{hideHelp();pt++;try{pl().pause()}catch{/* ignore */}st.hold=false};$('#hHear').onclick=()=>{unlockAudio();st.helping=false;stuckHelp('tap')};
@@ -268,7 +271,7 @@ function sumExtra(d){if(d||!st.first)return '';let ok=0,n=0;for(const [k,v] of O
  let sk='';try{const S=PG.streak(st.P);if(S.cur>0)sk=`<span class="rc-str">🔥 ${L(`${S.cur}-day streak`,`${S.cur} دن کا سلسلہ`)}</span>`}catch{/* ignore */}
  const sc=st.mode==='memory'||st.mode==='test'?`<div class="rc-score"><b>${Math.round(100*ok/n)}%</b><span>${st.mode==='test'?L('Test score','آزمائش کا اسکور'):L('From memory','یاد سے')}${st.hintN?` · ${L(`${st.hintN} hints`,`${st.hintN} اشارے`)}`:''}</span></div>`:'';
  return `${sc}<div class="rc-types">${bits.join(' · ')}${bits.length&&sk?' · ':''}${sk}</div>`}
-function showSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const d=st.drill;
+function showSummary(final){if(st.mode==='hifz'&&!st.drill)return hzSummary(final);logNow();hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const d=st.drill;
  const fl=Object.values(st.flagged).sort((a,b)=>(st.fixed[a.key]?1:0)-(st.fixed[b.key]?1:0)),list=d?d.items:fl,ok=Object.values(st.T.marks).filter(m=>m==='ok').length;
  const fixed=d?d.fixes:Object.keys(st.fixed).length,todo=d?d.items.filter(x=>!st.fixed[x.key]).length:fl.filter(x=>!st.fixed[x.key]).length;
  box.innerHTML=`<div class="rc-sh"><b>${d?L('Practice finished','مشق مکمل'):final?L('Surah complete 🎉','سورت مکمل 🎉'):L('Session summary','سیشن کا خلاصہ')}</b></div>
@@ -287,7 +290,7 @@ const MODES=[['follow','Follow','ساتھ پڑھیں','Text visible; words light
  ['test','Test me','آزمائش','Text hidden, no first-letter hints. You get a score at the end.','متن چھپا، کوئی اشارہ نہیں۔ آخر میں اسکور ملے گا۔'],
  ['lr','Listen & repeat','سنیں اور دہرائیں','Hear each ayah, then recite it. Moves ayah by ayah.','ہر آیت سنیں، پھر پڑھیں۔ آیت بہ آیت آگے بڑھتا ہے۔']];
 const QINFO={auto:['Auto','خودکار','Picks Fast or Balanced for your phone.','آپ کے فون کے مطابق خود چنتا ہے۔'],fast:['Fast','تیز','Checks less often. Saves battery on older phones.','کم بار چیک کرتا ہے۔ پرانے فون کی بیٹری بچاتا ہے۔'],balanced:['Balanced','متوازن','Recommended.','تجویز کردہ۔'],accurate:['Accurate','درست','Checks more often and is stricter on look-alike words. Uses more battery.','زیادہ بار چیک کرتا ہے اور ملتے جلتے الفاظ پر سخت ہے۔ بیٹری زیادہ لگتی ہے۔']};
-const hiddenMode=()=>!!st&&(st.mode==='memory'||st.mode==='test');
+const hiddenMode=()=>!!st&&(st.mode==='memory'||st.mode==='test'||st.mode==='hifz');
 function revealed(i){if(!hiddenMode())return true;const T=st.T;return !!(T.marks[i]||T.prov[i]||i<T.p||st.hint[i]===2)}
 function tjHtml(i){const x=st.flat[i],sg=st.tjOn&&st.tj&&st.tj[i];if(!sg)return esc(x.t);return sg.map(g=>g.r<0?esc(g.s):`<span class="tj" data-r="${g.r}" style="--tj:${TJ.colorOf(g.r)}">${esc(g.s)}</span>`).join('')}
 function wordInner(i){const x=st.flat[i];if(revealed(i))return tjHtml(i);if(st.hint[i]===1)return `<span class="rc-hn">${esc(x.n[0]||'')}…</span>`;return `<span class="rc-ph">${'•'.repeat(Math.max(2,Math.min(6,x.n.length)))}</span>`}
@@ -301,15 +304,15 @@ function tjLegend(){const k=$('#rcTjk');if(!k)return;const cur=st.flat[Math.min(
  k.hidden=!has;if(!has){$('#rcTjc').hidden=true;return}k.innerHTML=TJ.legend(ur()).map(g=>`<span><i style="background:${g.color}"></i>${esc(g.name)}</span>`).join('')+`<small>${L('Tap a coloured letter','رنگین حرف دبائیں')}</small>`}
 function tjTap(e){const t=e.target.closest('.tj');const c=$('#rcTjc');if(!t){c.hidden=true;return}const r=TJ.info(+t.dataset.r,ur());if(!r)return;
  c.hidden=false;c.innerHTML=`<i style="background:${r.color}"></i><div><b>${esc(r.name)}</b> <small>· ${esc(r.gname)}</small><p>${esc(r.text)}</p><small class="muted">${L('Colours show the standard rule; the tutor does not grade tajweed.','رنگ معیاری قاعدہ دکھاتے ہیں؛ ٹیوٹر تجوید کی جانچ نہیں کرتا۔')}</small></div>`}
-function hintTap(){if(!st||!hiddenMode()||st.mode==='test')return;const i=st.T.cursor;if(i>=st.flat.length)return;st.hint[i]=Math.min(2,(st.hint[i]||0)+1);st.hintN++;buzz(10);paint()}
+function hintTap(){if(!st||!hiddenMode()||st.mode==='test')return;const i=st.T.cursor;if(i>=st.flat.length)return;st.hint[i]=Math.min(2,(st.hint[i]||0)+1);st.hintN++;if(st.hs&&st.hint[i]===1)st.hs.list.push({...targetOf(i),ph:[],kind:'hint',ts:Date.now()});buzz(10);paint()}
 function setMode(m){PREF.mode=m;st.mode=m;st.lrA=0;st.lrTok=(st.lrTok||0)+1;pt++;try{pl().pause()}catch{/* ignore */}st.hold=false;st.lineA=0;modeUI();paint()}
-function modeUI(){const h=$('#rcHint');h.hidden=st.mode!=='memory'&&st.mode!=='lr';h.textContent=st.mode==='lr'?'▶ '+L('Hear ayah','آیت سنیں'):'💡 '+L('Hint','اشارہ');
+function modeUI(){const h=$('#rcHint');h.hidden=st.mode!=='memory'&&st.mode!=='lr'&&st.mode!=='hifz';h.textContent=st.mode==='lr'?'▶ '+L('Hear ayah','آیت سنیں'):'💡 '+L('Hint','اشارہ');
  $('#rcOptS').textContent=optSummary();blindUI();$('.rc-key').hidden=!!st.drill}
-const optSummary=()=>{const m=MODES.find(x=>x[0]===st.mode);return `${L(m[1],m[2])} · ${st.n}:${st.rangeA}${st.rangeB>st.rangeA?'–'+st.rangeB:''}`};
+const optSummary=()=>{const m=MODES.find(x=>x[0]===st.mode)||['hifz','Hifz Test','حفظ ٹیسٹ'];return `${L(m[1],m[2])} · ${st.n}:${st.rangeA}${st.rangeB>st.rangeA?'–'+st.rangeB:''}`};
 function optsHtml(){const tot=st.ctx.txts.length,q=qPref(),eff=qLevel();
  const ao=(sel)=>{let h='';for(let k=1;k<=tot;k++)h+=`<option value="${k}"${k===sel?' selected':''}>${k}</option>`;return h};
  const rates=[0.75,1,1.25].map(r=>`<button class="rc-chp${st.rate===r?' on':''}" data-rate="${r}">${r}×</button>`).join('');
- return `<div class="rc-og"><b>${L('Practice mode','مشق کا انداز')}</b><div class="rc-mod">${MODES.map(m=>`<button class="rc-md${st.mode===m[0]?' on':''}" data-md="${m[0]}" aria-pressed="${st.mode===m[0]}"><b>${L(m[1],m[2])}</b><small>${L(m[3],m[4])}</small></button>`).join('')}</div></div>
+ return `${st.mode==='hifz'?`<div class="rc-og"><div class="rc-sp"><button class="rc-chp${st.ctx.showTr?' on':''}" id="oTr">${L('Show translation','ترجمہ دکھائیں')}</button><button class="rc-chp${st.ctx.auto!==false?' on':''}" id="oAuto">${L('Auto-continue','خود آگے بڑھیں')}</button></div></div>`:''}<div class="rc-og"${st.mode==='hifz'?' hidden':''}><b>${L('Practice mode','مشق کا انداز')}</b><div class="rc-mod">${MODES.map(m=>`<button class="rc-md${st.mode===m[0]?' on':''}" data-md="${m[0]}" aria-pressed="${st.mode===m[0]}"><b>${L(m[1],m[2])}</b><small>${L(m[3],m[4])}</small></button>`).join('')}</div></div>
  <div class="rc-og"><b>${L('Choose ayahs','آیات منتخب کریں')}</b><div class="rc-rg"><label>${L('From','از')}<select id="oFrom">${ao(st.rangeA)}</select></label><label>${L('To','تا')}<select id="oTo">${ao(st.rangeB)}</select></label><button class="btn" id="oGo">${L('Apply','لاگو')}</button></div></div>
  <div class="rc-og"><b>${L('Hear the model recitation','نمونہ تلاوت سنیں')}</b><div class="rc-rg"><span class="muted">${L('Speed','رفتار')}</span><div class="rc-sp">${rates}</div></div><div class="rc-abw ar" id="oAbw" dir="rtl" lang="ar"></div>
   <div class="bar"><button class="btn" id="abP">▶ ${L('Play','چلائیں')}</button><button class="btn" id="abL">⟲ ${L('Loop A–B','A–B دہرائیں')}</button><button class="btn ghost" id="abS">■</button></div><small class="muted" id="abH">${L('Tap a first word (A), then a last word (B). Loop repeats that part.','پہلا لفظ (A) پھر آخری لفظ (B) دبائیں۔ لوپ اسی حصے کو دہراتا ہے۔')}</small></div>
@@ -327,6 +330,8 @@ function wireExtras(){const o=$('#rcOpt');st.tjOn=localStorage.getItem('qsTj')!=
   if(b.id==='oHap'){localStorage.setItem('qsHaptic',localStorage.getItem('qsHaptic')==='0'?'1':'0');buzz(15);o.innerHTML=optsHtml();abWords();return}
   if(b.id==='oTips'){onbShow();o.hidden=true;$('#rcOptB').setAttribute('aria-expanded','false');return}
   if(b.id==='oProg'){close();return}
+  if(b.id==='oTr'){st.ctx.showTr=!st.ctx.showTr;hzSave();hzTr(st.lineA);o.innerHTML=optsHtml();abWords();return}
+  if(b.id==='oAuto'){st.ctx.auto=st.ctx.auto===false;hzSave();o.innerHTML=optsHtml();abWords();return}
   if(b.id==='oGo'){let f=+$('#oFrom').value,t=+$('#oTo').value;if(t<f)[f,t]=[t,f];const {n,ctx}=st;PREF.mode=st.mode;open(n,f,{...ctx,to:t});return}
   if(b.dataset.j!==undefined){abPick(+b.dataset.j);return}
   if(b.id==='abP')abPlay(false);else if(b.id==='abL')abPlay(true);else if(b.id==='abS')abStop()};
@@ -369,3 +374,33 @@ if(navigator.webdriver){
  // feed 16 kHz audio through the real ingest/decode path in real time (no microphone needed)
  window.__reciteStream=async(a,speed=1)=>{if(!st.vs&&!window.__noVad){try{await ensureVad()}catch{/* level gate */}if(st&&!st.vs)st.vs=newVadStream()}return new Promise(res=>{st.listening=true;micUI();const step=Math.round(SR*0.04);let i=0;const iv=setInterval(()=>{if(!st){clearInterval(iv);return res()}ingest(Float32Array.from(a.subarray(i,i+step)));i+=step;if(i>=a.length){ingest(new Float32Array(step));if(st.end/SR>a.length/SR+2.6){clearInterval(iv);res()}}},40/speed)})};
 }
+
+// ---------- Hifz Test: hidden text, words reveal as recited, mistakes counted ----------
+const HZK='qsHifzTests';
+export const hifzHistory=()=>{try{return JSON.parse(localStorage.getItem(HZK))||[]}catch{return []}};
+function hzSave(){try{const c=JSON.parse(localStorage.getItem('qsHzCfg')||'{}');c.showTr=!!st.ctx.showTr;c.auto=st.ctx.auto!==false;localStorage.setItem('qsHzCfg',JSON.stringify(c))}catch{/* ignore */}}
+function hzTr(a){const e=panel&&$('#rcTr');if(!e)return;const x=st.ctx.showTr&&st.ctx.trOf?.(a);e.hidden=!x;e.textContent=x||''}
+/** Pause between ayat when auto-continue is off. */
+function hzAyah(pa){const na=st.flat[st.T.p]?.a;if(pa==null||na==null||na===pa)return;st.hs.ayat[pa]=1;if(st.ctx.auto===false&&st.listening&&!st.coach){stopMic();chip('ok',L(`Ayah ${pa} done — tap the mic for the next ayah`,`آیت ${pa} مکمل — اگلی آیت کے لیے مائیک دبائیں`))}}
+/** Auto-locate: before the first verified phrase, if the reciter clearly started at another ayah of the range, move the
+ *  start there. It only moves the pointer; every green still has to be earned by the normal verified tracker. */
+function hzLocate(H,t,aux){const T=st.T;if(T.verified||T.p>0&&Object.keys(T.marks).length||!H||H.length<4||t-st.locAt<1.5)return;st.locAt=t;
+ const starts=[];st.flat.forEach((x,i)=>{if(x.k===0&&i!==T.p)starts.push(i)});if(!starts.length||starts.length>400)return;let hit=[];
+ for(const i0 of starts){const tk=new Tracker(st.flat.slice(i0).map(x=>x.n));tk.cfg=T.cfg;try{tk.update(H,t,aux)}catch{continue}if(tk.verified)hit.push(i0);if(hit.length>1)return}
+ if(hit.length!==1)return;const i0=hit[0];T.p=T.cursor=i0;st.lineA=0;chip('listen',L(`Found you at ayah ${st.flat[i0].a}`,`آپ آیت ${st.flat[i0].a} پر ہیں`))}
+function hzRetry(a){const {n,ctx}=st;stopMic();open(n,a,ctx);setTimeout(()=>startMic().catch(()=>{}),0)}
+function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const hs=st.hs,T=st.T;
+ for(let i=0;i<T.p&&i<st.flat.length;i++){const a=st.flat[i].a;if(st.flat[i+1]?.a!==a)hs.ayat[a]=1}
+ const okW=Object.entries(T.marks).filter(([k,v])=>v==='ok'&&!st.hint[+k]).length;
+ const nm=hs.list.filter(x=>x.kind!=='hint'&&x.kind!=='stuck').length,nh=hs.list.filter(x=>x.kind==='hint'||x.kind==='stuck').length,ny=Object.keys(hs.ayat).length;
+ if(!hs.saved){hs.saved=1;const h=hifzHistory();h.unshift({ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,ayat:ny,ok:okW,mist:nm,hints:nh});try{localStorage.setItem(HZK,JSON.stringify(h.slice(0,50)))}catch{/* ignore */}}
+ const KN={wrong:['Mistake','غلطی'],skip:['Skipped','چھوٹا'],hint:['Hint','اشارہ'],stuck:['Stuck','اٹکے']};
+ box.innerHTML=`<div class="rc-sh"><b>${final?L('Hifz Test complete','حفظ ٹیسٹ مکمل'):L('Hifz Test summary','حفظ ٹیسٹ کا خلاصہ')}</b></div>
+ <div class="rc-stats"><span class="g"><b>${ny}</b>${L('ayat done','آیات مکمل')}</span><span class="g"><b>${okW}</b>${L('words correct','درست الفاظ')}</span><span class="r"><b>${nm}</b>${L('mistakes','غلطیاں')}</span><span><b>${nh}</b>${L('hints','اشارے')}</span></div>
+ ${hs.list.length?`<div class="rc-wl-h">${L('Tap to hear · ⟲ to retry that ayah','سننے کے لیے دبائیں · ⟲ اس آیت سے دوبارہ')}</div><div class="rc-wl">${hs.list.map((x,j)=>`<div class="rc-hzr"><button class="rc-wi" data-j="${j}"><span class="ar" dir="rtl" lang="ar">${esc(x.t)}</span><small>${L(KN[x.kind]?.[0]||'Mistake',KN[x.kind]?.[1]||'غلطی')} · ${x.sn}:${x.a}</small></button><button class="btn ghost rc-hzj" data-a="${x.a}" aria-label="Retry ${x.a}">⟲</button></div>`).join('')}</div>`:`<p class="rc-ft">${L('No mistakes — well recited!','کوئی غلطی نہیں — ماشاءاللہ!')}</p>`}
+ <p class="rc-note muted">${nm?L('Mistakes are saved to your weak words for review.','غلطیاں دہرائی کے لیے کمزور الفاظ میں محفوظ ہیں۔'):''}</p>
+ <div class="bar rc-sb">${!final?`<button class="btn" id="sGo">${L('Keep going','جاری رکھیں')}</button>`:''}<button class="btn" id="sRe">⟲ ${L('Test again','دوبارہ ٹیسٹ')}</button><button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
+ box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=hs.list[+b.dataset.j];if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0});document.getElementById('a'+x.a)?.scrollIntoView({block:'center',behavior:'smooth'})}});
+ box.querySelectorAll('.rc-hzj').forEach(b=>b.onclick=()=>{const {n,ctx}=st;open(n,+b.dataset.a,{...ctx,hs:null})});
+ const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.hold=false;st.cut=st.end;st.lineA=0;paint();startMic().then(()=>armStuck(1500))};
+ $('#sRe').onclick=()=>{const {n,ctx}=st;open(n,st.rangeA,{...ctx,hs:null})};$('#sX').onclick=close}

@@ -460,3 +460,6 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 @media (prefers-reduced-motion:reduce){.tile,.tutorbar{transition:none}}
 
 :lang(ur) .tile b,:lang(ur) .rsel label,:lang(ur) .rctl label{font-size:12px;line-height:1.7}:lang(ur) .tile{padding-top:8px}:lang(ur) .tutorbar small{line-height:1.8;font-size:12px}:lang(ur) .tutorbar span{line-height:1.5}
+.rc-trl{font-size:.9rem;color:var(--muted,#888);margin:.25rem 0 .5rem;line-height:1.5;overflow-wrap:anywhere}
+.rc-hzr{display:flex;gap:6px;align-items:stretch}.rc-hzr .rc-wi{flex:1;min-width:0}.rc-hzj{min-width:44px;padding:0 10px}
+.hzt-i p{margin:.3rem 0 0}.chk{display:flex;gap:8px;align-items:center}.seg{display:flex;gap:8px}.seg .btn{flex:1}

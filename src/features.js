@@ -67,7 +67,7 @@ const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
-const MORE_EXTRA=[['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+const MORE_EXTRA=[['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
 export const qaida=id=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,id));
 export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=Object.keys(W).length,nD=dueItems(W).length;
@@ -305,3 +305,23 @@ export async function wbw(s){const lang=C.S.wbwLang||(C.S.ui==='ur'?'ur':'en');c
  do{const d=await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${s}?words=true&word_fields=text_uthmani&language=${lang}&per_page=50&page=${page}`).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
   for(const v of d.verses)out[v.verse_number]=v.words.filter(w=>w.char_type_name==='word').map(w=>({t:w.text_uthmani,m:w.translation?.text||'',tr:w.transliteration?.text||'',au:w.audio_url?'https://audio.qurancdn.com/'+w.audio_url:''}));tp=d.pagination.total_pages}while(++page<=tp);
  return wbwCache[key]=out}
+
+// Hifz Test setup: pick surah + ayah range (or a juz), then recite from memory with the text hidden.
+export async function hifzTest(pre){C.setTitle(tt('Hifz Test','حفظ ٹیسٹ'));const list=await C.surahs();const c=LS.get('qsHzCfg',{});const s0=+pre||c.s||LS.get('lastRead',{}).s||1;
+ const H=(()=>{try{return JSON.parse(localStorage.getItem('qsHifzTests'))||[]}catch{return []}})();
+ const cnt=s=>list[s-1]?.numberOfAyahs||7;const fr=pre?1:c.from||1,to=pre?cnt(s0):Math.min(c.to||cnt(s0),cnt(s0));
+ app().innerHTML=`<div class="card hzt-i"><b>${tt('Recite from memory','یاد سے پڑھیں')}</b><p class="muted">${tt('The ayah text is hidden. Each word appears as you recite it correctly. A mistake or a skipped word shows the correct word, plays it and is counted.','آیت کا متن چھپا رہتا ہے۔ ہر لفظ درست پڑھنے پر ظاہر ہوتا ہے۔ غلطی یا چھوٹا لفظ درست لفظ دکھاتا، سناتا اور گنتا ہے۔')}</p></div>
+ <div class="form"><div class="seg" role="group"><button class="btn ${c.by==='juz'?'ghost':''}" id="zBS">${tt('Surah','سورت')}</button><button class="btn ${c.by==='juz'?'':'ghost'}" id="zBJ">${tt('Juz','پارہ')}</button></div>
+ <div id="zS" ${c.by==='juz'?'hidden':''}><label>${tt('Surah','سورت')}<select id="zSu">${list.map(x=>`<option value="${x.number}" ${x.number===s0?'selected':''}>${x.number}. ${esc(x.englishName)}</option>`).join('')}</select></label>
+ <div class="row2"><label>${tt('From ayah','آیت سے')}<input type="number" id="zF" min="1" value="${fr}"></label><label>${tt('To ayah','آیت تک')}<input type="number" id="zT" min="1" value="${to}"></label></div></div>
+ <div id="zJ" ${c.by==='juz'?'':'hidden'}><label>${tt('Juz','پارہ')}<select id="zJu">${Array.from({length:30},(_,i)=>`<option value="${i+1}" ${i+1===(c.juz||30)?'selected':''}>${i+1}</option>`).join('')}</select></label><small class="muted">${tt('Starts at the first surah of the juz.','پارے کی پہلی سورت سے شروع ہوتا ہے۔')}</small></div>
+ <label class="chk"><input type="checkbox" id="zTr" ${c.showTr?'checked':''}> ${tt('Show translation','ترجمہ دکھائیں')}</label>
+ <label class="chk"><input type="checkbox" id="zAu" ${c.auto===false?'':'checked'}> ${tt('Auto-continue to the next ayah','خود اگلی آیت پر جائیں')}</label>
+ <button class="btn" id="zGo">${I.icon('tutor')} ${tt('Start Hifz Test','حفظ ٹیسٹ شروع کریں')}</button></div>
+ <h3 class="sh">${tt('Past tests','پچھلے ٹیسٹ')}</h3>${H.length?`<ul class="list" id="zH">${H.slice(0,20).map(h=>`<li class="row"><a style="flex:1;display:flex;gap:10px;align-items:center;min-width:0" href="#/hifztest/${h.sn}"><b class="num">${h.sn}</b><span><b>${esc(list[h.sn-1]?.englishName||'')} ${h.from}–${h.to}</b><small>${new Date(h.ts).toLocaleDateString()} · ${tt(`${h.ayat} ayat · ${h.ok} words · ${h.mist} mistakes · ${h.hints} hints`,`${h.ayat} آیات · ${h.ok} الفاظ · ${h.mist} غلطیاں · ${h.hints} اشارے`)}</small></span></a></li>`).join('')}</ul>`:`<p class="muted" id="zH0">${tt('No tests yet.','ابھی کوئی ٹیسٹ نہیں۔')}</p>`}`;
+ let by=c.by||'surah';const $$=q=>app().querySelector(q);
+ $$('#zBS').onclick=()=>{by='surah';$$('#zS').hidden=false;$$('#zJ').hidden=true;$$('#zBS').classList.remove('ghost');$$('#zBJ').classList.add('ghost')};
+ $$('#zBJ').onclick=()=>{by='juz';$$('#zS').hidden=true;$$('#zJ').hidden=false;$$('#zBJ').classList.remove('ghost');$$('#zBS').classList.add('ghost')};
+ $$('#zSu').onchange=()=>{$$('#zF').value=1;$$('#zT').value=cnt(+$$('#zSu').value)};
+ $$('#zGo').onclick=()=>{let s,f,t;const juz=+$$('#zJu').value;if(by==='juz'){[s,f,t]=L.juzRanges(juz)[0]}else{s=+$$('#zSu').value;const n=cnt(s);f=Math.max(1,Math.min(n,+$$('#zF').value||1));t=Math.max(f,Math.min(n,+$$('#zT').value||n))}
+  const cfg={by,s,from:f,to:t,juz,showTr:$$('#zTr').checked,auto:$$('#zAu').checked};LS.set('qsHzCfg',cfg);C.startHifzTest(cfg)}}
