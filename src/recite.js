@@ -6,6 +6,7 @@ import {Tracker,GOP_CFG} from './recite-live.js';
 import * as PG from './progress.js';
 import * as TJ from './tj-rules.js';
 import {Resampler,Conditioner} from './audio-front.js';
+import {ensureVad,newVadStream} from './vad.js';
 import {esc} from './lib.js';
 import * as I from './icons.js';
 import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,letters,ENCOURAGE,ESCALATE_AT} from './coach.js';
@@ -38,7 +39,7 @@ function chip(kind,text){if(!panel)return;const c=$('#rcChip');c.className='rc-c
 export function review(items,ctx){if(ctx.gc)ctx.gc('feature-recite-review');open(0,1,{...ctx,txts:[],review:items})}
 
 /** Open the panel for surah n starting at ayah a. ctx: {words, txts, ayahUrl(a), event} */
-export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,pronEvt:false,helpEvt:false,helping:false,hseq:0,progAt:0,sig:'',stuckDone:false,helpI:-1,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0,mode:ctx.review?'follow':PREF.mode,hint:{},first:{},hintN:0,t0:Date.now(),snap:{ok:0,bad:0,unc:0},nRun:0,P:PG.load(),rate:+localStorage.getItem('qsRate')||1,startA:a};
+export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,vs:null,vf:[],vq:[],gated:0,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,pronEvt:false,helpEvt:false,helping:false,hseq:0,progAt:0,sig:'',stuckDone:false,helpI:-1,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0,mode:ctx.review?'follow':PREF.mode,hint:{},first:{},hintN:0,t0:Date.now(),snap:{ok:0,bad:0,unc:0},nRun:0,P:PG.load(),rate:+localStorage.getItem('qsRate')||1,startA:a};
  for(let i=a;!ctx.review&&i<=Math.min(ctx.txts.length,ctx.to||1e9)&&st.flat.length<FLAT_MAX;i++){const w=ctx.words?.[i];const list=w?w.map(x=>({t:x.t,tr:x.tr,m:x.m,au:x.au})):ctx.txts[i-1].split(/\s+/).filter(x=>norm(x)).map(t=>({t}));
   list.forEach((x,k)=>st.flat.push({...x,a:i,k,n:norm(x.t)}))}
  st.flat=st.flat.filter(x=>x.n);st.T=new Tracker(st.flat.map(x=>x.n));st.T.cfg=Q().gop;st.rangeA=a;st.rangeB=st.flat.length?st.flat[st.flat.length-1].a:a;
@@ -91,6 +92,7 @@ async function startMic(){if(st.listening)return;st.ctx.event?.();unlockAudio();
  let stream;const gum=a=>navigator.mediaDevices.getUserMedia({audio:a});
  try{try{stream=await gum({echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1})}catch(e){if(e&&e.name==='OverconstrainedError')stream=await gum(true);else throw e}}
  catch(e){const n=e&&e.name;chip('warn',n==='NotFoundError'||n==='DevicesNotFoundError'?L('No microphone found on this device.','اس ڈیوائس پر مائیک نہیں ملا۔'):n==='NotReadableError'||n==='TrackStartError'?L('The microphone is busy — close other apps or calls that use it, then tap the mic again.','مائیک مصروف ہے — اسے استعمال کرنے والی دوسری ایپس یا کالز بند کریں، پھر دوبارہ مائیک دبائیں۔'):L('Microphone permission is needed. On iPhone: tap the aA button in Safari › Website Settings › Microphone › Allow (or Settings › Safari › Microphone). Then tap the mic again.','مائیک کی اجازت درکار ہے۔ آئی فون پر: Safari میں aA › ویب سائٹ سیٹنگز › مائیک › اجازت دیں (یا Settings › Safari › Microphone)۔ پھر دوبارہ مائیک دبائیں۔'));return}
+ if(!st.vs){try{await ensureVad()}catch{/* fallback: level gate */}if(!st)return;if(!st.vs)st.vs=newVadStream()}
  const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();await ac.resume().catch(()=>{});
  const src=ac.createMediaStreamSource(stream),proc=ac.createScriptProcessor(4096,1,1);const rs=new Resampler(ac.sampleRate,SR),cond=new Conditioner();
  st.mic={stream,ac,src,proc};
@@ -105,9 +107,16 @@ function micUI(){const b=$('#rcMic');b.classList.toggle('on',st.listening);b.que
 /** Append 16 kHz mono samples; track level + voice activity; keep only the audio the tracker can still need. */
 function ingest(o){if(st.hold||!o.length)return;let e=0;for(let i=0;i<o.length;i++)e+=o[i]*o[i];const rms=Math.sqrt(e/o.length);const thr=Math.max(0.01,st.floor*2.5);
  st.chunks.push({s:st.end,a:o});st.end+=o.length;const t=st.end/SR;
- if(rms>thr){st.lastVoice=t;if(st.coach)st.coach.voiced=true}else st.floor=st.floor*0.97+rms*0.03;
+ // v3.3: "voice" = the neural voice detector says SPEECH (3 of the last 5 frames), not just "louder than the room". Taps, fans, music, a cough no longer wake the recogniser.
+ // Until the detector is loaded (first second) the old level test is the fallback.
+ if(st.vs){const ps=st.vs.push(o);ps.forEach((p,i)=>{const ft=(st.vs.n-ps.length+i+1)*512/SR,on=p>=0.5?1:0;st.vf.push([ft,on]);st.vq.push(on);if(st.vq.length>5)st.vq.shift();
+   if(on&&st.vq.reduce((a,b)=>a+b,0)>=3){st.lastVoice=ft;if(st.coach)st.coach.voiced=true}});
+  while(st.vf.length&&st.vf[0][0]<t-40)st.vf.shift();if(rms<=thr)st.floor=st.floor*0.97+rms*0.03}
+ else if(rms>thr){st.lastVoice=t;if(st.coach)st.coach.voiced=true}else st.floor=st.floor*0.97+rms*0.03;
  st.lvl=Math.max(Math.min(1,rms*9),st.lvl*0.8);
  const keep=Math.min(st.T.winStart,t-Q().win,st.cut/SR)-1;while(st.chunks.length>1&&(st.chunks[0].s+st.chunks[0].a.length)/SR<keep)st.chunks.shift()}
+/** Seconds of detected speech between t0 and t1 (stream seconds). Infinity while the detector is not loaded (cannot judge). */
+function speechSecs(t0,t1){if(!st.vs)return Infinity;let n=0;for(const [ft,on] of st.vf)if(on&&ft>t0&&ft<=t1)n++;return n*512/SR}
 function slice(t0,t1){const s0=Math.max(0,Math.floor(t0*SR)),s1=Math.min(st.end,Math.floor(t1*SR));if(s1<=s0)return new Float32Array(0);const out=new Float32Array(s1-s0);
  for(const c of st.chunks){const a=Math.max(c.s,s0),b=Math.min(c.s+c.a.length,s1);if(b>a)out.set(c.a.subarray(a-c.s,b-c.s),a-s0)}return out}
 function tick(){if(!st||!panel)return;const t=st.end/SR;
@@ -121,7 +130,8 @@ function tick(){if(!st||!panel)return;const t=st.end/SR;
  const audio=slice(s0,t);st.sent=now;st.busy=true;const job={id:++st.idc,gen:st.gen,off:s0,t,at:now};st.job=job;getWorker().postMessage({type:'run',id:job.id,audio},[audio.buffer])}
 
 // ---------- tracking ----------
-function result(job,ws,ms,aux){autoQ(ms);const H=ws.map(x=>({w:norm(x.s),t0:job.off+x.t0,t1:job.off+x.t1})).filter(x=>x.w);
+function result(job,ws,ms,aux){autoQ(ms);if(!st.coach&&speechSecs(job.off,job.t)<0.3){st.gated=(st.gated||0)+1;return}// no speech in this window: whatever the model "heard" in noise is ignored
+ const H=ws.map(x=>({w:norm(x.s),t0:job.off+x.t0,t1:job.off+x.t1})).filter(x=>x.w);
  if(st.coach){coachEval(H.map(x=>x.w),job.t-st.lastVoice>=0.7&&st.coach.voiced);return}
  if(navigator.webdriver)(window.__rlog??=[]).push({t:Math.round(performance.now()),aud:job.t,ms,h:H.map(x=>x.w).join(' ')});
  step(H,job.t,aux)}
@@ -353,5 +363,5 @@ function logNow(){if(!st||st.drill||st.ctx.review||!st.first)return;let ok=0,bad
 if(navigator.webdriver){
  window.__recite={feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},mode:st.mode,hint:{...st.hint},first:{...st.first},tj:st.tj&&Object.keys(st.tj).length,tjN:st.n,tjCov:st.tj&&(()=>{const by={};st.flat.forEach((x,i)=>(by[x.a]??=[]).push(i));let cov=0;const miss=[];for(const a of Object.keys(by)){if(by[a].every(i=>st.tj[i]))cov+=by[a].length;else miss.push(a)}return{words:st.flat.length,cov,ay:miss.length,miss}})(),hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
  // feed 16 kHz audio through the real ingest/decode path in real time (no microphone needed)
- window.__reciteStream=(a,speed=1)=>new Promise(res=>{st.listening=true;micUI();const step=Math.round(SR*0.04);let i=0;const iv=setInterval(()=>{if(!st){clearInterval(iv);return res()}ingest(Float32Array.from(a.subarray(i,i+step)));i+=step;if(i>=a.length){ingest(new Float32Array(step));if(st.end/SR>a.length/SR+2.6){clearInterval(iv);res()}}},40/speed)});
+ window.__reciteStream=async(a,speed=1)=>{if(!st.vs&&!window.__noVad){try{await ensureVad()}catch{/* level gate */}if(st&&!st.vs)st.vs=newVadStream()}return new Promise(res=>{st.listening=true;micUI();const step=Math.round(SR*0.04);let i=0;const iv=setInterval(()=>{if(!st){clearInterval(iv);return res()}ingest(Float32Array.from(a.subarray(i,i+step)));i+=step;if(i>=a.length){ingest(new Float32Array(step));if(st.end/SR>a.length/SR+2.6){clearInterval(iv);res()}}},40/speed)})};
 }

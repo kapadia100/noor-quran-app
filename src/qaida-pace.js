@@ -12,23 +12,32 @@ export const PACE={
  confirm:4,            // confident speech frames needed before an item is advanced (~130 ms: the highlight appears this fast)
  hang:5,               // 160 ms of non-speech closes a burst (the pause between items)
  minBurst:0.16,        // a burst shorter than this is a click/cough/word fragment and the advance is taken back
- maxBurst:2.6,         // longer than one item = continuous talking / noise: not reading the next item, the advance is taken back
+ maxBurst:1.6,         // longer than one item = continuous talking / noise: not reading the next item, the advance is taken back
  minSnr:8,             // dB the burst must stand above the room (far-away voices, TV in another room, whispers are ignored)
  floorWin:600,floorPct:0.2,
- warm:25,              // the first ~0.8 s only measure the room (the UI says "calibrating")
+ warm:4,              // the first ~0.8 s only measure the room (the UI says "calibrating")
  avgP:0.65             // the burst's mean speech probability must reach this (music/noise that only flickers above the threshold does not)
 };
+/** Level normaliser for the VOICE MODEL input only (the SNR check still uses the raw level). The voice model is level-sensitive: a quiet phone mic
+ * (speech at -45 dBFS) reads as "not speech". Fast attack, slow release, boost only (never attenuates), capped at +36 dB. */
+export class VadGain{
+ constructor(c={}){this.target=c.target??0.25;this.max=c.max??63;this.rel=c.rel??0.98;this.up=c.up??0.05;this.env=1e-4;this.g=1}
+ process(fr){let pk=0;for(let i=0;i<fr.length;i++){const a=fr[i]<0?-fr[i]:fr[i];if(a>pk)pk=a}
+  this.env=Math.max(pk,this.env*this.rel);let tg=this.target/(this.env+1e-6);tg=tg<1?1:tg>this.max?this.max:tg;
+  if(tg<this.g)this.g=tg;else this.g+=(tg-this.g)*this.up;
+  if(this.g<1.001)return fr;const o=new Float32Array(fr.length),g=this.g;for(let i=0;i<fr.length;i++){const v=fr[i]*g;o[i]=v>1?1:v<-1?-1:v}return o}}
 let SHARED=null;
 /** Give every detector the (already fetched) voice-model weights. */
 export function setVadWeights(w){SHARED=w}
 export const vadReady=()=>!!SHARED;
+export const vadWeights=()=>SHARED;
 export class Pace{
- constructor(cfg={}){this.c={...PACE,...cfg};const w=cfg.weights||SHARED;if(!w&&!cfg.probs)throw new Error('vad weights not loaded');this.vad=cfg.probs?null:new Silero(w);
+ constructor(cfg={}){this.c={...PACE,...cfg};const w=cfg.weights||SHARED;if(!w&&!cfg.probs)throw new Error('vad weights not loaded');this.vad=cfg.probs?null:new Silero(w);this.vg=new VadGain(cfg.gain||{});
   this.buf=new Float32Array(0);this.k=0;this.e=[];this.nf=-70;this.state=0;this.run=0;this.quiet=0;this.cnt=0;this.lastDb=-90;this.lastP=0;this.lock=false;this.sumP=0;this.nP=0;this.sumDb=0;this.frames=0}
  /** Push samples; returns events [{type:'on'|'revoke'|'end', t, i}] (t in stream seconds). */
  push(x){const c=this.c,ev=[];let a=x;if(this.buf.length){a=new Float32Array(this.buf.length+x.length);a.set(this.buf);a.set(x,this.buf.length)}
   let p=0;for(;p+c.frame<=a.length;p+=c.frame){const fr=a.subarray(p,p+c.frame);let s=0;for(let i=0;i<c.frame;i++)s+=fr[i]*fr[i];const db=c.dbs?(c.dbs[this.k]??-100):10*Math.log10(s/c.frame+1e-10);
-   const pr=this.c.probs?(this.c.probs[this.k]??0):this.vad.step(fr);this.frame(pr,db,ev)}
+   const pr=this.c.probs?(this.c.probs[this.k]??0):this.vad.step(this.c.noGain?fr:this.vg.process(fr));this.frame(pr,db,ev)}
   this.buf=a.slice(p);return ev}
  floor(){const h=this.e;if(h.length<10)return Math.min(...h,-60);const s=Float32Array.from(h).sort();return s[Math.floor(s.length*this.c.floorPct)]}
  frame(pr,db,ev){const c=this.c,dt=c.frame/16000,tt=this.k*dt;this.k++;this.lastDb=db;this.lastP=pr;

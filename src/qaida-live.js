@@ -5,8 +5,10 @@
 //           like the expected word rather than the other words of the row?). Result per word: confirmed, or not confirmed (never red: isolated words are only recognised
 //           about half of the time, so a miss is not evidence of a mistake).
 // Audio never leaves the phone. The engine is DOM-free: the screen listens to callbacks.
-import {Pace} from './qaida-pace.js';
-import {gradeClosed} from './qaida-grade.js';
+import {Pace,vadReady} from './qaida-pace.js';
+import {ensureVad} from './vad.js';
+export {ensureVad};
+import {gradeClosed,CLOSED} from './qaida-grade.js';
 import {Resampler,Conditioner} from './audio-front.js';
 const SR=16000,MODEL_BASE='https://kapadia100.github.io/noor-quran-app/models/';
 let worker=null,ready=false,loadP=null;const pending=new Map();let jobId=0;
@@ -34,7 +36,8 @@ const decode=audio=>new Promise(res=>{const id=++jobId;pending.set(id,res);getWo
  */
 export function createLive(o){
  const check=o.mode==='check';
- const S={pace:new Pace({hangFrames:check?20:14}),offset:0,pos:0,end:0,chunks:[],bursts:[],grades:{},open:0,stopped:false,mic:null,hearing:false,t:0,done:false,hold:false,maxDb:-120};
+ const mkPace=()=>new Pace({hang:check?7:5});
+ const S={pace:vadReady()?mkPace():new Pace({probs:[],hang:5}),holdUntil:0,offset:0,pos:0,end:0,chunks:[],bursts:[],grades:{},open:0,stopped:false,mic:null,hearing:false,t:0,done:false,hold:false,maxDb:-120};
  const total=()=>S.offset+S.pace.items;
  const setPos=()=>{const n=Math.max(0,Math.min(o.n,total()));if(n!==S.pos){S.pos=n;o.onPos?.(n)}};
  const slice=(t0,t1)=>{const s0=Math.max(0,Math.floor(t0*SR)),s1=Math.min(S.end,Math.floor(t1*SR));const out=new Float32Array(Math.max(0,s1-s0));
@@ -42,7 +45,7 @@ export function createLive(o){
  const finishIfDone=()=>{if(S.done||S.stopped)return;if(S.pos>=o.n&&S.open===0&&(!check||S.grades[o.n-1]!==undefined)){S.done=true;o.onDone?.()}};
  async function grade(slot,t0,t1){if(!check||slot<0||slot>=o.n)return;const a=slice(t0-0.3,t1+0.25);if(a.length<6400){return}
   S.open++;let h;try{h=await decode(a)}catch{h=null}S.open--;if(S.stopped)return;
-  if(h){const g=gradeClosed(h.lp,h.T,o.words,slot,{margin:2,gap:14});S.grades[slot]=g.ok?'ok':'nc';o.onGrade?.(slot,g.ok?'ok':'nc')}else{S.grades[slot]='nc';o.onGrade?.(slot,'nc')}
+  if(h){const g=gradeClosed(h.lp,h.T,o.words,slot,CLOSED);S.grades[slot]=g.ok?'ok':'nc';o.onGrade?.(slot,g.ok?'ok':'nc')}else{S.grades[slot]='nc';o.onGrade?.(slot,'nc')}
   finishIfDone()}
  const onEvents=ev=>{for(const e of ev){
   if(e.type==='on'){S.bursts[e.i]={t0:e.t};setPos()}
@@ -51,11 +54,11 @@ export function createLive(o){
   finishIfDone()};
  /** Feed 16 kHz mono samples (raw, no AGC) for pace + the conditioned copy for the model. */
  const ingest=(raw,cond)=>{if(S.stopped)return;
-  if(S.hold){raw=new Float32Array(raw.length);if(cond)cond=new Float32Array(cond.length)}
+  if(S.hold||S.end<S.holdUntil){raw=new Float32Array(raw.length);if(cond)cond=new Float32Array(cond.length)}
   if(check){S.chunks.push({s:S.end,a:cond});const keep=S.end/SR-25;while(S.chunks.length>1&&(S.chunks[0].s+S.chunks[0].a.length)/SR<keep)S.chunks.shift()}
   S.end+=raw.length;S.t=S.end/SR;
   onEvents(S.pace.push(raw));
-  const db=S.pace.lastDb;S.maxDb=Math.max(S.maxDb,db);o.onLevel?.(Math.max(0,Math.min(1,(db+80)/60)),{db,floor:S.pace.nf,trig:S.pace.trigger,items:S.pace.items,pos:S.pos});
+  const db=S.pace.lastDb;S.maxDb=Math.max(S.maxDb,db);o.onLevel?.(Math.max(0,Math.min(1,(db+80)/60)),{db,p:S.pace.lastP,floor:S.pace.nf,trig:S.pace.trigger,items:S.pace.items,pos:S.pos});
   if(!S.hold&&S.pace.items===0&&S.offset===0&&!S.warned2&&S.t>=S.pace.c.warm*S.pace.c.frame/SR+5){S.warned2=true;o.onStatus?.(S.maxDb<-80?'dead':'quiet')}
   const hearing=S.pace.state===1;if(hearing!==S.hearing){S.hearing=hearing;o.onStatus?.(hearing?'hear':'listen')}
   const wt=S.pace.c.warm*S.pace.c.frame/SR;if(S.t<wt&&!S.warned){o.onStatus?.('warm')}else if(!S.warned){S.warned=true;o.onStatus?.('listen')}};
@@ -64,7 +67,7 @@ export function createLive(o){
   /** Learner tapped slot i: "I am here". The next burst belongs to slot i. */
   jump(i){S.offset=i-S.pace.items;setPos()},
   /** Mute the microphone feed while the app plays a reference sound (so it never hears itself). */
-  hold(on){S.hold=!!on},
+  hold(on){S.hold=!!on;if(!on)S.holdUntil=S.end+Math.round(0.5*SR)},// +0.5 s tail: the room still rings after the sound stops
   get level(){return{db:S.pace.lastDb,floor:S.pace.nf,trig:S.pace.trigger}},
   /** Test / non-mic feed. */
   feed(raw){const cond=check?new Float32Array(raw):raw;ingest(raw,cond)},
@@ -74,6 +77,7 @@ export function createLive(o){
    // iOS Safari only unlocks audio inside the tap: create + resume the AudioContext first, before any await (model download, permission prompt).
    const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();ac.resume?.().catch(()=>{});
    const fail=err=>{try{ac.close()}catch{/* ignore */}return{ok:false,err}};
+   try{await ensureVad();S.pace=mkPace()}catch{return fail('vad')}
    if(check)try{await ensureModel(o.onProgress)}catch{return fail('model')}
    let stream;const gum=a=>navigator.mediaDevices.getUserMedia({audio:a});
    try{try{stream=await gum({echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1})}catch(e){if(e&&e.name==='OverconstrainedError')stream=await gum(true);else throw e}}

@@ -7,6 +7,7 @@ import {TOKENS} from '../public/ctc-core.js';
 // The model returns, for every 40 ms frame, how likely each letter is (CTC). Instead of decoding freely (which often turns a single word into
 // something unrelated), score every word of the row against those probabilities and see whether the expected word wins. Much more reliable
 // for isolated words because the model only has to tell a handful of known words apart.
+const V0=31;
 const IDX=Object.fromEntries(TOKENS.map((c,i)=>[c,i]));
 export const tokensOf=w=>[...norm(w)].map(c=>IDX[c]).filter(x=>x>0);
 const LSE=(a,b)=>a>b?a+Math.log1p(Math.exp(b-a)):b>-1e29?b+Math.log1p(Math.exp(a-b)):a;
@@ -17,8 +18,10 @@ export function ctcLogLik(lp,T,seq,V=31){const n=seq.length;if(!n)return -1e9;co
  return S>1?LSE(a[S-1],a[S-2]):a[0]}
 /** Best single path score (upper bound for any word): sum of the per-frame maxima. */
 export function bestPath(lp,T,V=31){let s=0;for(let t=0;t<T;t++){let m=-1e30;for(let v=0;v<V;v++)if(lp[t*V+v]>m)m=lp[t*V+v];s+=m}return s}
-export const CLOSED={margin:2,gap:14};
+// v3.3: + vb = how far the word must beat the all-blank ("nothing was said") path. Measured on 14,760 grades of non-reading audio (noise, room sounds, other speech,
+// lesson audio, other reciters): without it 4.3% of grades were falsely confirmed, with vb 15 about 0.1% (and the burst must first pass the speech detector).
+export const CLOSED={margin:2,gap:14,vb:15};
 /** cands: expected words of the row; i: expected index. Returns {ok, ll, best, gap, win}. Words that spell the same (letters only) tie and count as the same word. */
 export function gradeClosed(lp,T,cands,i,cfg=CLOSED){const toks=cands.map(tokensOf);const ll=toks.map(t=>t.length?ctcLogLik(lp,T,t):-1e9);const bp=bestPath(lp,T);
  const same=toks.map(t=>t.join(',')===toks[i].join(','));let other=-1e9;ll.forEach((v,k)=>{if(!same[k]&&v>other)other=v});
- const margin=ll[i]-other,gap=bp-ll[i];return{ok:margin>=cfg.margin&&gap<=cfg.gap,margin,gap,ll:ll[i]}}
+ let bl=0;for(let t=0;t<T;t++)bl+=lp[t*V0];const margin=ll[i]-other,gap=bp-ll[i],vb=ll[i]-bl;return{ok:margin>=cfg.margin&&gap<=cfg.gap&&vb>=(cfg.vb??0),margin,gap,vb,ll:ll[i]}}

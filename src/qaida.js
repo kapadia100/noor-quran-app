@@ -104,6 +104,7 @@ const LMSG=tt=>({warm:tt('Calibrating the room… stay quiet for a moment','کم
  suspended:tt('Safari did not start the microphone. Tap Start again (tap it once, directly).','Safari نے مائیک شروع نہیں کیا۔ شروع دوبارہ دبائیں (ایک بار سیدھا)۔'),
  interrupted:tt('The microphone was interrupted (a call or another app). Tap Start again.','مائیک رک گیا (کال یا کوئی اور ایپ)۔ شروع دوبارہ دبائیں۔'),
  nomic:tt('No microphone is available here. Open the app directly in Safari or Chrome.','یہاں مائیک دستیاب نہیں۔ ایپ کو براہِ راست Safari یا Chrome میں کھولیں۔'),denied:tt('Microphone permission is off. Allow it in the browser settings, then try again.','مائیک کی اجازت بند ہے۔ براؤزر کی سیٹنگ میں اجازت دے کر دوبارہ کوشش کریں۔'),
+ vad:tt('Could not load the voice detector (it is part of the app). Reload the app once while online, then try again. Read-along will not run without it, so noise is never counted as reading.','آواز پہچاننے والا لوڈ نہیں ہو سکا (یہ ایپ کا حصہ ہے)۔ ایک بار آن لائن ایپ دوبارہ کھولیں۔ اس کے بغیر ساتھ ساتھ پڑھنا نہیں چلے گا تاکہ شور کبھی پڑھائی نہ گنا جائے۔'),
  busy:tt('The microphone is busy. Close other apps or calls that use it, then try again.','مائیک مصروف ہے۔ جو ایپ یا کال اسے استعمال کر رہی ہو بند کر کے دوبارہ کوشش کریں۔'),
  model:tt('Could not load the word checker (needs internet once). Switched to read-along, which works offline.','الفاظ جانچنے والا لوڈ نہیں ہو سکا (ایک بار انٹرنیٹ چاہیے)۔ ساتھ ساتھ پڑھنے پر آ گیا، جو بغیر انٹرنیٹ چلتا ہے۔')});
 function liveUI(tt,les,root,kind,sel,reg,note){
