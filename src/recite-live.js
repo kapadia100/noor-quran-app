@@ -32,7 +32,7 @@ export function recoverRun(st,flat,cur,cfg=RECOVER){
  if(from===cur)return null;
  let to=from;while(st[to]&&st[to].st==='ok'&&(st[to].s??0)>=cfg.strong&&flat[to].length>=cfg.minLen)to++;
  return to-from>=cfg.minRun?{from,to}:null}
-export const START_N=3,START_S=0.85;
+export const START_N=3,START_S=0.85;const flatLen=(f,p,n)=>{let c=0;for(let q=p;q<p+n;q++)c+=(f[q]||'').length;return c};
 export class Tracker{
  constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[];this.verified=false;this.startN=START_N}
  // decode from just before the last locked word so it is heard in full and serves as a strong left context
@@ -55,7 +55,7 @@ export class Tracker{
   // chance by unrelated speech; three strong consecutive words cannot (measured: see docs). A reciter who really reads gets
   // the same greens a moment later, all at once.
   if(!this.verified){let run=0,sum=0;for(let q=this.p;st[q]&&st[q].st==='ok';q++){run++;sum+=st[q].s??1}
-   if(run>=this.startN&&sum/run>=START_S)this.verified=true;else{this.prov={};this.cursor=this.p;return ev}}
+   if((run>=this.startN&&sum/run>=START_S)||(run>=2&&sum/run>=0.99&&flatLen(this.flat,this.p,run)>=7))this.verified=true;else{this.prov={};this.cursor=this.p;return ev}}
   this.prov=prov;this.cursor=cur;
   // streaks
   const upd=(S,pred)=>{for(const k of Object.keys(S))if(!pred(+k))delete S[k]};
