@@ -57,3 +57,46 @@ test('Urdu labels and dark mode render without overflow',async({page})=>{
  await page.addInitScript(()=>{localStorage.setItem('settings',JSON.stringify({ui:'ur',dark:true}))});
  await page.goto('./#/qaida');await expect(page.locator('.q-row').first()).toContainText('حروف');
  await page.goto('./#/qaida/madd');await expect(page.locator('.q-rule')).toBeVisible()});
+
+// ---- live reading (v3.1): follow-along from the pace, checked words, never red ----
+const fakeMic=page=>page.addInitScript(()=>{window.__qFake=true});
+const noRed=async page=>{const bad=await page.evaluate(()=>[...document.querySelectorAll('.q-lp *, .q-tile, .q-cell, .q-word')].filter(e=>/red|wrong|miss|err/i.test(e.className&&e.className.baseVal===undefined?e.className:'')).length);expect(bad).toBe(0)};
+
+test('letters: Read along button, honest "not checked" label, highlight follows each spoken item',async({page})=>{
+ await fakeMic(page);await page.goto('./#/qaida/huroof');
+ await expect(page.locator('.q-lbtn')).toBeVisible();await page.click('.q-lbtn');
+ await expect(page.locator('#qLp')).toBeVisible();await expect(page.locator('.q-ltag')).toHaveText(/not checked/i);await expect(page.locator('.q-ltag')).toHaveClass(/fol/);
+ await expect(page.locator('.q-cur')).toHaveCount(1);await expect(page.locator('.q-tile.q-cur')).toHaveAttribute('data-i','0');
+ for(let k=1;k<=3;k++){await page.evaluate(()=>window.__qlive._burst());await expect(page.locator('.q-tile.q-fa')).toHaveCount(k);await expect(page.locator('.q-tile.q-cur')).toHaveAttribute('data-i',String(k))}
+ await expect(page.locator('.q-tile.q-ok, .q-tile.q-nc')).toHaveCount(0);await noRed(page);
+ await page.click('#qlStop');await expect(page.locator('#qlSum')).toContainText(/Read again/);await expect(page.locator('.q-tile.q-ok')).toHaveCount(0);
+ const P=await page.evaluate(()=>localStorage.qsQaida);expect(P||'{}').not.toContain('"got":{"');});
+
+test('tapping an item while reading moves the position there (does not play audio)',async({page})=>{
+ await fakeMic(page);await page.goto('./#/qaida/huroof');await page.click('.q-lbtn');
+ await page.evaluate(()=>window.__qlive._burst());await page.locator('.q-tile').nth(10).click();
+ await expect(page.locator('.q-tile.q-cur')).toHaveAttribute('data-i','10');expect(await plays(page)).toEqual([]);
+ await page.evaluate(()=>window.__qlive._burst());await expect(page.locator('.q-tile.q-cur')).toHaveAttribute('data-i','11')});
+
+test('follow-along also works on the harakat grid and the joined lesson has no live mode',async({page})=>{
+ await fakeMic(page);await page.goto('./#/qaida/harakat');await page.click('.q-lbtn');await page.evaluate(()=>window.__qlive._burst());await expect(page.locator('.q-cell.q-fa')).toHaveCount(1);
+ await page.goto('./#/qaida/joined');await expect(page.locator('.q-lbtn')).toHaveCount(0)});
+
+test('word rows are checked: confirmed words go green with a tick, others stay neutral grey, never red; summary is honest and saves only confirmed words',async({page})=>{
+ await fakeMic(page);await page.goto('./#/qaida/practice');await page.click('.q-lbtn');
+ await expect(page.locator('.q-ltag')).toHaveClass(/chk/);await expect(page.locator('.q-ldesc')).toContainText(/not a mistake/i);
+ const n=await page.locator('.q-word').count();expect(n).toBeGreaterThan(5);
+ for(let i=0;i<4;i++)await page.evaluate(()=>window.__qlive._burst());
+ await page.evaluate(()=>{window.__qlive._grade(0,true);window.__qlive._grade(1,false);window.__qlive._grade(2,true)});
+ await expect(page.locator('.q-word.q-ok')).toHaveCount(2);await expect(page.locator('.q-word.q-nc')).toHaveCount(1);await noRed(page);
+ await page.click('#qlStop');await expect(page.locator('#qlSum')).toContainText('2 of');await expect(page.locator('#qlSum')).toContainText(/not confirmed/i);
+ const P=await page.evaluate(()=>JSON.parse(localStorage.qsQaida));expect(Object.keys(P.lessons.practice.got)).toHaveLength(2)});
+
+test('follow-along driven by real audio samples: bursts advance, silence and a 5 ms click do not',async({page})=>{
+ await fakeMic(page);await page.goto('./#/qaida/huroof');await page.click('.q-lbtn');
+ const pos=await page.evaluate(()=>{const L=window.__qlive,SR=16000;let s=3;const r=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296-.5};
+  const push=(n,f)=>{const x=new Float32Array(n);for(let i=0;i<n;i++)x[i]=r()*0.003+(f?f(i):0);for(let i=0;i<n;i+=1600)L.feed(x.subarray(i,i+1600))};
+  const tone=n=>i=>0.25*Math.min(1,i/300,(n-i)/300)*Math.sin(2*Math.PI*230*i/SR);
+  push(SR*1.2);const out=[];for(let k=0;k<5;k++){push(Math.round(SR*.35),tone(Math.round(SR*.35)));push(Math.round(SR*.4));out.push(L.pos)}
+  push(SR*3);out.push(L.pos);push(80,i=>0.4*Math.sin(i));push(SR*1);out.push(L.pos);return out});
+ expect(pos).toEqual([1,2,3,4,5,5,5])});
