@@ -15,12 +15,14 @@ export const words=t=>String(t).split(/\s+/).map(norm).filter(Boolean);
  */
 export function align(E,H){const n=E.length,m=H.length,INF=1e9,D=[],B=[];
  for(let i=0;i<=n;i++){D.push(new Array(m+1).fill(INF));B.push(new Array(m+1).fill(null))}D[0][0]=0;
- const DEL=0.85,INS=0.7;
+ // INS_JUNK: a one-letter fragment is decoder noise, cheap to ignore so it is not paired with a real word.
+ // MERGE: a real merge decodes both words (>=0.85); a looser match is just a skipped short word.
+ const DEL=0.85,INS=0.7,INS_JUNK=0.3,MERGE=0.85;
  for(let i=0;i<=n;i++)for(let j=0;j<=m;j++){const d=D[i][j];if(d>=INF)continue;
   const up=(ii,jj,c,op)=>{if(d+c<D[ii][jj]){D[ii][jj]=d+c;B[ii][jj]=[i,j,op]}};
   if(i<n&&j<m)up(i+1,j+1,1-sim(E[i],H[j]),'m');
-  if(i<n)up(i+1,j,DEL,'d');if(j<m)up(i,j+1,INS,'i');
-  if(i+1<n&&j<m){const s=sim(E[i]+E[i+1],H[j]);if(s>0.75)up(i+2,j+1,2*(1-s),'m2')}
+  if(i<n)up(i+1,j,DEL,'d');if(j<m)up(i,j+1,H[j].length<=1?INS_JUNK:INS,'i');
+  if(i+1<n&&j<m){const s=sim(E[i]+E[i+1],H[j]);if(s>MERGE)up(i+2,j+1,2*(1-s),'m2')}
   if(i<n&&j+1<m){const s=sim(E[i],H[j]+H[j+1]);if(s>0.75)up(i+1,j+2,(1-s)+0.05,'s2')}}
  // allow trailing expected words to be unmatched for free (not yet recited)
  let bi=n,best=D[n][m];for(let i=0;i<n;i++)if(D[i][m]<best-1e-9){best=D[i][m];bi=i}// trailing expected words (not yet recited) cost nothing
