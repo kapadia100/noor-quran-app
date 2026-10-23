@@ -59,3 +59,19 @@ Free decoding turns one word into something unrelated. Instead each burst is sco
 **Also in v3.3.0.** Headset / AirPods disconnect and phone calls stop the mic with a clear message (track end + audio-context interruption), screen wake lock while listening, level meter and 0.8 s room calibration for the Qaida live panel.
 
 **Not done / not verifiable here.** A larger WebGPU Quran model (no WebGPU device to test on and no validated larger model), beam multi-hypothesis tracking, DTW alignment, an extra rejection model for isolated letters. A real iPhone test is still needed for microphone route, AGC and speaker-bleed behaviour.
+
+## v3.3.1: "I read correctly but connect the words and the tutor gets stuck" (iPhone)
+
+**Root causes (measured, not guessed).**
+1. *The voice gate closed in the middle of a verse.* v3.3.0 needed p>=0.5 on 3 of 5 voice-model frames and a 0.3 s minimum. Soft, blended or room-reverberant recitation sits at p=0.2-0.5 for whole words, so the gate shut, decoding stopped (about 9 decodes instead of 16 on the same clips) and nothing could advance. The recogniser itself was fine: a one-shot decode of the same audio was 99.5 % OK.
+2. *Start verification demanded a clean run beginning exactly at word 1.* A soft, garbled or very short first word (an `ام`-type word, a hamza-initial word heard as another word) never verified, even when words 2-7 matched perfectly. Short 3-word ayat with one unclear word never reached a run of 2.
+3. *A persistently unclear word froze the visible prefix.* Its streak never cleared, and the "unclear" lock needs two later OK words, which cannot exist at the end of an ayah.
+
+**Fix (all green marks still need real evidence; nothing is ever marked wrong because of it).**
+- `src/voice-gate.js`: hysteresis. A frame must be clearly voiced (p>=0.3, 2 of the last 5 frames) to OPEN the gate; once speech is running it stays open through weaker frames (p>=0.12) for 2.5 s, decoding is allowed 4 s after the last voice, and a window needs 0.15 s of voice to be trusted.
+- `startEvidence` (`src/recite-live.js`): ordered phrase match instead of "3 strong words from word 1": the run may start up to 2 words into the ayah, may contain one blurred word, and is scored by letters matched (long exact words count for more). One or two look-alike words are still never enough.
+- Persisted-unclear words no longer block the contiguous prefix (they stay neutral, never red).
+- `Tracker.realign`: after verification, if nothing advances for 2.5 s while words are heard, look 1..12 words ahead (40 after 6 s) for a strong ordered run; adopt it, mark the words in between neutral ("unclear", never red).
+- Visible fallback: speech heard but no progress for 4 s shows "Keep reading, I'm listening" and re-aligns at once (every 6 s at most). Nothing is marked and no help card appears.
+
+**Measurements.** See the release notes: per-word green rate, time-to-lock and stall before/after on 66 real recitation clips under 8 conditions (clean, 1.25x, 1.5x, phone-mic chain, low volume, reverb, 16 kHz narrow, combined "hard"); false-green audit over 72 non-speech + speech streams (0 / 72, unrelated speech 0 / 8) and 66 real clips tracked against a different ayah (0 false greens).
