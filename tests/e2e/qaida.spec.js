@@ -9,7 +9,7 @@ const plays=page=>page.evaluate(()=>window.__qplays||[]);
 
 test('More tab has a Qaida entry that opens the lesson list with 9 lessons',async({page})=>{
  await page.goto('./#/more');await page.click('#qaidaEntry');await expect(page).toHaveURL(/#\/qaida$/);
- await expect(page.locator('.q-row')).toHaveCount(9);await expect(page.locator('.q-note')).toContainText('cannot reliably');
+ await expect(page.locator('.q-row')).toHaveCount(9);await expect(page.locator('.q-note')).toContainText('Start reading live');
  await expect(page.locator('#qaidaEntry')).toHaveCount(0)});
 
 test('letters lesson: 29 tiles, tap plays the matching recorded clip (hamza uses the alif clip, ya its own)',async({page})=>{
@@ -62,15 +62,27 @@ test('Urdu labels and dark mode render without overflow',async({page})=>{
 const fakeMic=page=>page.addInitScript(()=>{window.__qFake=true});
 const noRed=async page=>{const bad=await page.evaluate(()=>[...document.querySelectorAll('.q-lp *, .q-tile, .q-cell, .q-word')].filter(e=>/red|wrong|miss|err/i.test(e.className&&e.className.baseVal===undefined?e.className:'')).length);expect(bad).toBe(0)};
 
-test('letters: Read along button, honest "not checked" label, highlight follows each spoken item',async({page})=>{
+test('letters: big Live start card on top, honest "tracked by voice" label, items light up GREEN as you read',async({page})=>{
  await fakeMic(page);await page.goto('./#/qaida/huroof');
  await expect(page.locator('.q-lbtn')).toBeVisible();await page.click('.q-lbtn');
- await expect(page.locator('#qLp')).toBeVisible();await expect(page.locator('.q-ltag')).toHaveText(/not checked/i);await expect(page.locator('.q-ltag')).toHaveClass(/fol/);
+ await expect(page.locator('#qLp')).toBeVisible();await expect(page.locator('.q-ltag')).toHaveText(/tracked by voice/i);await expect(page.locator('.q-ltag')).toHaveClass(/fol/);
  await expect(page.locator('.q-cur')).toHaveCount(1);await expect(page.locator('.q-tile.q-cur')).toHaveAttribute('data-i','0');
  for(let k=1;k<=3;k++){await page.evaluate(()=>window.__qlive._burst());await expect(page.locator('.q-tile.q-fa')).toHaveCount(k);await expect(page.locator('.q-tile.q-cur')).toHaveAttribute('data-i',String(k))}
  await expect(page.locator('.q-tile.q-ok, .q-tile.q-nc')).toHaveCount(0);await noRed(page);
  await page.click('#qlStop');await expect(page.locator('#qlSum')).toContainText(/Read again/);await expect(page.locator('.q-tile.q-ok')).toHaveCount(0);
  const P=await page.evaluate(()=>localStorage.qsQaida);expect(P||'{}').not.toContain('"got":{"');});
+
+test('Live card is the first thing in the lesson, above the grid and the fold; items turn green; meter, Hear it and badge are there',async({page})=>{
+ await fakeMic(page);await page.goto('./#/qaida/huroof');
+ const [lb,gr]=await Promise.all(['.q-lb-top','.q-grid'].map(s=>page.locator(s).boundingBox()));expect(lb.y).toBeLessThan(gr.y);expect(lb.y+lb.height).toBeLessThan(500);
+ await expect(page.locator('.q-lb-top .q-badge')).toContainText('LIVE');const bb=await page.locator('.q-lbtn').boundingBox();expect(bb.height).toBeGreaterThanOrEqual(48);
+ expect(await page.locator('.q-lbtn').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(46, 160, 67)');
+ await page.click('.q-lbtn');await expect(page.locator('.q-lb-top')).toBeHidden();await expect(page.locator('#qLp .q-badge')).toContainText('LIVE');
+ await expect(page.locator('.q-meter')).toBeVisible();await expect(page.locator('#qlDbg')).toBeVisible();await expect(page.locator('#qlHear')).toBeVisible();
+ for(let k=0;k<2;k++)await page.evaluate(()=>window.__qlive._burst());
+ await expect.poll(async()=>{const c=await page.locator('.q-tile.q-fa').first().evaluate(e=>getComputedStyle(e).backgroundColor);const m=c.match(/[\d.]+/g).map(Number);return m[1]>m[0]+60&&m[1]>m[2]+60},{timeout:3000}).toBe(true); // green dominant once the fade ends, never blue/red
+ await page.click('#qlHear');await expect.poll(()=>plays(page)).toEqual(['qaida/3-a.mp3']); // plays the NEXT letter to read (position 2 = tha)
+ await page.click('#qlStop');await expect(page.locator('.q-lb-top')).toBeVisible()});
 
 test('tapping an item while reading moves the position there (does not play audio)',async({page})=>{
  await fakeMic(page);await page.goto('./#/qaida/huroof');await page.click('.q-lbtn');
@@ -84,12 +96,13 @@ test('follow-along also works on the harakat grid and the joined lesson has no l
 
 test('word rows are checked: confirmed words go green with a tick, others stay neutral grey, never red; summary is honest and saves only confirmed words',async({page})=>{
  await fakeMic(page);await page.goto('./#/qaida/practice');await page.click('.q-lbtn');
- await expect(page.locator('.q-ltag')).toHaveClass(/chk/);await expect(page.locator('.q-ldesc')).toContainText(/not a mistake/i);
+ await expect(page.locator('.q-ltag')).toHaveClass(/chk/);await expect(page.locator('.q-ldesc')).toContainText(/not a mistake|not confirmed/i);await expect(page.locator('#qlDl')).toHaveCount(0);
  const n=await page.locator('.q-word').count();expect(n).toBeGreaterThan(5);
  for(let i=0;i<4;i++)await page.evaluate(()=>window.__qlive._burst());
  await page.evaluate(()=>{window.__qlive._grade(0,true);window.__qlive._grade(1,false);window.__qlive._grade(2,true)});
  await expect(page.locator('.q-word.q-ok')).toHaveCount(2);await expect(page.locator('.q-word.q-nc')).toHaveCount(1);await noRed(page);
- await page.click('#qlStop');await expect(page.locator('#qlSum')).toContainText('2 of');await expect(page.locator('#qlSum')).toContainText(/not confirmed/i);
+ await page.locator('.q-word.q-nc').click();await expect.poll(async()=>(await plays(page)).length).toBe(1); // tapping a grey word plays it (correction audio), does not move the position
+ await page.click('#qlStop');await expect(page.locator('#qlSum')).toContainText('2 of');await expect(page.locator('#qlSum .q-ch2')).toHaveCount(await page.locator('.q-word.q-nc').count());await expect(page.locator('#qlSum')).toContainText(/not confirmed/i);
  const P=await page.evaluate(()=>JSON.parse(localStorage.qsQaida));expect(Object.keys(P.lessons.practice.got)).toHaveLength(2)});
 
 test('follow-along driven by real audio samples: bursts advance, silence and a 5 ms click do not',async({page})=>{

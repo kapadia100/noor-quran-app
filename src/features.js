@@ -5,7 +5,7 @@ import * as I from './icons.js';
 import * as GC from './analytics.js';
 import {weakLoad,dueItems} from './coach.js';
 import {progressPage} from './progress-page.js';
-import {qaidaEntry} from './qaida-entry.js';
+import {qaidaEntry,qaidaHomeCard} from './qaida-entry.js';
 const I_=I.icon;
 const {esc,ymd}=L;
 let C,PAGES=null;export const init=ctx=>{C=ctx;X('pages.json').then(p=>PAGES=p).catch(()=>{})};
@@ -48,8 +48,9 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
   <div class="htop"><a class="round" href="#/more" aria-label="${tt('Menu','مینو')}">${I.icon('menu')}</a><div class="htitle"><b class="appname">${tt('Quran Safar','قرآن سفر')}</b><small>${PR.hijri(new Date(),S().ui)} · <span class="streak" id="streak"><b>${st}</b> ${tt('day streak','دن مسلسل')}</span></small></div></div>
   <div class="srow"><form class="sbar" id="hs">${I.icon('search')}<input id="hq" aria-label="${tt('Search','تلاش')}" placeholder="${C.t('q')}"></form><a class="round heart" href="#/bookmarks" aria-label="${tt('Favourites','پسندیدہ')}">${I.icon('heart')}</a></div>
   ${pcard(nx)}
-  <div class="hcards"><a class="hc hc-quran" href="${lr?`#/surah/${lr.s}/${lr.a}`:'#/quran'}" id="homeQuran"><span class="ti">${I.icon('quran')}</span><b>${tt('Quran','قرآن')}</b><small>${lr?`${tt('Continue','جاری رکھیں')} ${esc(lr.name)} ${lr.s}:${lr.a}`:tt('114 surahs · 30 paras','114 سورتیں · 30 پارے')}</small><span class="go">›</span></a>
-  <a class="hc hc-tutor" href="#/recite" id="homeTutor"><span class="ti">${I.icon('tutor')}</span><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Live tutor — words light up as you recite','لائیو ٹیوٹر، بولتے ہی الفاظ روشن')}</small><span class="go">›</span></a></div>
+  <div class="hcards"><a class="hc hc-quran" href="${lr?`#/surah/${lr.s}/${lr.a}`:'#/quran'}" id="homeQuran"><span class="ti">${I.icon('quran')}</span><b>${tt('Quran','قرآن')}</b><small>${lr?`${tt('Continue','جاری')} ${lr.s}:${lr.a}`:tt('114 surahs','114 سورتیں')}</small></a>
+  <a class="hc hc-tutor" href="#/recite" id="homeTutor"><span class="ti">${I.icon('tutor')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Words light up as you recite','بولتے ہی الفاظ روشن')}</small></a>
+  ${qaidaHomeCard(tt,I)}</div>
   ${(()=>{const n=dueItems(weakLoad()).length;return n?`<a class="tutor-card review" href="#/recite/review" id="homeReview"><span class="ti">★</span><div><b>${tt('Review weak words','کمزور الفاظ کی دہرائی')}</b><small>${tt(n+' word'+(n>1?'s':'')+' ready to practice',n+' الفاظ مشق کے لیے تیار')}</small></div><span class="go">›</span></a>`:''})()}
  </section>
  <section class="dsec">

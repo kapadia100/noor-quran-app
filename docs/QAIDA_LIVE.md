@@ -25,3 +25,12 @@ Free decoding turns one word into something unrelated. Instead each burst is sco
 
 ## Pace follower
 10 ms frames, adaptive noise floor (400 ms warm-up that only measures the room), burst starts after 40 ms above floor+9 dB, ends after 150 ms below floor+6 dB, bursts under 90 ms (clicks/taps) are taken back. Synthetic Qaida readings built from the CC0 clips: exact item count in clean and white noise down to 15 dB SNR at every tested speed, no over-count; at 8 dB SNR 82-98 % of items are counted (under-count only). Limits: needs a short pause (~150 ms) between items; noise or other voices can merge/miss bursts; it does not verify what was said. Tapping an item moves the position there.
+
+## v3.2.0 changes (why "live" did not feel live on iPhone in v3.1.0)
+- The Start button was a small ghost button inside the lesson, checked mode needed a second "Download tutor" tap, follow-along lit up blue (Quran tutor is green) and there was no way to hear the right answer while reading. Qaida was also not on Home.
+- Now: a big green **Start reading live** card with a red LIVE badge is the first thing in every lesson; tapping it is the only step (the ~19 MB word checker downloads automatically the first time, falling back to read-along if offline). The AudioContext is created inside the tap (iOS requirement), before the mic permission and the download.
+- Items turn **green** as they are read. Letters/syllables are tracked by voice ("tracked by voice", not graded, stated on the card and in the panel). Real words get a ✓ only when the on-device checker confirms them; grey = not confirmed; no red.
+- **Hear it** (plays the next item, or the last unconfirmed word) and tap-a-grey-word/summary chips play the correct audio. The mic feed is muted while reference audio plays (`hold()`), so the app never hears itself.
+- Adaptive pace: 0.8 s room calibration (15th percentile), trigger = room + 9 dB with an absolute floor of -66 dBFS (was -52), so quiet phone mics work. "I cannot hear you" / "microphone looks silent" hints after 5 s with no item.
+- On-screen level meter with the trigger line and a dB read-out (mic / line / room / heard) for debugging on a real phone.
+- Home: Quran, Recite & Learn and Qaida (LIVE) are three compact cards in one row.
