@@ -27,7 +27,7 @@ describe('qaida data',()=>{
 });
 
 describe('qaida words vs the Quran text',()=>{
- const n=s=>s.replace(/[\u064B-\u0652\u0670\u0640\u06D6-\u06ED]/g,'').replace(/[ٱأإآ]/g,'ا').replace(/ى/g,'ي');
+ const n=s=>s.replace(/\p{M}/gu,'').replace(/\u0640/g,'').replace(/[\u0671\u0623\u0625\u0622]/g,'\u0627').replace(/\u0649/g,'\u064A');
  it('every example word is the word at its surah:ayah:word position',()=>{
   for(const ws of Object.values(D.WORDS))for(const w of ws){const [s,a,i]=w.k.split(':').map(Number);
    const j=JSON.parse(fs.readFileSync(`public/offline/s/ar/${s}.json`,'utf8'));let words=j[a-1].trim().split(/\s+/);if(s!==1&&a===1)words=words.slice(4);
