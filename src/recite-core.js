@@ -43,8 +43,10 @@ export function judge(E,H,opt={}){const OK=opt.ok??0.6,STRONG=opt.strong??0.75,W
  const done=last+1;const marks=[];const noRed=degenerate(H);
  for(let k=0;k<done;k++){const x=a[k];
   if(x.j>=0&&x.s>=OK){marks.push({k,st:'ok'});continue}
-  const strongL=k>0&&a[k-1].j>=0&&a[k-1].s>=STRONG,strongR=k+1<done&&a[k+1].j>=0&&a[k+1].s>=STRONG;
-  const enclosed=strongL&&strongR&&k>=1&&!noRed;
+  let l=k,r=k;if(x.j<0){while(l>0&&a[l-1].j<0&&k-l<2)l--;while(r+1<done&&a[r+1].j<0&&r-k<2)r++}// run of up to 3 missing words
+  const runOk=x.j>=0||(!(l>0&&a[l-1].j<0)&&!(r+1<done&&a[r+1].j<0));
+  const strongL=l>0?a[l-1].j>=0&&a[l-1].s>=STRONG:!!opt.anchored,strongR=r+1<done&&a[r+1].j>=0&&a[r+1].s>=STRONG;
+  const enclosed=strongL&&strongR&&(l>=1||opt.anchored)&&runOk&&!noRed;
   if(x.j<0){const shortW=E[k].length<=3;marks.push({k,st:enclosed&&!shortW?'skip':'unclear'})}
   else marks.push({k,st:enclosed&&x.s<WRONG&&H[x.j].length>=2&&E[k].length>=4?'wrong':'unclear',heard:H[x.j]})}
- return {done,marks}}
+ return {done,marks,tail:done>0&&a[done-1].j>=0&&a[done-1].s>=STRONG}}

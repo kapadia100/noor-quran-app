@@ -80,17 +80,17 @@ function handle(job,text){if(!st)return;const H=hwords(text);if(navigator.webdri
  if(job.kind==='partial'){if(job.seq!==st.seq)return;st.live=H.length?judge(windowE(),H).done:0;return draw()}
  st.live=0;if(!H.length)return draw();
  if(job.kind==='verify'){// second opinion (beam search, padded): red only where BOTH decodes flag the same word
-  const j=judge(job.E,H),flag=new Set(j.marks.filter(m=>m.st==='wrong'||m.st==='skip').map(m=>m.k));
+  const j=judge(job.E,H,{anchored:job.anchored}),flag=new Set(j.marks.filter(m=>m.st==='wrong'||m.st==='skip').map(m=>m.k));
   return apply(job.first,job.base,k=>flag.has(k))}
- const E=windowE();const j=judge(E,H);
+ const E=windowE();const anchored=false;/* boundary-anchored skips caused false reds in simulation: kept off */const j=judge(E,H,{anchored});
  if(job.audio&&j.marks.some(m=>m.st==='wrong'||m.st==='skip')){// don't show red yet: confirm with a second decode (a few hundred ms)
-  st.queue.unshift({job:{kind:'verify',id:++st.idc,seq:st.seq,E,first:j,base:st.p},audio:job.audio});return pump()}
+  st.queue.unshift({job:{kind:'verify',id:++st.idc,seq:st.seq,E,first:j,base:st.p,anchored},audio:job.audio});return pump()}
  apply(j,st.p,()=>true)}
 /** Apply a judged segment. confirm(k) says whether a red candidate at window index k is confirmed. */
 function apply(j,base,confirm){if(!st||base!==st.p)return;let bad=null;
  for(const m of j.marks){const i=base+m.k;const red=(m.st==='wrong'||m.st==='skip')&&confirm(m.k);st.marks[i]=m.st==='ok'?'ok':red?'bad':'unc';if(red)bad??={i,st:m.st}}
  if(!j.done){const c=st.p;st.marks[c]=st.marks[c]||'try';msg(L('Unclear — please repeat from the highlighted word.','واضح نہیں — نشان زدہ لفظ سے دوبارہ پڑھیں۔'),'soft');draw();return}
- st.p+=j.done;if(st.marks[st.p]==='try')delete st.marks[st.p];
+ st.p+=j.done;st.tail=j.tail;if(st.marks[st.p]==='try')delete st.marks[st.p];
  if(bad)showFix(bad);else if(j.marks.some(m=>m.st!=='ok'))msg(L('Some words were unclear (amber). Repeat them if you like, or continue.','کچھ الفاظ واضح نہیں تھے (پیلے)۔ چاہیں تو دہرائیں۔'),'soft');else if(st.listening)msg(L('Listening…','سن رہا ہے…'));
  if(st.p>=st.flat.length){msg(L('Surah complete ✓','سورت مکمل ✓'));stopMic()}draw()}
 function showFix(b){const w=st.flat[b.i];const box=$('#rcFix');box.hidden=false;
