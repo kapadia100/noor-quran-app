@@ -13,6 +13,7 @@ import {esc} from './lib.js';
 import * as F from './features.js';
 import {icon} from './icons.js';
 import * as GC from './analytics.js';
+import {weakLoad,weakSave,weakAll,dueItems} from './coach.js';
 const I_=icon;
 document.querySelectorAll('[data-i]').forEach(b=>b.insertAdjacentHTML('afterbegin',icon(b.dataset.i)));
 import * as L2 from './lib.js';
@@ -46,9 +47,18 @@ async function home(tab){setTitle(t('quran'));loading();const list=await surahs(
 // ---------- Recite & Learn (live tutor) entry page ----------
 async function tutorPage(){const ur=S.ui==='ur';setTitle(ur?'تلاوت اور سیکھیں':'Recite & Learn');loading();const list=await surahs();const lr=LS.get('lastRead');
  app.innerHTML=`<div class="tutor-card" style="cursor:default"><span class="ti">${I_('tutor')}</span><div><b>${ur?'تلاوت اور سیکھیں':'Recite & Learn'}</b><small>${ur?'سورت منتخب کریں، مائیک دبائیں اور پڑھیں۔ ہر لفظ بولتے ہی سبز ہو جاتا ہے؛ غلطی ہو تو درست لفظ سنیں اور آگے بڑھیں۔':'Pick a surah, tap the mic and recite. Each word lights up the moment you say it; if one is wrong or missed, hear the right one and carry on.'}</small></div></div>
+ ${weakAll(weakLoad()).length?`<a class="card hl" href="#/recite/review">★ ${ur?'کمزور الفاظ کی دہرائی':'Review weak words'} (${weakAll(weakLoad()).length})</a>`:''}
  ${lr?`<a class="card hl" href="#/recite/${lr.s}/${lr.a}">▶ ${ur?'جاری رکھیں':'Continue'}: ${esc(lr.name)} ${lr.s}:${lr.a}</a>`:''}
  <input id="f" class="inp" aria-label="${t('filter')}" placeholder="${t('filter')}"><ul class="list" id="sl"></ul>`;
  const draw=q=>{q=q.toLowerCase();$('#sl').innerHTML=list.filter(s=>surahMatch(s,q)).map(s=>`<li><a href="#/recite/${s.number}"><b class="num">${s.number}</b><span><b>${esc(s.englishName)}</b><small>${esc(s.englishNameTranslation)} · ${s.numberOfAyahs} ${t('ayahs')}</small></span><span class="ar sm">${esc(s.name)}</span></a></li>`).join('')};draw('');$('#f').oninput=e=>draw(e.target.value)}
+
+async function weakPage(){const ur=S.ui==='ur';setTitle(ur?'کمزور الفاظ':'Weak words');const W=weakLoad(),all=weakAll(W),due=dueItems(W),now=Date.now();
+ const when=e=>{const d=(e.due||0)-now;return d<=0?(ur?'اب':'due now'):d<864e5?(ur?'آج':'today'):(ur?`${Math.ceil(d/864e5)} دن`:`in ${Math.ceil(d/864e5)}d`)};
+ app.innerHTML=`<div class="tutor-card" style="cursor:default"><span class="ti">${I_('tutor')}</span><div><b>${ur?'کمزور الفاظ':'Weak words'}</b><small>${ur?'جن الفاظ میں غلطی ہوئی، انہیں وقفے وقفے سے دہرائیں۔':'Words you missed come back at spaced intervals until you have them.'}</small></div></div>
+ ${all.length?`<button class="btn" id="wRev" style="width:100%;margin:8px 0">▶ ${due.length?(ur?`دہرائی شروع کریں (${due.length})`:`Start review (${due.length} due)`):(ur?'سب کی مشق کریں':'Practice all')}</button>
+ <ul class="list" id="wl">${all.map(e=>`<li class="row"><a style="flex:1;display:flex;gap:10px;align-items:center;min-width:0" href="#/recite/${e.sn}/${e.a}"><b class="num">${e.sn}:${e.a}</b><span><b class="ar sm" dir="rtl">${esc(e.t)}</b><small>${esc(e.m||e.tr||'')} · ${ur?'غلطیاں':'misses'} ${e.miss||1} · ${when(e)}</small></span></a><button class="wx" data-k="${esc(e.key)}" aria-label="${ur?'ہٹائیں':'Remove'}">✕</button></li>`).join('')}</ul>`:`<p class="muted" style="text-align:center;margin:24px 0">${ur?'ابھی کوئی کمزور لفظ نہیں۔ تلاوت کریں — جو لفظ غلط ہوں گے یہاں آئیں گے۔':'No weak words yet. Recite — any word you miss will show up here.'}</p>`}`;
+ app.querySelectorAll('.wx').forEach(b=>b.onclick=e=>{e.preventDefault();const W2=weakLoad();delete W2[b.dataset.k];weakSave(W2);weakPage()});
+ const rv=$('#wRev');if(rv)rv.onclick=async()=>{rv.disabled=true;try{const R=await import('./recite.js');RC=R;R.review((due.length?due:all).slice(0,20),{ayahUrl:(a,sn)=>arUrls(sn).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite'),gc:GC.event})}catch{toast(t('err'))}finally{rv.disabled=false}}}
 
 // ---------- verified text corrections (Tanzil 1.1 / quran.com agree) ----------
 function juzList(){return `<ul class="list">${JUZ.map((r,i)=>`<li><a href="#/juz/${i+1}"><b class="num">${i+1}</b><span><b>Juz ${i+1} · ${JUZN[i]}</b><small>Starts ${r[0]}:${r[1]}${JUZ[i+1]?` · ends before ${JUZ[i+1][0]}:${JUZ[i+1][1]}`:' · ends 114:6'}</small></span><span class="ar">پارہ ${(i+1).toLocaleString('ar-EG')}</span></a></li>`).join('')}</ul>`}
@@ -166,7 +176,7 @@ async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return
  $('#hideT').onclick=e=>{S.hifzHide=!S.hifzHide;save();e.currentTarget.classList.toggle('on',S.hifzHide);box.classList.toggle('hide-ar',S.hifzHide)};
  if(S.wbw)loadW();
  $('#recT').onclick=async()=>{const b=$('#recT');b.disabled=true;try{if(cur)stop();const [R,w]=await Promise.all([import('./recite.js'),words?Promise.resolve(words):F.wbw(n).catch(()=>null)]);RC=R;
-  R.open(n,lastVisible(n)||+start||1,{words:w,txts,ayahUrl:a=>arUrls(n).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite')})}catch{toast(t('err'))}finally{b.disabled=false}};
+  R.open(n,lastVisible(n)||+start||1,{words:w,txts,ayahUrl:(a,sn=n)=>arUrls(sn).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite'),gc:GC.event})}catch{toast(t('err'))}finally{b.disabled=false}};
  if(AUTOT){AUTOT=false;$('#recT').click()}
  app.onclick=e=>{const wEl=e.target.closest('.w');if(wEl&&words){const [a,k]=wEl.dataset.w.split('.').map(Number);const w=words[a][k];document.querySelectorAll('.w.on').forEach(x=>x.classList.remove('on'));wEl.classList.add('on');
    let tip=$('#wtip');if(!tip){tip=document.createElement('div');tip.id='wtip';tip.setAttribute('role','status');document.body.append(tip)}tip.innerHTML=`<span class="ar">${esc(w.t)}</span> <i>${esc(w.tr)}</i><br><b>${esc(w.m)}</b>`;tip.hidden=false;clearTimeout(tip._t);tip._t=setTimeout(()=>tip.hidden=true,4000);if(w.au)playUrl(w.au,'',true);return}
@@ -258,7 +268,7 @@ async function route(){$('#sheet').hidden=true;try{GC.route(location.hash.replac
  $('#back').style.visibility=p[0]?'visible':'hidden';
  const sec={hsearch:'hadith',surah:'quran',juz:'quran',mushaf:'quran',search:'quran',bookmarks:'quran',notes:'quran',khatam:'quran',hifz:'quran',recite:'quran',prayer:'ibadat',qibla:'ibadat',tracker:'ibadat',ramadan:'ibadat',calendar:'ibadat',tasbeeh:'ibadat',duas:'ibadat',zakat:'ibadat',mosques:'ibadat',names:'ibadat'}[p[0]]??p[0];document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
  const FR={quran:()=>home(),more:F.more,ibadat:F.ibadat,help:F.help,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:F.names,tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz};
- try{document.body.classList.remove('enter');void document.body.offsetWidth;document.body.classList.add('enter');if(FR[p[0]])await FR[p[0]]();else if(p[0]==='recite')p[1]?(AUTOT=true,await reader(+p[1],p[2])):await tutorPage();else if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='hsearch')await hadithSearch(p[1]||'bukhari',p[2]||'');else if(p[0]==='hadith')p[2]==='n'?await hadithNo(p[1],p[3]):p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
+ try{document.body.classList.remove('enter');void document.body.offsetWidth;document.body.classList.add('enter');if(FR[p[0]])await FR[p[0]]();else if(p[0]==='recite')p[1]==='review'?await weakPage():p[1]?(AUTOT=true,await reader(+p[1],p[2])):await tutorPage();else if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='hsearch')await hadithSearch(p[1]||'bukhari',p[2]||'');else if(p[0]==='hadith')p[2]==='n'?await hadithNo(p[1],p[3]):p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
   else if(p[0]==='search')await search(p[1]||'');else if(p[0]==='bookmarks')bookmarks();else if(p[0]==='prayer')prayer();else if(p[0]==='qibla')qibla();else if(p[0]==='juz')p[1]?await juzReader(+p[1]):await home('juz');else if(p[0]==='settings'){await settings();app.insertAdjacentHTML('beforeend',`<p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`)}else await F.dashboard()}
  catch(e){if(v!==app)return;console.error(e);v.innerHTML=`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}}
 F.init({app:()=>app,S,save,t,setTitle,loading,toast,j,arabic,transFor,surahs,dateCard,tick,pn,playUrl,startHifz});
