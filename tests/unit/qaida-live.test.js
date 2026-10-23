@@ -19,6 +19,18 @@ describe('Qaida pace follower',()=>{
  it('takes back a click shorter than a syllable',()=>{const x=new Float32Array(SR*3);for(let i=0;i<x.length;i++)x[i]=rnd()*0.0015;const s0=SR*1.5;for(let i=0;i<0.05*SR;i++)x[s0+i]+=0.3*Math.sin(i*0.4);const {p,ev}=run(x);expect(p.items).toBe(0);expect(ev.some(e=>e.type==='on')).toBe(true)});
  it('is still under the item count if there is noise at 15 dB SNR',()=>{const x=reading(10,{noise:0.02,amp:0.2});expect(run(x).p.items).toBeLessThanOrEqual(10);expect(run(x).p.items).toBeGreaterThanOrEqual(9)});
 });
+describe('Qaida pace on a quiet phone microphone (adaptive floor)',()=>{
+ it('follows speech 20 to 30 dB quieter than the lab clips (phone mic with noise suppression)',()=>{for(const amp of [0.02,0.008,0.004]){const {p}=run(reading(10,{amp,noise:0.0001,lead:1.2}));expect(p.items,'amp '+amp).toBe(10)}});
+ it('follows speech over a steady room hum by calibrating the floor in the first second',()=>{for(const noise of [0.004,0.01,0.02]){const {p}=run(reading(8,{amp:0.12,noise,lead:1.2}));expect(p.items,'noise '+noise).toBe(8)}});
+ it('the trigger line sits above the measured room level and exposes it for the on-screen meter',()=>{const {p}=run(reading(2,{noise:0.01,lead:1.5}));expect(p.trigger).toBeGreaterThan(p.nf+6);expect(Number.isFinite(p.lastDb)).toBe(true)});
+ it('never counts anything on a very quiet room with a loud hum at -50 dB',()=>{const x=new Float32Array(SR*8);for(let i=0;i<x.length;i++)x[i]=0.0045*Math.sin(i*0.05)+rnd()*0.001;expect(run(x).p.items).toBe(0)});
+ it('tells the user when the mic is too quiet or silent',()=>{
+  const feedAll=(x,st)=>{const L=createLive({mode:'along',n:6,onStatus:k=>st.push(k)});for(let i=0;i<x.length;i+=1600)L.feed(x.subarray(i,i+1600))};
+  const a=[];const x=new Float32Array(SR*9);for(let i=0;i<x.length;i++)x[i]=rnd()*0.004;feedAll(x,a);expect(a).toContain('quiet');
+  const b=[];feedAll(new Float32Array(SR*9),b);expect(b).toContain('dead');
+  const c=[];feedAll(reading(4),c);expect(c).not.toContain('quiet');expect(c).not.toContain('dead')});
+ it('hold() mutes the feed so reference audio played by the app is never counted',()=>{const pos=[];const L=createLive({mode:'along',n:10,onPos:n=>pos.push(n)});const x=reading(5);L.hold(true);for(let i=0;i<x.length;i+=1600)L.feed(x.subarray(i,i+1600));expect(L.pos).toBe(0)});
+});
 // synthetic log-probs: frames strongly voting for the given letters, with blanks between
 function lpFor(word,{conf=0.9,pad=3}={}){const toks=tokensOf(word),V=31,rows=[];const row=k=>{const r=new Float32Array(V).fill(Math.log((1-conf)/(V-1)));r[k]=Math.log(conf);return r};
  for(let i=0;i<pad;i++)rows.push(row(0));for(const t of toks){rows.push(row(t),row(t),row(0))}for(let i=0;i<pad;i++)rows.push(row(0));
