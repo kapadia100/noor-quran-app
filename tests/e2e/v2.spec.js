@@ -86,3 +86,16 @@ test('translation-only audio with language picker plays continuously',async({pag
  expect(got.some(u=>/ur\.khan\/1\.mp3/.test(u))).toBe(true);expect(got.some(u=>/alafasy/.test(u))).toBe(false);
  await page.goto('./#/settings');await expect(page.locator('#s_am')).toHaveValue('tr');await expect(page.locator('#s_tal')).toHaveValue('ur');
  const ui=await page.locator('#r_abar, #s_abar').first().innerText();expect(ui).not.toMatch(/khan|walk|islamic|everyayah/i)});
+test('practice help: live check panel, green words, correction card for a clear mistake (no model, fed text)',async({page})=>{
+ await page.goto('./');await page.evaluate(()=>{window.__reciteFake=true});await page.addInitScript(()=>{window.__reciteFake=true});await page.goto('./#/surah/1');await page.waitForSelector('.ayah');
+ await page.click('#recT');await expect(page.locator('#recite')).toBeVisible();await expect(page.locator('#recite')).toContainText('not full tajweed');
+ await expect(page.locator('#recite')).not.toContainText(/tarteel|whisper|hugging/i);
+ await page.click('#rcMic');await page.evaluate(()=>window.__recite.commit('بسم الله الرحمن الرحيم'));await expect(page.locator('#recite .rc-ref')).toHaveText('1:2');
+ await page.evaluate(()=>window.__recite.partial('الحمد لله'));await expect(page.locator('#rcLine .rc-live')).toHaveCount(1);
+ await page.evaluate(()=>window.__recite.commit('الحمد لله رب الكافرين الرحمن'));// 1:2 has 4 words; "العالمين" replaced
+ const st=await page.evaluate(()=>window.__recite.state());expect(Object.values(st.marks).filter(v=>v==='bad').length).toBeLessThanOrEqual(1);
+ await page.click('#rcMic');await page.locator('#recite .rc-x').click();await expect(page.locator('#recite')).toHaveCount(0)});
+test('practice help: no red flags for a correct recitation fed in small chunks',async({page})=>{
+ await page.addInitScript(()=>{window.__reciteFake=true});await page.goto('./#/surah/1');await page.waitForSelector('.ayah');await page.click('#recT');await page.click('#rcMic');
+ for(const s of ['بسم الله الرحمن الرحيم','الحمد لله رب','العالمين الرحمن الرحيم','مالك يوم الدين','اياك نعبد واياك نستعين','اهدنا الصراط المستقيم','صراط الذين انعمت عليهم غير المغضوب عليهم ولا الضالين'])await page.evaluate(t=>window.__recite.commit(t),s);
+ const st=await page.evaluate(()=>window.__recite.state());expect(Object.values(st.marks).filter(v=>v!=='ok')).toEqual([]);await expect(page.locator('#rcLine')).toContainText('Surah complete')});

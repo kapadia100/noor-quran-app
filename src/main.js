@@ -128,6 +128,7 @@ async function transFor(n,ed=S.trans){if(BUNDLED.includes(ed))return bundledTr(n
 async function transJuz(n){const rs=juzRanges(n);const parts=await Promise.all(rs.map(([s])=>transFor(s)));return {edition:parts[0].edition,fallback:parts.some(p=>p.fallback),parts}}
 
 // Long surahs render progressively (CHUNK ayahs at a time, more appended as you scroll) so Al-Baqara opens instantly.
+let RC=null;addEventListener('hashchange',()=>RC?.close());
 const CHUNK=30;let hifzCfg=null,hifzPos=null;
 function startHifz(c){hifzCfg=c;hifzPos={a:c.from,c:0,r:0};S.continuous=true;playPos(c.s,c.from-1,false);toast(S.ui==='ur'?'حفظ سیشن شروع':`Hifz: ${c.s}:${c.from}-${c.to} · ×${c.each} each · range ×${c.range}`)}
 async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return}loading();F.markRead();
@@ -138,7 +139,7 @@ async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return
   return `<article class="ayah ${F.isMemorised(ref)?'mem':''}" id="a${i+1}"><div class="tools"><span class="badge">${ref}</span><button data-play="${i}" aria-label="Play from ${ref}">▶</button><button data-taf="${ref}" aria-label="${t('tafsir')} ${ref}">${I_('tafsir')}</button><button data-bm="${ref}" aria-label="Bookmark ${ref}">${bm.some(b=>b.ref===ref)?'★':'☆'}</button><button data-note="${ref}" aria-label="Note ${ref}" class="${notes[ref]?'has':''}">${I_('notes')}</button><button data-share="${i}" aria-label="Share ${ref}">${I_('share')}</button><button data-mem="${ref}" aria-label="Memorised ${ref}">${F.isMemorised(ref)?'🧠':'○'}</button><button data-cp="${i}" aria-label="Copy ${ref}">⧉</button></div>
   <p class="ar" dir="rtl" lang="ar">${w?w.map((x,k)=>`<span class="w" data-w="${i+1}.${k}">${esc(x.t)}</span>`).join(' '):esc(txts[i])} <span class="end">﴿${(i+1).toLocaleString('ar-EG')}﴾</span></p><p class="tr ${isUr?'ur':''}" dir="${rtl?'rtl':'ltr'}" lang="${esc(tr.edition.language)}">${esc(tr.texts[i]??'')}</p>${notes[ref]?`<p class="note">${I_('notes')} ${esc(notes[ref].text)}</p>`:''}</article>`};
  app.innerHTML=`<div class="bar"><select id="tr" aria-label="${t('translation')}">${opt(trs,S.trans)}</select><select id="rc" aria-label="${t('reciter')}">${opt(recs,S.reciter)}</select><button class="btn" id="playAll">▶ ${t('play')}</button></div>
- <div class="bar"><button class="btn ${S.wbw?'on':''}" id="wbwT" aria-pressed="${!!S.wbw}">${I_('letters')} ${S.ui==='ur'?'لفظ بہ لفظ':'Word by word'}</button><button class="btn ${S.hifzHide?'on':''}" id="hideT" aria-pressed="${!!S.hifzHide}">${I_('eyeoff')} ${S.ui==='ur'?'متن چھپائیں':'Hide text'}</button><a class="btn" href="#/mushaf/${F.pageFor(n,+start||1)||''}" id="toMushaf">${I_('mushaf')} Mushaf</a><a class="btn" href="#/hifz">${I_('hifz')} Hifz</a></div>
+ <div class="bar"><button class="btn ${S.wbw?'on':''}" id="wbwT" aria-pressed="${!!S.wbw}">${I_('letters')} ${S.ui==='ur'?'لفظ بہ لفظ':'Word by word'}</button><button class="btn ${S.hifzHide?'on':''}" id="hideT" aria-pressed="${!!S.hifzHide}">${I_('eyeoff')} ${S.ui==='ur'?'متن چھپائیں':'Hide text'}</button><a class="btn" href="#/mushaf/${F.pageFor(n,+start||1)||''}" id="toMushaf">${I_('mushaf')} Mushaf</a><a class="btn" href="#/hifz">${I_('hifz')} Hifz</a><button class="btn" id="recT">🎙 ${S.ui==='ur'?'مشق میں مدد':'Practice help'}</button></div>
  ${audioBar('r')}
  ${tr.fallback?`<p class="card muted">${t('offlineTr')}</p>`:''}
  <div class="head"><div class="ar big">${esc(meta.name)}</div><small>${esc(meta.englishNameTranslation)} · ${meta.numberOfAyahs} ${t('ayahs')}</small>${n!=1&&n!=9?'<div class="ar bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>':''}</div>
@@ -157,6 +158,8 @@ async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return
  $('#wbwT').onclick=e=>{S.wbw=!S.wbw;save();e.currentTarget.classList.toggle('on',S.wbw);e.currentTarget.setAttribute('aria-pressed',S.wbw);if(S.wbw)loadW();else{words=null;redraw()}};
  $('#hideT').onclick=e=>{S.hifzHide=!S.hifzHide;save();e.currentTarget.classList.toggle('on',S.hifzHide);box.classList.toggle('hide-ar',S.hifzHide)};
  if(S.wbw)loadW();
+ $('#recT').onclick=async()=>{const b=$('#recT');b.disabled=true;try{if(cur)stop();const [R,w]=await Promise.all([import('./recite.js'),words?Promise.resolve(words):F.wbw(n).catch(()=>null)]);RC=R;
+  R.open(n,lastVisible(n)||+start||1,{words:w,txts,ayahUrl:a=>arUrls(n).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite')})}catch{toast(t('err'))}finally{b.disabled=false}};
  app.onclick=e=>{const wEl=e.target.closest('.w');if(wEl&&words){const [a,k]=wEl.dataset.w.split('.').map(Number);const w=words[a][k];document.querySelectorAll('.w.on').forEach(x=>x.classList.remove('on'));wEl.classList.add('on');
    let tip=$('#wtip');if(!tip){tip=document.createElement('div');tip.id='wtip';tip.setAttribute('role','status');document.body.append(tip)}tip.innerHTML=`<span class="ar">${esc(w.t)}</span> <i>${esc(w.tr)}</i><br><b>${esc(w.m)}</b>`;tip.hidden=false;clearTimeout(tip._t);tip._t=setTimeout(()=>tip.hidden=true,4000);if(w.au)playUrl(w.au,'',true);return}
   const arP=e.target.closest('.hide-ar .ar');if(arP){arP.classList.toggle('peek');return}
