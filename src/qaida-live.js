@@ -72,7 +72,7 @@ export function createLive(o){
   /** Test / non-mic feed. */
   feed(raw){const cond=check?new Float32Array(raw):raw;ingest(raw,cond)},
   async start(){
-   if(typeof window!=='undefined'&&window.__qFake){S.fake=true;o.onStatus?.('listen');return{ok:true}}
+   if(typeof window!=='undefined'&&window.__qFake){S.fake=true;try{await ensureVad();S.pace=mkPace()}catch{}o.onStatus?.('listen');return{ok:true}}
    if(!navigator.mediaDevices?.getUserMedia)return{ok:false,err:'nomic'};
    // iOS Safari only unlocks audio inside the tap: create + resume the AudioContext first, before any await (model download, permission prompt).
    const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();ac.resume?.().catch(()=>{});

@@ -18,7 +18,7 @@ export function wordForms(w,prev='',next=''){const f=new Set([w]);
  if(w.length>=4&&w.endsWith('ه')){f.add(w.slice(0,-1)+'ت')}// ta marbuta: -h at a pause, -t when joined
  if(w.startsWith('ال')&&w.length>=4){f.add(w.slice(1));// hamzat al-wasl dropped: (...)l-
   if(SHAMS.has(w[2]))f.add('ا'+w.slice(2)),f.add(w.slice(2));// lam shamsiyya assimilates: ar-Rahman -> ar-rahman
-  else f.add(w.slice(2))}
+  }// (a moon-letter lam is always pronounced, so the whole al- is never dropped)
  else if(prev&&w.length>=4&&w[0]==='ا')f.add(w.slice(1));// other hamzat al-wasl (ibn, ism, ithnan, ...)
  if(w.length>=2&&w.endsWith('ن')&&next&&(IDGH.has(next[0])||next[0]==='ب')){if(next[0]==='ب')f.add(w.slice(0,-1)+'م');else f.add(w.slice(0,-1)),f.add(w.slice(0,-1)+next[0])}// idgham / iqlab: the nun is absorbed or becomes a meem
  if(next&&next.startsWith('ال')&&w.length>=3&&LONG.has(w[w.length-1]))f.add(w.slice(0,-1));// long vowel shortens before a wasl word

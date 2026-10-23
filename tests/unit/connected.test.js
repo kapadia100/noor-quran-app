@@ -18,4 +18,8 @@ describe('connected recitation (wasl, idgham, ikhfa, iqlab, lam shamsiyya, hamza
  it('a skipped word is not accepted as fully OK',()=>{let n=0,bad=0;
   for(const c of C){const {E,H}=prep(c);if(H.length<3)continue;const h=H.filter((_,i)=>i!==1);const r=judge(E,h);n++;if(allOk(E,r))bad++}
   expect(n).toBeGreaterThan(20);expect(bad).toBe(0)});
+ it('a different word that only resembles a moon-letter al- word is never accepted (alif-lam is not dropped wholesale)',()=>{
+  const E='الحمد لله رب العالمين الرحمن الرحيم'.split(' ').map(norm);
+  const r=judge(E,'الحمد لله رب عليم الرحمن الرحيم'.split(' ').map(norm));
+  expect(r.marks[3].st).not.toBe('ok');expect(r.marks.some(m=>m.st==='wrong'||m.st==='skip')).toBe(false)});
 });

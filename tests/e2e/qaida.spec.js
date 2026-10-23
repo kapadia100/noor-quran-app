@@ -105,11 +105,19 @@ test('word rows are checked: confirmed words go green with a tick, others stay n
  await page.click('#qlStop');await expect(page.locator('#qlSum')).toContainText('2 of');await expect(page.locator('#qlSum .q-ch2')).toHaveCount(await page.locator('.q-word.q-nc').count());await expect(page.locator('#qlSum')).toContainText(/not confirmed/i);
  const P=await page.evaluate(()=>JSON.parse(localStorage.qsQaida));expect(Object.keys(P.lessons.practice.got)).toHaveLength(2)});
 
-test('follow-along driven by real audio samples: bursts advance, silence and a 5 ms click do not',async({page})=>{
+test('follow-along driven by real recorded speech: reading advances, silence, room noise, a tone and a 5 ms click do not',async({page})=>{
+ // v3.3.0: the pace follower needs a VOICE (voice model), so synthetic tones no longer count; real recorded clips do.
+ const {reading,noiseBed,SR}=await import('../unit/audio-fixtures.js');
+ const read=Array.from(reading(4,{gap:0.6,gain:0.3}));
+ const quiet=Array.from(noiseBed(SR*3,0.003));
+ const tone=Array.from({length:Math.round(SR*.35)},(_,i)=>0.25*Math.sin(2*Math.PI*230*i/SR));
+ const click=Array.from({length:80},(_,i)=>0.4*Math.sin(i));
  await fakeMic(page);await page.goto('./#/qaida/huroof');await page.click('.q-lbtn');
- const pos=await page.evaluate(()=>{const L=window.__qlive,SR=16000;let s=3;const r=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296-.5};
-  const push=(n,f)=>{const x=new Float32Array(n);for(let i=0;i<n;i++)x[i]=r()*0.003+(f?f(i):0);for(let i=0;i<n;i+=1600)L.feed(x.subarray(i,i+1600))};
-  const tone=n=>i=>0.25*Math.min(1,i/300,(n-i)/300)*Math.sin(2*Math.PI*230*i/SR);
-  push(SR*1.2);const out=[];for(let k=0;k<5;k++){push(Math.round(SR*.35),tone(Math.round(SR*.35)));push(Math.round(SR*.4));out.push(L.pos)}
-  push(SR*3);out.push(L.pos);push(80,i=>0.4*Math.sin(i));push(SR*1);out.push(L.pos);return out});
- expect(pos).toEqual([1,2,3,4,5,5,5])});
+ await expect.poll(()=>page.evaluate(()=>!!window.__qlive?.feed)).toBe(true);
+ const pos=await page.evaluate(async({read,quiet,tone,click})=>{const L=window.__qlive;const out=[];
+  const push=a=>{const x=Float32Array.from(a);for(let i=0;i<x.length;i+=1600)L.feed(x.subarray(i,i+1600))};
+  push(quiet);out.push(L.pos);push(tone);push(quiet);out.push(L.pos);push(click);push(quiet);out.push(L.pos);
+  push(read);out.push(L.pos);push(quiet);push(click);push(quiet);out.push(L.pos);return out},{read,quiet,tone,click});
+ expect(pos.slice(0,3)).toEqual([0,0,0]); // silence, a 230 Hz tone, a click: nothing
+ expect(pos[3]).toBeGreaterThanOrEqual(3);expect(pos[3]).toBeLessThanOrEqual(4); // 4 real spoken items: 3-4 counted, never more
+ expect(pos[4]).toBe(pos[3])}); // silence + a click afterwards: unchanged

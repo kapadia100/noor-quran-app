@@ -34,7 +34,7 @@ export function recoverRun(st,flat,cur,cfg=RECOVER){
  return to-from>=cfg.minRun?{from,to}:null}
 export const START_N=3,START_S=0.85;const flatLen=(f,p,n)=>{let c=0;for(let q=p;q<p+n;q++)c+=(f[q]||'').length;return c};
 export class Tracker{
- constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[];this.verified=false;this.startN=START_N}
+ constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[];this.verified=false;this.startN=globalThis.__startN??START_N}
  // decode from just before the last locked word so it is heard in full and serves as a strong left context
  get winStart(){return this.p>0?Math.max(0,this.lockedStart-(+globalThis.__WPAD||0.2)):0}
  /** H: [{w: normalized word, t0, t1}] (absolute seconds). Returns list of events [{type:'lock'|'prov', i, st}] */
@@ -50,12 +50,6 @@ export class Tracker{
    if(m&&m.st==='ok'){prov[cur]=1;cur++;continue}
    const r=recoverRun(st,this.flat,cur);if(r){for(let q=r.from;q<r.to;q++)prov[q]=1;cur=r.to;continue}
    break}
-  // START VERIFICATION: nothing is painted or locked until the first words of a session are confirmed by a short
-  // CONTIGUOUS run of strong matches. A single or two lookalike words (English "ism wallah" ~ "bismi llah") can be hit by
-  // chance by unrelated speech; three strong consecutive words cannot (measured: see docs). A reciter who really reads gets
-  // the same greens a moment later, all at once.
-  if(!this.verified){let run=0,sum=0;for(let q=this.p;st[q]&&st[q].st==='ok';q++){run++;sum+=st[q].s??1}
-   if((run>=this.startN&&sum/run>=START_S)||(run>=2&&sum/run>=0.99&&flatLen(this.flat,this.p,run)>=7))this.verified=true;else{this.prov={};this.cursor=this.p;return ev}}
   this.prov=prov;this.cursor=cur;
   // streaks
   const upd=(S,pred)=>{for(const k of Object.keys(S))if(!pred(+k))delete S[k]};
@@ -66,6 +60,12 @@ export class Tracker{
    else this.sUnc[i]=(this.sUnc[i]||0)+1}
   // fix sBad stored mixed shapes
   for(const k of Object.keys(this.sBad)){if(typeof this.sBad[k]==='number')this.sBad[k]={st:st[k].st,n:this.sBad[k]}}
+  // START VERIFICATION: nothing is painted or locked until the first words of a session are confirmed by a short
+  // CONTIGUOUS run of strong matches. A single or two lookalike words (English "ism wallah" ~ "bismi llah") can be hit by
+  // chance by unrelated speech; three strong consecutive words cannot (measured: see docs). A reciter who really reads gets
+  // the same greens a moment later, all at once.
+  if(!this.verified){let run=0,sum=0;for(let q=this.p;st[q]&&st[q].st==='ok';q++){run++;sum+=st[q].s??1}
+   if((run>=this.startN&&sum/run>=START_S)||(run>=2&&sum/run>=0.99&&flatLen(this.flat,this.p,run)>=7))this.verified=true;else{this.prov={};this.cursor=this.p;return ev}}
   // sequential locking
   for(;;){const i=this.p,m=st[i];if(!m)break;let lock=null;
    if(m.st==='ok'&&this.sOk[i]>=LOCK_OK)lock='ok';

@@ -58,7 +58,7 @@ test('pronunciation drill: tips are shown in Urdu when the app is in Urdu',async
  await expect(page.locator('#rcTips')).toContainText('حلق');await expect(page.locator('#rcTips')).not.toContainText('Middle of the throat')});
 
 test('stuck help: a quiet stall plays the expected word once, shows it, never counts as a miss, and re-arms after progress',async({page})=>{
- await page.addInitScript(()=>{window.__stuckMs=500;window.__stuckFirst=0});
+ await page.addInitScript(()=>{window.__stuckMs=500;window.__stuckFirst=0;window.__startN=1}); // single injected words must count here (start verification is covered by unit tests)
  await open(page);
  await expect(page.locator('#rcHelpCard')).toBeVisible();await expect(page.locator('#rcHelpCard .rc-hw')).toContainText(/ب.*س.*م/s);await expect(page.locator('#rcHelpCard .rc-ft')).not.toBeEmpty();
  await expect(page.locator('#rcLine .rc-hl')).toHaveCount(1);
