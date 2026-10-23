@@ -4,6 +4,7 @@ import * as PR from './prayer.js';
 import * as I from './icons.js';
 import * as GC from './analytics.js';
 import {weakLoad,dueItems} from './coach.js';
+import {progressPage} from './progress-page.js';
 const I_=I.icon;
 const {esc,ymd}=L;
 let C,PAGES=null;export const init=ctx=>{C=ctx;X('pages.json').then(p=>PAGES=p).catch(()=>{})};
@@ -65,11 +66,13 @@ const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))re
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
 const MORE_EXTRA=[['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+export const progress=()=>progressPage(C,tt,ur,I);
 export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=Object.keys(W).length,nD=dueItems(W).length;
  const row=(href,ic,en,u,sub,id)=>`<a class="mrc-row" href="${href}" id="${id}"><span class="mi">${ic}</span><span class="mt"><b>${tt(en,u)}</b><small>${sub}</small></span><span class="go">›</span></a>`;
  app().innerHTML=`<section class="dsec"><div class="mrc" id="moreRecite"><div class="mrc-h"><span class="ti">${I.icon('tutor')}</span><div><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Your live Quran tutor','آپ کا لائیو قرآنی ٹیوٹر')}</small></div></div>
   ${row('#/recite',I.icon('tutor'),'Recite & Learn','تلاوت اور سیکھیں',tt('Pick a surah and start reciting','سورت منتخب کریں اور تلاوت شروع کریں'),'mrcPick')}
   ${row('#/recite/review',I.icon('star'),'Review weak words','کمزور الفاظ کی دہرائی',nW?tt(`${nW} saved · ${nD} due now`,`${nW} محفوظ · ${nD} ابھی تیار`):tt('None yet — missed words appear here','ابھی کوئی نہیں — غلط الفاظ یہاں آئیں گے'),'mrcReview')}
+  ${row('#/progress',I.icon('star'),'My progress','میری پیش رفت',tt('Streak, accuracy per surah, weak letters','سلسلہ، سورت وار درستی، کمزور حروف'),'mrcProg')}
   <button class="mrc-row" id="mrcDrill" ${nW?'':'disabled'}><span class="mi">${I.icon('play')}</span><span class="mt"><b>${tt('Practice weak words (drill)','کمزور الفاظ کی مشق (ڈرل)')}</b><small>${nW?tt('Hear each word, then repeat it','ہر لفظ سنیں، پھر دہرائیں'):tt('Available once you have weak words','کمزور الفاظ ہونے پر دستیاب')}</small></span><span class="go">›</span></button>
   <details class="mrc-how" id="mrcHow"><summary><span class="mi">${I.icon('help')}</span><span class="mt"><b>${tt('Stuck help & pronunciation drill','اٹکنے پر مدد اور تلفظ کی مشق')}</b><small>${tt('How it works','یہ کیسے کام کرتا ہے')}</small></span><span class="go">⌄</span></summary>
    <p><b>${tt('Stuck help.','اٹکنے پر مدد۔')}</b> ${tt('Pause for about 3–4 seconds on the next word, or tap ❓ Help any time. The tutor plays that word, highlights it with its transliteration, then keeps listening. It never counts as a miss and plays once per pause.','اگلے لفظ پر تقریباً 3–4 سیکنڈ رکیں، یا کسی بھی وقت ❓ مدد دبائیں۔ ٹیوٹر وہ لفظ سناتا ہے، تلفظ کے ساتھ نمایاں کرتا ہے اور پھر سنتا رہتا ہے۔ یہ غلطی میں شمار نہیں ہوتا اور ہر وقفے پر ایک بار چلتا ہے۔')}</p>

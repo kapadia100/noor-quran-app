@@ -12,8 +12,8 @@ async function load(base){core=await import('./ctc-core.js');ort=await import(ba
  sess=await ort.InferenceSession.create(bytes,{executionProviders:['wasm'],graphOptimizationLevel:'all'})}
 self.onmessage=async e=>{const m=e.data;
  if(m.type==='load'){try{loading??=load(m.base);await loading;postMessage({type:'ready'})}catch(err){loading=null;postMessage({type:'error',message:String(err?.message||err)})}return}
- if(m.type==='run'){const t0=performance.now();let words=[];
+ if(m.type==='run'){const t0=performance.now();let words=[],lpOut=null,T=0;
   try{if(m.audio.length>=6400){const fb=core.fbank(m.audio);
    const o=await sess.run({x:new ort.Tensor('float32',fb.data,[1,fb.T,80]),x_lens:new ort.Tensor('int64',BigInt64Array.from([BigInt(fb.T)]),[1])});
-   const lp=o.log_probs;words=core.heardWords(core.greedy(lp.data,lp.dims[1]).chars).map(x=>({s:x.s,t0:x.t0,t1:x.t1}))}}catch(err){postMessage({type:'error',message:String(err?.message||err)});words=[]}
-  postMessage({type:'run',id:m.id,words,ms:Math.round(performance.now()-t0)})}};
+   const lp=o.log_probs;words=core.heardWords(core.greedy(lp.data,lp.dims[1]).chars).map(x=>({s:x.s,t0:x.t0,t1:x.t1}));lpOut=new Float32Array(lp.data);T=lp.dims[1]}}catch(err){postMessage({type:'error',message:String(err?.message||err)});words=[]}
+  postMessage({type:'run',id:m.id,words,lp:lpOut,T,ms:Math.round(performance.now()-t0)},lpOut?[lpOut.buffer]:[])}};

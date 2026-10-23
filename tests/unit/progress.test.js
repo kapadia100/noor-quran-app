@@ -1,0 +1,20 @@
+import {describe,it,expect} from 'vitest';
+import * as P from '../../src/progress.js';
+const at=(d,h=12)=>new Date(2026,9,d,h).getTime();
+const mk=(ts,ok,bad=0,unc=0,sn=1)=>({ts,sn,from:1,to:3,ok,bad,unc});
+describe('progress',()=>{
+ it('ignores tiny sessions and caps history',()=>{const p=P.blank();expect(P.logSession(p,mk(1,1,1))).toBe(false);for(let i=0;i<450;i++)P.logSession(p,mk(i,5));expect(p.sess.length).toBe(P.MAX_SESS)});
+ it('accuracy',()=>{expect(P.accuracy({ok:9,bad:1,unc:0})).toBe(.9);expect(P.accuracy({ok:0,bad:0,unc:0})).toBeNull()});
+ it('streak counts consecutive days and tolerates "today not yet"',()=>{const p=P.blank();[20,21,22].forEach(d=>P.logSession(p,mk(at(d),5)));
+  expect(P.streak(p,at(22,20)).cur).toBe(3);expect(P.streak(p,at(23,9)).cur).toBe(3);expect(P.streak(p,at(23,9)).today).toBe(false);expect(P.streak(p,at(25)).cur).toBe(0)});
+ it('best streak survives a gap',()=>{const p=P.blank();[1,2,3,4,10,11].forEach(d=>P.logSession(p,mk(at(d),5)));const s=P.streak(p,at(11));expect(s.cur).toBe(2);expect(s.best).toBe(4)});
+ it('missedLetters finds the substituted/deleted letters',()=>{expect(P.missedLetters('الرحمن','الرحيم')).toEqual(['ن']);
+  expect(P.missedLetters('كتب','كتب')).toEqual([]);expect(P.missedLetters('سمع','سمغ')).toEqual(['ع']);expect(P.missedLetters('قلب','كلب')).toEqual(['ق']);expect(P.missedLetters('حمد','')).toEqual(['ح','م','د'])});
+ it('weak letters need repeated evidence',()=>{const p=P.blank();P.addSeen(p,['سمع','سمع','سمع','سمع','سمع','سمع','سمع']);P.addMistake(p,{ts:1,sn:1,a:1,t:1,nw:'سمع',type:'wrong',heard:'سمغ'});
+  expect(P.weakLetters(p)).toEqual([]);P.addMistake(p,{ts:2,sn:1,a:1,t:1,nw:'سمع',type:'wrong',heard:'سمغ'});const w=P.weakLetters(p);expect(w[0].ch).toBe('ع');expect(w[0].miss).toBe(2)});
+ it('skips do not blame letters',()=>{const p=P.blank();P.addMistake(p,{ts:1,sn:1,a:1,t:1,nw:'سمع',type:'skip',heard:''});expect(p.let).toEqual({});expect(p.mis.length).toBe(1)});
+ it('per-surah accuracy uses the last five sessions',()=>{const p=P.blank();for(let i=0;i<6;i++)P.logSession(p,mk(at(1+i),i===0?0:10,i===0?10:0,0,2));P.logSession(p,mk(at(9),5,5,0,3));
+  const b=P.bySurah(p);expect(b[0].sn).toBe(3);expect(b[0].acc).toBe(.5);expect(b.find(x=>x.sn===2).acc).toBe(1)});
+ it('load/save round-trips and survives corrupt data',()=>{const m={};const ls={getItem:k=>m[k]??null,setItem:(k,v)=>{m[k]=v}};const p=P.blank();P.logSession(p,mk(5,5));P.save(p,ls);expect(P.load(ls).sess.length).toBe(1);m[P.KEY]='{oops';expect(P.load(ls).sess).toEqual([])});
+ it('lastDays returns n buckets',()=>{const p=P.blank();P.logSession(p,mk(at(22),7));const d=P.lastDays(p,7,at(23));expect(d.length).toBe(7);expect(d[5].ok).toBe(7);expect(d[6].ok).toBe(0)});
+});
