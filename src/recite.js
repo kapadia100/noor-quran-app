@@ -5,7 +5,8 @@ import {norm} from './recite-core.js';
 import {Tracker} from './recite-live.js';
 import {esc} from './lib.js';
 import * as I from './icons.js';
-import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,ENCOURAGE,ESCALATE_AT} from './coach.js';
+import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,letters,ENCOURAGE,ESCALATE_AT} from './coach.js';
+import {TIPS,SHADDA_TIP,PLAIN_TIP,hardOf,trickyIn,hasShadda} from './tajweed.js';
 const SILENT='data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
 const MODEL_BASE='https://kapadia100.github.io/noor-quran-app/models/',MB=19;
 const SR=16000,HOP_MS=250,MAXWIN=10,FLAT_MAX=400;
@@ -26,7 +27,7 @@ function chip(kind,text){if(!panel)return;const c=$('#rcChip');c.className='rc-c
 export function review(items,ctx){if(ctx.gc)ctx.gc('feature-recite-review');open(0,1,{...ctx,txts:[],review:items})}
 
 /** Open the panel for surah n starting at ayah a. ctx: {words, txts, ayahUrl(a), event} */
-export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0};
+export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,pronEvt:false,helpEvt:false,helping:false,hseq:0,progAt:0,sig:'',stuckDone:false,helpI:-1,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0};
  for(let i=a;!ctx.review&&i<=ctx.txts.length&&st.flat.length<FLAT_MAX;i++){const w=ctx.words?.[i];const list=w?w.map(x=>({t:x.t,tr:x.tr,m:x.m,au:x.au})):ctx.txts[i-1].split(/\s+/).filter(x=>norm(x)).map(t=>({t}));
   list.forEach((x,k)=>st.flat.push({...x,a:i,k,n:norm(x.t)}))}
  st.flat=st.flat.filter(x=>x.n);st.T=new Tracker(st.flat.map(x=>x.n));
@@ -34,16 +35,18 @@ export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],en
  panel.innerHTML=`<div class="rc-h"><span class="rc-ic">${I.icon('tutor')}</span><div class="rc-t"><b>${L('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${L('Live tutor','لائیو ٹیوٹر')} · <span class="rc-ref"></span></small></div><button class="rc-x" aria-label="Close">✕</button></div>
  <div class="rc-line ar" dir="rtl" lang="ar" id="rcLine"></div>
  <div class="rc-nudge" id="rcNudge" hidden></div>
+ <div class="rc-help" id="rcHelpCard" hidden></div>
  <div class="rc-fix" id="rcFix" hidden></div>
  <div class="rc-sum" id="rcSum" hidden></div>
  <div class="rc-prog" hidden><div id="rcBar"></div></div>
  <div class="rc-chip" id="rcChip"><i></i><span></span></div>
  <div class="rc-lv" aria-hidden="true"><i id="rcLv"></i></div>
  <div class="rc-key"><span class="k-ok">${L('Correct','درست')}</span><span class="k-unc">${L('Unclear','غیر واضح')}</span><span class="k-bad">${L('Check','دیکھیں')}</span></div>
- <div class="bar rc-ctl"><button class="btn" id="rcDl" hidden>${L(`Download tutor (~${MB} MB, once)`,`ٹیوٹر ڈاؤن لوڈ کریں (~${MB} MB، ایک بار)`)}</button><button class="rc-mic" id="rcMic" disabled aria-label="Microphone">${I.icon('mic')}<span>${L('Start','شروع')}</span></button></div>
+ <div class="bar rc-ctl"><button class="btn" id="rcDl" hidden>${L(`Download tutor (~${MB} MB, once)`,`ٹیوٹر ڈاؤن لوڈ کریں (~${MB} MB، ایک بار)`)}</button><button class="rc-mic" id="rcMic" disabled aria-label="Microphone">${I.icon('mic')}<span>${L('Start','شروع')}</span></button><button class="btn rc-hb" id="rcHelp" aria-label="${L('Help, I am stuck','مدد، میں اٹک گیا')}">❓ ${L('Help · I’m stuck','مدد · اٹک گیا')}</button></div>
  <p class="rc-note muted">${L('Checks your words as you recite, not full tajweed. Your voice stays on your phone.','یہ الفاظ چیک کرتا ہے، مکمل تجوید نہیں۔ آپ کی آواز فون سے باہر نہیں جاتی۔')}</p>`;
  document.body.append(panel);$('.rc-x').onclick=close;paint();
- $('#rcMic').onclick=async()=>{if(st.listening){stopMic();endOrSummary();return}await startMic();if(!st||!st.listening)return;if(st.coach&&!st.coach.done)listen();else if(st.drill)drillNext()};
+ $('#rcHelp').onclick=()=>{unlockAudio();helpTap()};
+$('#rcMic').onclick=async()=>{if(st.listening){stopMic();endOrSummary();return}await startMic();if(!st||!st.listening)return;if(st.coach&&!st.coach.done)listen();else if(st.drill)drillNext()};
  if(st.drill){$('#rcLine').hidden=true;$('.rc-ref').textContent=L('Review','دہرائی');$('.rc-key').hidden=true}
  $('#rcDl').onclick=()=>{$('#rcDl').disabled=true;$('#rcBar').parentNode.hidden=false;load()};
  st.timer=setInterval(tick,100);
@@ -52,7 +55,7 @@ export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],en
  else if(localStorage.getItem('qsCtc')){$('#rcBar').parentNode.hidden=false;chip('load',L('Preparing tutor…','ٹیوٹر تیار ہو رہا ہے…'));load()}
  else{$('#rcDl').hidden=false;chip('info',L('First use downloads a small tutor once. After that it works from your phone.','پہلی بار ایک چھوٹا ٹیوٹر ڈاؤن لوڈ ہوگا، پھر یہ فون پر ہی چلے گا۔'))}}
 function load(){getWorker().postMessage({type:'load',base:localStorage.getItem('qsAsrBase')||MODEL_BASE})}
-export function close(){if(!st)return;pt++;try{st.player?.pause()}catch{/* ignore */}stopMic();clearInterval(st.timer);clearTimeout(st.nudge);clearTimeout(st.coach?.to);panel?.remove();panel=null;st=null;document.querySelectorAll('.ayah.reciting').forEach(e=>e.classList.remove('reciting'))}
+export function close(){if(!st)return;pt++;try{st.player?.pause()}catch{/* ignore */}stopMic();clearInterval(st.timer);clearTimeout(st.nudge);clearTimeout(st.coach?.to);st.hseq++;panel?.remove();panel=null;st=null;document.querySelectorAll('.ayah.reciting').forEach(e=>e.classList.remove('reciting'))}
 
 // ---------- word line ----------
 function wordClass(i){const T=st.T,m=T.marks[i];if(m)return 'rc-'+m+(st.fx?.[i]?' rc-fx':'');if(T.prov[i])return 'rc-live';return ''}
@@ -61,11 +64,11 @@ function paint(){if(!st||!panel||st.drill)return;const T=st.T,fl=st.flat;const c
  if(st.lineA!==cur.a){st.lineA=cur.a;$('.rc-ref').textContent=`${st.n}:${cur.a}`;
   $('#rcLine').innerHTML=fl.map((x,i)=>[x,i]).filter(([x])=>x.a===cur.a).map(([x,i])=>`<span class="rc-w" data-i="${i}">${esc(x.t)}</span>`).join(' ');
   document.querySelectorAll('.ayah.reciting').forEach(e=>e.classList.remove('reciting'));const el=document.getElementById('a'+cur.a);if(el){el.classList.add('reciting');el.scrollIntoView({block:'center',behavior:'smooth'})}}
- for(const s of panel.querySelectorAll('.rc-w')){const i=+s.dataset.i;const c=wordClass(i)+(i===ci&&!T.marks[i]&&!T.prov[i]?' rc-cur':'');if(s.dataset.c!==c){s.dataset.c=c;s.className='rc-w '+c}}}
+ for(const s of panel.querySelectorAll('.rc-w')){const i=+s.dataset.i;const c=wordClass(i)+(i===ci&&!T.marks[i]&&!T.prov[i]?' rc-cur':'')+(i===st.helpI?' rc-hl':'');if(s.dataset.c!==c){s.dataset.c=c;s.className='rc-w '+c}}}
 
 // ---------- microphone ----------
 async function startMic(){if(st.listening)return;st.ctx.event?.();unlockAudio();
- if(window.__reciteFake){st.listening=true;micUI();return}
+ if(window.__reciteFake){st.listening=true;armStuck(window.__stuckFirst??1500);micUI();return}
  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}})}
  catch{chip('warn',L('Microphone permission is needed. On iPhone: Settings › Safari › Microphone (or allow when asked).','مائیک کی اجازت درکار ہے۔'));return}
  const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();await ac.resume().catch(()=>{});
@@ -73,7 +76,7 @@ async function startMic(){if(st.listening)return;st.ctx.event?.();unlockAudio();
  st.mic={stream,ac,src,proc};
  proc.onaudioprocess=e=>{if(!st||!st.listening)return;const x=e.inputBuffer.getChannelData(0);const n=Math.floor(x.length/ratio),o=new Float32Array(n),w=Math.max(1,Math.round(ratio));
   for(let i=0;i<n;i++){const p=Math.floor(i*ratio);let s=0,c=0;for(let k=0;k<w&&p+k<x.length;k++){s+=x[p+k];c++}o[i]=c?s/c:0}ingest(o)};
- src.connect(proc);proc.connect(ac.destination);st.listening=true;micUI()}
+ src.connect(proc);proc.connect(ac.destination);st.listening=true;armStuck(1500);micUI()}
 function stopMic(){if(!st)return;if(st.mic){try{st.mic.proc.disconnect();st.mic.src.disconnect();st.mic.stream.getTracks().forEach(t=>t.stop());st.mic.ac.close()}catch{/* ignore */}st.mic=null}
  st.listening=false;st.lvl=0;if(panel){micUI();paint()}}
 function micUI(){const b=$('#rcMic');b.classList.toggle('on',st.listening);b.querySelector('span').textContent=st.listening?L('Stop','روکیں'):L('Start','شروع');b.setAttribute('aria-pressed',st.listening);
@@ -90,6 +93,7 @@ function tick(){if(!st||!panel)return;const t=st.end/SR;
  // level meter + state chip
  const lv=st.listening?st.lvl:0;$('#rcLv').style.transform=`scaleX(${lv.toFixed(3)})`;$('#rcMic').style.setProperty('--lv',lv.toFixed(3));st.lvl*=0.85;
  if(st.listening&&!st.hold&&!st.fixOpen){const hearing=t-st.lastVoice<0.5;if(hearing!==st.hearing){st.hearing=hearing;chip(hearing?'hear':'listen',hearing?L('Hearing you…','آپ کو سن رہا ہے…'):L('Listening — start reciting','سن رہا ہے — پڑھنا شروع کریں'))}}
+ stuckTick(t);
  if(!st.listening||st.busy||st.hold||!ready||window.__reciteFake)return;
  const now=performance.now();if(now-st.sent<HOP_MS)return;if(t-st.lastVoice>2.2)return; // nothing new to hear
  const s0=Math.max(st.T.winStart,st.cut/SR,t-MAXWIN);if(t-s0<0.5)return;
@@ -135,22 +139,30 @@ function nudge(i){const t=targetOf(i),el=$('#rcNudge');el.hidden=false;
  $('#nRep').onclick=()=>coachStart(t,'unc');clearTimeout(st.nudge);st.nudge=setTimeout(hideNudge,7000)}
 function hideNudge(){clearTimeout(st?.nudge);if(panel)$('#rcNudge').hidden=true}
 function setSay(text,cls=''){const e=panel&&$('#rcSay');if(e){e.textContent=text;e.className='rc-say '+cls}}
-function coachStart(t,kind,why){st.gen++;st.hold=true;st.fixOpen=true;hideNudge();$('#rcSum').hidden=true;
+function coachStart(t,kind,why){st.gen++;st.hold=true;st.fixOpen=true;hideNudge();hideHelp();$('#rcSum').hidden=true;
  const c=st.coach={t,kind,why,tries:0,esc:false,voiced:false,seq:0,done:false,sy:syllables(t.t)};c.sw=syllWeights(c.sy);
  if(!st.coachEvt){st.coachEvt=true;st.ctx.gc?.('feature-recite-coach')}
  const box=$('#rcFix');box.hidden=false;box.className='rc-fix rc-coach'+(kind==='unc'?' soft':'');
  const head=kind==='bad'?(why==='skip'?L('Missed word','چھوٹا ہوا لفظ'):L('Let’s fix this word','آئیں اس لفظ کو درست کریں')):kind==='unc'?L('Say it once more','ایک بار پھر کہیں'):L('Practice','مشق');
  box.innerHTML=`<div class="rc-fh">${head} · ${t.sn}:${t.a}</div><div class="ar rc-bigw" dir="rtl" lang="ar">${esc(t.t)}</div>
  <div class="rc-syl ar" id="rcSyl" dir="rtl" lang="ar" hidden>${c.sy.map(s=>`<span>${esc(s)}</span>`).join('')}</div>
+<div class="rc-let ar" id="rcLet" dir="rtl" lang="ar" hidden>${letters(t.t).map(u=>`<span class="${hardOf(u)?'hard':''}">${esc(u)}</span>`).join('')}</div>
  ${t.tr?`<div class="rc-ft"><i>${esc(t.tr)}</i>${t.m?` · ${esc(t.m)}`:''}</div>`:''}
  <div class="rc-phr ar" id="rcPhr" dir="rtl" lang="ar" hidden>${(t.ph||[]).map((x,j)=>`<span class="${j===t.pi?'me':''}">${esc(x.t)}</span>`).join(' ')}</div>
  <div class="rc-say" id="rcSay" role="status" aria-live="polite"></div>
- <div class="bar rc-cb"><button class="btn" id="cHear">▶ ${L('Hear','سنیں')}</button><button class="btn" id="cSlow">${L('Slow','آہستہ')}</button><button class="btn" id="cPhr">${L('In phrase','جملے میں')}</button><button class="btn ghost" id="cSkip">${L('Skip for now','ابھی چھوڑیں')}</button></div>`;
+ <div class="bar rc-cb"><button class="btn" id="cHear">▶ ${L('Hear','سنیں')}</button><button class="btn" id="cSlow">${L('Slow','آہستہ')}</button><button class="btn" id="cPhr">${L('In phrase','جملے میں')}</button><button class="btn ghost" id="cSkip">${L('Skip for now','ابھی چھوڑیں')}</button></div>
+<div class="rc-tips" id="rcTips" hidden></div>`;
  $('#cHear').onclick=()=>act('hear');$('#cSlow').onclick=()=>act('slow');$('#cPhr').onclick=()=>act('phrase');$('#cSkip').onclick=coachSkip;
  const esc2=kind==='bad'&&(st.miss[t.key]||0)>=ESCALATE_AT;
- if(esc2){c.esc=true;act('esc',L('You have missed this word a few times — let’s go step by step.','یہ لفظ کئی بار غلط ہوا — چلیں قدم بہ قدم سیکھیں۔'))}else act('hear',kind==='drill'?L('Listen…','سنیں…'):L('Listen to the correct word…','درست لفظ سنیں…'))}
+ if(esc2){c.esc=true;act('pron',L('Let’s practise just the sound of this word.','آئیں صرف اس لفظ کی آواز کی مشق کریں۔'))}else act('hear',kind==='drill'?L('Listen…','سنیں…'):L('Listen to the correct word…','درست لفظ سنیں…'))}
 function hl(f){const r=panel&&$('#rcSyl');if(!r||!st.coach)return;const k=f<0?-1:syllAt(st.coach.sw,f);[...r.children].forEach((e,i)=>e.classList.toggle('on',i===k))}
 function showSyl(){const r=$('#rcSyl');if(r)r.hidden=false;$('#rcFix')?.classList.add('syl')}
+/** Pronunciation-only drill view: syllables + letters with harakat, transliteration, and plain makhraj tips for the tricky letters. */
+function showPron(){const c=st.coach;showSyl();$('#rcFix').classList.add('pron');const l=$('#rcLet');if(l)l.hidden=false;const el=$('#rcTips');if(!el||!c)return;
+ const u=ur()?1:0,tl=trickyIn(c.t.t),h=tl.map(b=>{const x=TIPS[b];return `<div class="rc-tip"><span class="ar rc-tl" dir="rtl" lang="ar">${b}</span><div><b>${esc(x.n[u])}</b> · <small>${esc(x.p[u])}</small><p>${esc(x.e[u])}</p></div></div>`});
+ if(hasShadda(c.t.t))h.push(`<div class="rc-tip"><span class="ar rc-tl" dir="rtl" lang="ar">◌ّ</span><div><p>${esc(SHADDA_TIP[u])}</p></div></div>`);
+ if(!h.length)h.push(`<div class="rc-tip"><span class="rc-tl">✓</span><div><p>${esc(PLAIN_TIP[u])}</p></div></div>`);
+ el.innerHTML=`<div class="rc-tips-h">${L('Sound tips','آواز کے مشورے')}</div>${h.join('')}`;el.hidden=false}
 function showPhrase(){const r=$('#rcPhr');if(r)r.hidden=false}
 function hlPhrase(j){const r=panel&&$('#rcPhr');if(r)[...r.children].forEach((e,i)=>e.classList.toggle('cur',i===j))}
 /** One coaching action: play (cancelling anything else), then go back to listening for his repeat. */
@@ -160,12 +172,12 @@ async function act(kind,pre){const c=st.coach;if(!c||c.done)return;const my=++c.
  if(kind==='hear')r=await playWord(t);
  else if(kind==='slow'){showSyl();r=await playWord(t,{rate:SYL_RATE,onTick:hl});hl(-1)}
  else if(kind==='phrase'){showPhrase();r=await playPhrase(t,hlPhrase);hlPhrase(-1)}
- else if(kind==='esc'){showSyl();showPhrase();r=await playWord(t,{rate:SYL_RATE,onTick:hl});hl(-1);if(gone())return;
-  if(r!=='blocked'){setSay(L('Now the word inside its phrase.','اب لفظ جملے میں سنیں۔'),'play');r=await playPhrase(t,hlPhrase);hlPhrase(-1);if(gone())return}
-  if(r!=='blocked'){setSay(L('Once more, normal speed.','ایک بار پھر، عام رفتار سے۔'),'play');r=await playWord(t)}}
+ else if(kind==='pron'){showPron();c.pron=true;if(!st.pronEvt){st.pronEvt=true;st.ctx.gc?.('feature-recite-pronounce')}
+  setSay(L('Slowly — watch each part.','آہستہ — ہر حصے کو دیکھیں۔'),'play');r=await playWord(t,{rate:SYL_RATE,onTick:hl});hl(-1);if(gone())return;
+  if(r!=='blocked'){setSay(L('Now at normal speed.','اب عام رفتار سے۔'),'play');r=await playWord(t)}}
  if(gone())return;
  if(r==='blocked')setSay(L('Tap ▶ Hear to listen, then say the word.','سننے کے لیے ▶ دبائیں، پھر لفظ کہیں۔'),'play');
- listen(r==='blocked'?null:(c.esc&&kind==='esc'?L('Now you try — take your time.','اب آپ کوشش کریں — آرام سے۔'):null))}
+ listen(r==='blocked'?null:(kind==='pron'?L('Now you try — take your time.','اب آپ کوشش کریں — آرام سے۔'):null))}
 function listen(msg){const c=st.coach;if(!c)return;c.voiced=false;st.gen++;st.cut=st.end;st.hold=false;setSay(msg||L('Now repeat the word','اب اس لفظ کو دہرائیں'),'say');chip('listen',L('Listening — repeat the word','سن رہا ہے — لفظ دہرائیں'))}
 /** Judge a repeat attempt. Success is instant; a miss only counts after he stopped speaking AND the heard word is clearly different. */
 function coachEval(heard,ended){const c=st.coach;if(!c||c.done||st.hold)return;const r=attempt(c.t.nw,heard);
@@ -176,7 +188,7 @@ function coachEval(heard,ended){const c=st.coach;if(!c||c.done||st.hold)return;c
  if(c.kind==='unc')return setSay(L('Try once more, or tap Skip.','ایک بار اور کوشش کریں یا چھوڑ دیں۔'),'say');
  c.tries++;const k=c.t.key;st.miss[k]=(st.miss[k]||0)+1;recMiss(st.weak,c.t);weakSave(st.weak);
  const enc=ENCOURAGE[(c.tries-1)%ENCOURAGE.length],msg=L(enc[0],enc[1]);
- if(st.miss[k]>=ESCALATE_AT&&!c.esc){c.esc=true;act('esc',L('Let’s slow down and learn it step by step.','آہستہ کریں اور قدم بہ قدم سیکھیں۔'))}else act(c.esc&&c.tries%2?'slow':'hear',msg)}
+ if(st.miss[k]>=ESCALATE_AT&&!c.esc){c.esc=true;act('pron',L('Let’s practise just the sound of this word.','آئیں صرف اس لفظ کی آواز کی مشق کریں۔'))}else act(c.esc&&c.tries%2?'pron':'hear',msg)}
 function coachWin(){const c=st.coach;if(!c||c.done)return;c.done=true;pt++;try{pl().pause()}catch{/* ignore */}st.hold=true;const k=c.t.key,t=c.t;
  if(c.kind==='bad'){st.fixed[k]=t;if(st.weak[k])recFix(st.weak,k);if(st.T.marks[t.i]==='bad'){st.T.marks[t.i]='ok';(st.fx??={})[t.i]=1}}
  else if(c.kind==='drill'){st.fixed[k]=t;st.drill.fixes++;if(st.weak[k]){if(st.drill.review)recFix(st.weak,k,Date.now(),true);else recFix(st.weak,k)}}
@@ -188,13 +200,35 @@ function coachSkip(){const c=st.coach;if(!c||c.done)return;c.done=true;pt++;try{
 function coachEnd(){if(!st||!st.coach)return;st.coach=null;st.fixOpen=false;st.gen++;const box=$('#rcFix');box.hidden=true;box.classList.remove('win');
  if(st.drill)return drillNext();
  const q=st.queue.shift();if(q)return coachStart(q.t,'bad',q.kind);
- st.hold=false;st.cut=st.end;paint();if(st.listening)chip('listen',L('Continue from the next word.','اگلے لفظ سے جاری رکھیں۔'));else if(ready)chip('ready',readyMsg())}
+ st.hold=false;st.cut=st.end;armStuck(1500);paint();if(st.listening)chip('listen',L('Continue from the next word.','اگلے لفظ سے جاری رکھیں۔'));else if(ready)chip('ready',readyMsg())}
+// ---------- stuck help: gentle, never a miss ----------
+const STUCK_MS=3500,sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function armStuck(extra=0){if(!st)return;st.progAt=performance.now()+extra;st.stuckDone=false;st.sig=sigOf()}
+const sigOf=()=>`${st.T.cursor}:${Object.keys(st.T.prov).length}:${Object.keys(st.T.marks).length}`;
+/** Called every 100 ms: progress re-arms; a quiet stall of ~3.5 s plays the expected word once. */
+function stuckTick(t){if(!st.listening||st.hold||st.coach||st.fixOpen||st.helping||st.drill)return;const now=performance.now(),g=sigOf();
+ if(g!==st.sig){st.sig=g;st.progAt=now;st.stuckDone=false;if(st.helpI>=0)hideHelp();return}
+ if(st.stuckDone||!ready&&!window.__reciteFake)return;
+ if(now-st.progAt>=(window.__stuckMs||STUCK_MS)&&t-st.lastVoice>0.8&&!st.busy&&$('#rcSum').hidden)stuckHelp('auto')}
+function hideHelp(){if(!st)return;st.hseq++;st.helping=false;st.helpI=-1;if(panel){$('#rcHelpCard').hidden=true;paint()}}
+function helpTap(){if(!st)return;if(st.coach&&!st.coach.done){act('hear');return}if(st.drill||!$('#rcSum').hidden)return;stuckHelp('tap')}
+async function stuckHelp(src){if(!st||st.coach||st.helping||st.T.cursor>=st.flat.length)return;const i=st.T.cursor,t=targetOf(i),my=++st.hseq;
+ st.helping=true;st.stuckDone=true;st.helpI=i;hideNudge();if(!st.helpEvt){st.helpEvt=true;st.ctx.gc?.('feature-recite-stuck')}
+ const card=$('#rcHelpCard');card.hidden=false;
+ card.innerHTML=`<button class="rc-hx" id="hX" aria-label="Close">✕</button><div class="rc-hh">${src==='tap'?L('Here is the next word','اگلا لفظ یہ ہے'):L('Stuck? Here is the next word','اٹک گئے؟ اگلا لفظ یہ ہے')}</div><div class="ar rc-hw" dir="rtl" lang="ar">${esc(t.t)}</div>${t.tr?`<div class="rc-ft"><i>${esc(t.tr)}</i>${t.m?` · ${esc(t.m)}`:''}</div>`:''}<div class="rc-hs" id="hS" role="status" aria-live="polite"></div><div class="bar"><button class="btn" id="hHear">▶ ${L('Hear again','دوبارہ سنیں')}</button></div>`;
+ $('#hX').onclick=()=>{hideHelp();pt++;try{pl().pause()}catch{/* ignore */}st.hold=false};$('#hHear').onclick=()=>{unlockAudio();st.helping=false;stuckHelp('tap')};
+ const say=x=>{const e=panel&&$('#hS');if(e)e.textContent=x};
+ paint();st.hold=true;pt++;try{pl().pause()}catch{/* ignore */}chip('hear',L('Playing the next word…','اگلا لفظ چل رہا ہے…'));say(L('Listen…','سنیں…'));
+ const r=await playWord(t);if(!st||st.hseq!==my)return;
+ if(r==='blocked')say(L('Tap ▶ to hear it, then say it.','سننے کے لیے ▶ دبائیں، پھر کہیں۔'));else say(L('Now say it — I am listening.','اب آپ کہیں — میں سن رہا ہوں۔'));
+ if(!window.__reciteFake)await sleep(350);if(!st||st.hseq!==my)return;
+ st.helping=false;st.hold=false;st.progAt=performance.now();if(st.listening)chip('listen',L('Listening — say the word','سن رہا ہے — لفظ کہیں'))}
 // ---------- practice drill + end-of-session summary ----------
 function drillNext(){const d=st.drill;if(!d)return;if(d.idx>=d.items.length){stopMic();showSummary(true);return}
  const e=d.items[d.idx++];$('.rc-ref').textContent=`${d.idx}/${d.items.length}`;
  coachStart({...e,nw:e.nw||norm(e.t),ph:e.ph||[],cn:e.cn||[],ci:e.ci||0,pi:e.pi||0},'drill')}
 function endOrSummary(){if(!st||st.coach)return;if(st.drill){if(st.drill.idx>0)showSummary(false);return}if(Object.keys(st.flagged).length)showSummary(false)}
-function showSummary(final){hideNudge();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const d=st.drill;
+function showSummary(final){hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const d=st.drill;
  const fl=Object.values(st.flagged).sort((a,b)=>(st.fixed[a.key]?1:0)-(st.fixed[b.key]?1:0)),list=d?d.items:fl,ok=Object.values(st.T.marks).filter(m=>m==='ok').length;
  const fixed=d?d.fixes:Object.keys(st.fixed).length,todo=d?d.items.filter(x=>!st.fixed[x.key]).length:fl.filter(x=>!st.fixed[x.key]).length;
  box.innerHTML=`<div class="rc-sh"><b>${d?L('Practice finished','مشق مکمل'):final?L('Surah complete 🎉','سورت مکمل 🎉'):L('Session summary','سیشن کا خلاصہ')}</b></div>
@@ -205,11 +239,11 @@ function showSummary(final){hideNudge();const box=$('#rcSum');box.hidden=false;$
  box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=list.find(y=>y.key===b.dataset.k);if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0})}});
  const again=$('#sAgain');if(again)again.onclick=async()=>{const items=list.slice().sort((a,b)=>(st.fixed[a.key]?1:0)-(st.fixed[b.key]?1:0));st.drill={items,idx:0,fixes:0,skips:0,review:!!d?.review};st.fixed={};box.hidden=true;$('#rcLine').hidden=true;
   if(!st.listening)await startMic();if(st.listening)drillNext()};
- const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.drill=null;st.hold=false;st.cut=st.end;$('#rcLine').hidden=false;st.lineA=0;paint();startMic()};
+ const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.drill=null;st.hold=false;st.cut=st.end;$('#rcLine').hidden=false;st.lineA=0;paint();startMic().then(()=>armStuck(1500))};
  $('#sX').onclick=close}
 // test hooks (automation only)
 if(navigator.webdriver){
- window.__recite={feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},hold:st.hold,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
+ window.__recite={feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
  // feed 16 kHz audio through the real ingest/decode path in real time (no microphone needed)
  window.__reciteStream=(a,speed=1)=>new Promise(res=>{st.listening=true;micUI();const step=Math.round(SR*0.04);let i=0;const iv=setInterval(()=>{if(!st){clearInterval(iv);return res()}ingest(Float32Array.from(a.subarray(i,i+step)));i+=step;if(i>=a.length){ingest(new Float32Array(step));if(st.end/SR>a.length/SR+2.6){clearInterval(iv);res()}}},40/speed)});
 }

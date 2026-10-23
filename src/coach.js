@@ -33,3 +33,6 @@ export function syllAt(weights,f){const tot=weights.reduce((a,b)=>a+b,0);let x=M
 export function estimateSlice(cn,i0,i1,dur,pad=0.2){const tot=cn.reduce((a,b)=>a+b,0)||1;let a=0;for(let i=0;i<i0;i++)a+=cn[i];let b=a;for(let i=i0;i<=i1&&i<cn.length;i++)b+=cn[i];
  return [Math.max(0,dur*a/tot-pad),Math.min(dur,dur*b/tot+pad)]}
 export const ENCOURAGE=[['Almost — listen once more, then try again.','تقریباً — ایک بار پھر سنیں، پھر دوبارہ کوشش کریں۔'],['Good try. Take your time.','اچھی کوشش۔ آرام سے۔'],['You can do this — slowly.','آپ کر سکتے ہیں — آہستہ آہستہ۔'],['Nice effort. One more time.','شاباش۔ ایک بار اور۔']];
+/** Letters of a word, each with its harakat (for the letter-by-letter view). */
+export const letters=word=>String(word).match(new RegExp(`[\\u0621-\\u064A\\u0671][${MARK}]*`,'g'))||[String(word)];
+export const PRONOUNCE_AT=ESCALATE_AT;

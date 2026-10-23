@@ -33,17 +33,55 @@ test('coach: not clear / close / silence never count as a miss; a clear wrong wo
  await expect(page.locator('#rcSay')).toContainText(/./);
  const n=await page.evaluate(()=>window.__rplays.length);expect(n).toBe(2)});
 
-test('coach: third miss escalates to slow syllables, then the phrase, with encouragement and skip',async({page})=>{
+test('pronunciation drill: after 3 misses the 4th attempt is a sound-only drill (letters, makhraj tip, slow then normal audio)',async({page})=>{
  await open(page);await wrong(page);
  await page.evaluate(()=>window.__recite.say('كتاب'));await page.evaluate(()=>window.__recite.say('كتاب'));
- const s=await st(page);expect(s.miss['1:3:1']).toBe(3);expect(s.coach.esc).toBe(true);
- const tags=await page.evaluate(()=>window.__rplays.slice(-8).map(p=>p.tag+'@'+p.rate));
- expect(tags.some(t=>t==='word@0.6')).toBe(true);expect(tags.some(t=>t==='phrase@1')).toBe(true);
- await expect(page.locator('#rcSyl')).toBeVisible();await expect(page.locator('#rcSyl span')).not.toHaveCount(0);await expect(page.locator('#rcPhr')).toBeVisible();
+ const s=await st(page);expect(s.miss['1:3:1']).toBe(3);expect(s.coach.esc).toBe(true);expect(s.coach.pron).toBe(true);
+ const tags=await page.evaluate(()=>window.__rplays.slice(-2).map(p=>p.tag+'@'+p.rate));expect(tags).toEqual(['word@0.6','word@1']);
+ expect(await page.evaluate(()=>window.__rplays.some(p=>p.tag==='phrase'))).toBe(false); // sound-only: no phrase here
+ await expect(page.locator('#rcSyl')).toBeVisible();await expect(page.locator('#rcSyl span')).not.toHaveCount(0);
+ await expect(page.locator('#rcLet')).toBeVisible();expect(await page.locator('#rcLet span').count()).toBeGreaterThanOrEqual(5);await expect(page.locator('#rcLet span.hard')).toHaveCount(1);
+ await expect(page.locator('#rcFix .rc-ft')).not.toBeEmpty();
+ await expect(page.locator('#rcTips')).toBeVisible();await expect(page.locator('#rcTips .rc-tip')).toHaveCount(2); // ح plus the shadda tip
+ await expect(page.locator('#rcTips')).toContainText(/middle of the throat/i);
  await expect(page.locator('#cSkip')).toBeVisible();
- // he cannot move on until he reads it correctly (or skips)
- expect((await st(page)).coach.done).toBe(false);await expect(page.locator('#rcFix')).toBeVisible();
+ const g=await page.evaluate(()=>(window.__gcStub||[]).map(o=>o.path));expect(g).toContain('feature-recite-pronounce');
+ // hear-and-repeat loop continues until correct or skip; a further miss repeats the slow+normal drill with encouragement
+ await page.evaluate(()=>window.__recite.say('كتاب'));expect((await st(page)).coach.done).toBe(false);await expect(page.locator('#rcFix')).toBeVisible();
+ // the phrase stays available on demand
+ await page.click('#cPhr');await expect(page.locator('#rcPhr')).toBeVisible();expect(await page.evaluate(()=>window.__rplays.some(p=>p.tag==='phrase'))).toBe(true);
  await page.evaluate(()=>window.__recite.say('الرحيم'));await expect(page.locator('#rcFix')).toBeHidden()});
+
+test('pronunciation drill: tips are shown in Urdu when the app is in Urdu',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('settings',JSON.stringify({ui:'ur'})));
+ await open(page);await wrong(page);await page.evaluate(()=>window.__recite.say('كتاب'));await page.evaluate(()=>window.__recite.say('كتاب'));
+ await expect(page.locator('#rcTips')).toContainText('حلق');await expect(page.locator('#rcTips')).not.toContainText('Middle of the throat')});
+
+test('stuck help: a quiet stall plays the expected word once, shows it, never counts as a miss, and re-arms after progress',async({page})=>{
+ await page.addInitScript(()=>{window.__stuckMs=500;window.__stuckFirst=0});
+ await open(page);
+ await expect(page.locator('#rcHelpCard')).toBeVisible();await expect(page.locator('#rcHelpCard .rc-hw')).toContainText(/ب.*س.*م/s);await expect(page.locator('#rcHelpCard .rc-ft')).not.toBeEmpty();
+ await expect(page.locator('#rcLine .rc-hl')).toHaveCount(1);
+ let p=await page.evaluate(()=>window.__rplays);expect(p.length).toBe(1);expect(p[0].tag).toBe('word');expect(p[0].url).toMatch(/^https?:/);
+ await page.waitForTimeout(1600);p=await page.evaluate(()=>window.__rplays);expect(p.length).toBe(1); // at most once per stall
+ const s=await st(page);expect(s.miss).toEqual({});expect(s.coach).toBeNull();expect(s.hold).toBe(false);expect(Object.values(s.marks)).toEqual([]);
+ expect(await page.evaluate(()=>localStorage.qsWeak||null)).toBeNull();
+ const g=await page.evaluate(()=>(window.__gcStub||[]).map(o=>o.path));expect(g).toContain('feature-recite-stuck');
+ // progress re-arms: say the word, card goes away, next stall helps again with the NEXT word
+ await page.evaluate(()=>window.__recite.feed('بسم'));await expect(page.locator('#rcHelpCard')).toBeHidden();
+ await expect.poll(()=>page.evaluate(()=>window.__rplays.length),{timeout:8000}).toBe(2);
+ await expect(page.locator('#rcHelpCard .rc-hw')).toContainText(/[اٱ].*ل.*ل.*ه/s);
+ expect((await st(page)).miss).toEqual({})});
+
+test('stuck help: the always-visible Help button plays the expected word on demand and during a coach replays it',async({page})=>{
+ await page.goto('./#/recite/1');await expect(page.locator('#recite')).toBeVisible();await expect(page.locator('#rcHelp')).toBeVisible();
+ await page.click('#rcHelp');await expect(page.locator('#rcHelpCard')).toBeVisible();await expect(page.locator('#rcHelpCard .rc-hw')).toBeVisible();
+ expect((await page.evaluate(()=>window.__rplays.map(p=>p.tag)))).toEqual(['word']);expect((await st(page)).miss).toEqual({});
+ await page.click('#hX');await expect(page.locator('#rcHelpCard')).toBeHidden();
+ await page.click('#rcMic');await wrong(page);await expect(page.locator('#rcHelpCard')).toBeHidden();
+ const n=(await page.evaluate(()=>window.__rplays.length));await page.click('#rcHelp');
+ expect(await page.evaluate(()=>window.__rplays.length)).toBe(n+1);await expect(page.locator('#rcHelpCard')).toBeHidden();expect((await st(page)).coach.kind).toBe('bad');
+ expect(await page.evaluate(()=>window.__recite.state().miss['1:3:1'])).toBe(1)});
 
 test('coach: skip for now keeps the word red and saved, and live recitation resumes',async({page})=>{
  await open(page);await wrong(page);await page.click('#cSkip');
@@ -86,4 +124,5 @@ test('coach layout: card + summary fit a 390px-wide phone without overflow, Urdu
  await open(page);await wrong(page);await page.evaluate(()=>window.__recite.say('كتاب'));await page.evaluate(()=>window.__recite.say('كتاب'));
  const b=await page.locator('#rcFix').boundingBox();expect(b.x).toBeGreaterThanOrEqual(-1);expect(b.x+b.width).toBeLessThanOrEqual(await page.evaluate(()=>innerWidth)+1);
  const mic=await page.locator('#rcMic').boundingBox();expect(mic).not.toBeNull();
+ for(const sel of ['#rcLet','#rcTips','#rcHelp','#rcSyl']){const q=await page.locator(sel).boundingBox();expect(q.x).toBeGreaterThanOrEqual(-1);expect(q.x+q.width).toBeLessThanOrEqual(await page.evaluate(()=>innerWidth)+1)}
  await page.click('#cSkip');await page.click('#lang').catch(()=>{});});
