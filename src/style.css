@@ -332,3 +332,26 @@ body.is-home #tutor{color:#2a2340}
 .mrc-st .bar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 6px}.mrc-st .btn{flex:1 1 150px;min-height:44px;font-size:13.5px}.mrc-st .btn.danger{background:#da3633;color:#fff;border-color:#da3633}
 .mrc-st .muted{display:block;line-height:1.45;font-size:12px}
 .mrc-st .btn .ic{width:18px;height:18px;vertical-align:-4px;margin-inline-end:6px}
+
+/* v2.9.3 compact home layout */
+.pcard{margin:10px 0 10px;padding:9px 11px 8px;border-radius:20px}
+.pcard .mosque-art{width:96px;height:64px;top:2px;opacity:.07}
+.pc-top{min-height:22px}.pc-badge{padding:2px 9px;font-size:11.5px}.pc-loc{font-size:11.5px}
+.pc-main{align-items:center;margin:4px 0 6px}
+.pc-nx{display:flex;align-items:baseline;gap:8px;min-width:0}.pc-nx b{display:inline;font-size:26px;line-height:1.2}.pc-at{font-size:13px;opacity:.9}
+.pc-cdw{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}.pcard .cd{font-size:22px;line-height:1.15}.pc-cdw small{font-size:10.5px;margin-top:1px}
+.pc-bar{height:4px;margin-bottom:8px}
+.pc-i{padding:5px 1px 4px;gap:1px;border-radius:12px}.pc-ic .ic{width:16px;height:16px}.pc-i b{font-size:10.5px}.pc-t{font-size:11px;flex-direction:row;align-items:baseline;gap:1px}.pc-t small{font-size:7.5px;margin:0;opacity:.7}
+.hcards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 10px}
+.hc{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:138px;padding:12px 12px 10px;border-radius:22px;color:#fff;text-decoration:none;overflow:hidden;min-width:0}
+.hc .ti{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.2);flex:none;margin-bottom:auto}.hc .ti .ic{width:26px;height:26px}
+.hc b{font-size:18px;line-height:1.2}.hc small{font-size:12px;line-height:1.35;opacity:.92;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
+.hc .go{position:absolute;inset-inline-end:12px;top:12px;font:600 22px system-ui,sans-serif;opacity:.9}[dir=rtl] .hc .go{transform:scaleX(-1)}
+.hc:active{transform:scale(.98)}
+.hc-tutor{background:linear-gradient(135deg,#6a4cff,#2ea043);box-shadow:0 8px 20px rgba(76,60,200,.3)}
+.hc-quran{background:linear-gradient(140deg,#c79a4a,#8a5a1f);box-shadow:0 8px 20px rgba(138,90,31,.3)}
+[data-theme=dark] .hc-quran{background:linear-gradient(140deg,#a8793a,#6a4318)}
+.dhead{font-weight:700;font-size:15px;margin:2px 4px 6px}
+.dsec .stories{padding:2px 2px 12px}.dsec .story{color:var(--fg)}
+body.is-home .hero{padding-bottom:12px}
+[dir=rtl] .hc small,body.rtl .hc small{line-height:1.9;font-size:12.5px;-webkit-line-clamp:3}

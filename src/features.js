@@ -36,24 +36,25 @@ function pcard(nx){const n=new Date(),pt=PR.times(n),cur=nowPrayer(),y=PR.times(
  const from=pt[cur]<=n?pt[cur]:y[cur],pct=nx?Math.max(0,Math.min(100,100*(n-from)/(nx.time-from))):0;
  const cell=k=>{const[t,ap]=PR.fmt12(pt[k]).split(' ');const st=k===cur?'cur':(nx&&nx.key===k?'nx':(pt[k]<n&&k!==cur?'past':''));return `<div class="pc-i ${st}"><span class="pc-ic">${I.icon(PIC[k])}</span><b>${C.pn(k)}</b><span class="pc-t">${t}<small>${ap||''}</small></span></div>`};
  return `<a class="pcard" href="#/prayer" id="homePrayer" aria-label="${tt('Prayer times','اوقاتِ نماز')}">${I.mosqueArt}
-  <div class="pc-top"><span class="pc-badge"><i></i>${tt('Now','اب')} · ${C.pn(cur)}</span><span class="pc-loc">${I.icon('pin')}${esc(PR.P.city||'')}</span></div>
-  ${nx?`<div class="pc-main"><div class="pc-nx"><small>${tt('Next prayer','اگلی نماز')}</small><b>${C.pn(nx.key)}</b><bdi dir="ltr" class="pc-at">${PR.fmt12(nx.time)}</bdi></div><div class="pc-cdw"><small>${tt('Time left','باقی وقت')}</small><span class="cd" data-at="${+nx.time}"></span></div></div>
+  <div class="pc-top"><span class="pc-badge"><i></i>${nx?tt('Next prayer','اگلی نماز'):tt('Now','اب')+' · '+C.pn(cur)}</span><span class="pc-loc">${I.icon('pin')}${esc(PR.P.city||'')}</span></div>
+  ${nx?`<div class="pc-main"><div class="pc-nx"><b>${C.pn(nx.key)}</b><bdi dir="ltr" class="pc-at">${PR.fmt12(nx.time)}</bdi></div><div class="pc-cdw"><span class="cd" data-at="${+nx.time}"></span><small>${tt('Time left','باقی وقت')}</small></div></div>
   <div class="pc-bar" data-from="${+from}" data-at="${+nx.time}"><i style="--w:${pct.toFixed(1)}%"></i></div>`:''}
   <div class="pc-row">${PR.PRAYERS.map(cell).join('')}</div></a>`}
 export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر'));document.body.classList.add('is-home');const [AR,tr,list]=await Promise.all([C.arabic([L.ayahOfDay().s]),C.transFor(L.ayahOfDay().s),C.surahs()]);
  const {s,a}=L.ayahOfDay(),lr=LS.get('lastRead'),st=readStreak(),kp=LS.get('khatam');const nx=PR.next();const plan=kp?L.khatamPlan({current:kp.page,end:kp.end}):null;const B=import.meta.env.BASE_URL;
  app().innerHTML=`<section class="hero">
   <div class="htop"><a class="round" href="#/more" aria-label="${tt('Menu','مینو')}">${I.icon('menu')}</a><div class="htitle"><b class="appname">${tt('Quran Safar','قرآن سفر')}</b><small>${PR.hijri(new Date(),S().ui)} · <span class="streak" id="streak"><b>${st}</b> ${tt('day streak','دن مسلسل')}</span></small></div></div>
-  <a class="tutor-card" href="#/recite" id="homeTutor"><span class="ti">${I.icon('tutor')}</span><div><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Live tutor — words light up as you recite','لائیو ٹیوٹر — بولتے ہی الفاظ نشان زد')}</small></div><span class="go">›</span></a>
-  ${(()=>{const n=dueItems(weakLoad()).length;return n?`<a class="tutor-card review" href="#/recite/review" id="homeReview"><span class="ti">★</span><div><b>${tt('Review weak words','کمزور الفاظ کی دہرائی')}</b><small>${tt(n+' word'+(n>1?'s':'')+' ready to practice',n+' الفاظ مشق کے لیے تیار')}</small></div><span class="go">›</span></a>`:''})()}
-  ${pcard(nx)}
-  <div class="stories">${STORIES.map(([h,img,e,u])=>`<a class="story" href="${h}"><img src="${B}img/${img}.webp" alt="" width="68" height="68" loading="lazy"><span>${tt(e,u)}</span></a>`).join('')}</div>
   <div class="srow"><form class="sbar" id="hs">${I.icon('search')}<input id="hq" aria-label="${tt('Search','تلاش')}" placeholder="${C.t('q')}"></form><a class="round heart" href="#/bookmarks" aria-label="${tt('Favourites','پسندیدہ')}">${I.icon('heart')}</a></div>
+  ${pcard(nx)}
+  <div class="hcards"><a class="hc hc-quran" href="${lr?`#/surah/${lr.s}/${lr.a}`:'#/quran'}" id="homeQuran"><span class="ti">${I.icon('quran')}</span><b>${tt('Quran','قرآن')}</b><small>${lr?`${tt('Continue','جاری رکھیں')} ${esc(lr.name)} ${lr.s}:${lr.a}`:tt('114 surahs · 30 paras','114 سورتیں · 30 پارے')}</small><span class="go">›</span></a>
+  <a class="hc hc-tutor" href="#/recite" id="homeTutor"><span class="ti">${I.icon('tutor')}</span><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Live tutor — words light up as you recite','لائیو ٹیوٹر، بولتے ہی الفاظ روشن')}</small><span class="go">›</span></a></div>
+  ${(()=>{const n=dueItems(weakLoad()).length;return n?`<a class="tutor-card review" href="#/recite/review" id="homeReview"><span class="ti">★</span><div><b>${tt('Review weak words','کمزور الفاظ کی دہرائی')}</b><small>${tt(n+' word'+(n>1?'s':'')+' ready to practice',n+' الفاظ مشق کے لیے تیار')}</small></div><span class="go">›</span></a>`:''})()}
  </section>
  <section class="dsec">
- ${lr?`<a class="card hl cont" href="#/surah/${lr.s}/${lr.a}">${I.icon('quran')}<span>${C.t('lastRead')}<br><b>${esc(lr.name)} ${lr.s}:${lr.a}</b></span></a>`:`<a class="card hl cont" href="#/surah/1">${I.icon('quran')}<span>${tt('Start reading','پڑھنا شروع کریں')}</span></a>`}
+ <div class="dhead">${tt('Daily','روزانہ')}</div>
+ <div class="stories" id="daily">${STORIES.map(([h,img,e,u])=>`<a class="story" href="${h}"><img src="${B}img/${img}.webp" alt="" width="68" height="68" loading="lazy"><span>${tt(e,u)}</span></a>`).join('')}</div>
  ${plan?`<a class="card kcard" href="#/khatam">${I.icon('khatam')} ${tt('Khatam','ختم')}: <b>${plan.pct}%</b> · ${tt('today','آج')} ${plan.perDay} ${tt('pages','صفحات')}<div class="prog"><i style="width:${plan.pct}%"></i></div></a>`:''}
- ${grid(TILES)}
+ ${grid(TILES.filter(x=>x[0]!=='#/quran'&&x[0]!=='#/prayer'))}
  <div class="card aotd" id="aotd">${I.corner}<small class="muted">${tt('Ayah of the day','آج کی آیت')} · ${esc(list[s-1].englishName)} ${s}:${a}</small><p class="ar" dir="rtl" lang="ar">${esc(L.ayahText(s,a,AR[s-1][a-1]))}</p><p class="tr" dir="${tr.edition.direction==='rtl'?'rtl':'ltr'}">${esc(tr.texts[a-1]||'')}</p>
  <div class="bar"><a class="btn" href="#/surah/${s}/${a}">${I.icon('quran')} ${tt('Open','کھولیں')}</a><button class="btn ghost" id="aShare">${I.icon('share')} ${tt('Share image','تصویر شیئر')}</button></div></div>
  </section>`;
