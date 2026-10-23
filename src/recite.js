@@ -7,6 +7,7 @@ import * as PG from './progress.js';
 import * as TJ from './tj-rules.js';
 import {Resampler,Conditioner} from './audio-front.js';
 import {ensureVad,newVadStream} from './vad.js';
+import {VoiceGate} from './voice-gate.js';
 import {esc} from './lib.js';
 import * as I from './icons.js';
 import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,letters,ENCOURAGE,ESCALATE_AT} from './coach.js';
@@ -39,7 +40,7 @@ function chip(kind,text){if(!panel)return;const c=$('#rcChip');c.className='rc-c
 export function review(items,ctx){if(ctx.gc)ctx.gc('feature-recite-review');open(0,1,{...ctx,txts:[],review:items})}
 
 /** Open the panel for surah n starting at ayah a. ctx: {words, txts, ayahUrl(a), event} */
-export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,vs:null,vf:[],vq:[],gated:0,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,pronEvt:false,helpEvt:false,helping:false,hseq:0,progAt:0,sig:'',stuckDone:false,helpI:-1,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0,mode:ctx.review?'follow':PREF.mode,hint:{},first:{},hintN:0,t0:Date.now(),snap:{ok:0,bad:0,unc:0},nRun:0,P:PG.load(),rate:+localStorage.getItem('qsRate')||1,startA:a};
+export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],end:0,cut:0,lastVoice:-9,vs:null,vg:new VoiceGate(),gated:0,floor:0.004,lvl:0,busy:false,listening:false,hold:false,sent:0,lineA:0,miss:{},coach:null,queue:[],flagged:{},fixed:{},skipped:{},weak:weakLoad(),player:null,coachEvt:false,pronEvt:false,helpEvt:false,helping:false,hseq:0,progAt:0,sig:'',stuckDone:false,helpI:-1,drill:ctx.review?{items:ctx.review,idx:0,fixes:0,skips:0,review:true}:null,nudge:0,mode:ctx.review?'follow':PREF.mode,hint:{},first:{},hintN:0,t0:Date.now(),snap:{ok:0,bad:0,unc:0},nRun:0,P:PG.load(),rate:+localStorage.getItem('qsRate')||1,startA:a};
  for(let i=a;!ctx.review&&i<=Math.min(ctx.txts.length,ctx.to||1e9)&&st.flat.length<FLAT_MAX;i++){const w=ctx.words?.[i];const list=w?w.map(x=>({t:x.t,tr:x.tr,m:x.m,au:x.au})):ctx.txts[i-1].split(/\s+/).filter(x=>norm(x)).map(t=>({t}));
   list.forEach((x,k)=>st.flat.push({...x,a:i,k,n:norm(x.t)}))}
  st.flat=st.flat.filter(x=>x.n);st.T=new Tracker(st.flat.map(x=>x.n));st.T.cfg=Q().gop;st.rangeA=a;st.rangeB=st.flat.length?st.flat[st.flat.length-1].a:a;
@@ -110,28 +111,27 @@ function ingest(o){if(st.hold||!o.length)return;let e=0;for(let i=0;i<o.length;i
  st.chunks.push({s:st.end,a:o});st.end+=o.length;const t=st.end/SR;
  // v3.3: "voice" = the neural voice detector says SPEECH (3 of the last 5 frames), not just "louder than the room". Taps, fans, music, a cough no longer wake the recogniser.
  // Until the detector is loaded (first second) the old level test is the fallback.
- if(st.vs){const ps=st.vs.push(o);ps.forEach((p,i)=>{const ft=(st.vs.n-ps.length+i+1)*512/SR,on=p>=0.5?1:0;st.vf.push([ft,on]);st.vq.push(on);if(st.vq.length>5)st.vq.shift();
-   if(on&&st.vq.reduce((a,b)=>a+b,0)>=3){st.lastVoice=ft;if(st.coach)st.coach.voiced=true}});
-  while(st.vf.length&&st.vf[0][0]<t-40)st.vf.shift();if(rms<=thr)st.floor=st.floor*0.97+rms*0.03}
+ if(st.vs){const ps=st.vs.push(o);ps.forEach((p,i)=>{const ft=(st.vs.n-ps.length+i+1)*512/SR;if(st.vg.frame(ft,p)){st.lastVoice=ft;if(st.coach)st.coach.voiced=true}});
+  st.vg.trim(t);if(rms<=thr)st.floor=st.floor*0.97+rms*0.03}
  else if(rms>thr){st.lastVoice=t;if(st.coach)st.coach.voiced=true}else st.floor=st.floor*0.97+rms*0.03;
  st.lvl=Math.max(Math.min(1,rms*9),st.lvl*0.8);
  const keep=Math.min(st.T.winStart,t-Q().win,st.cut/SR)-1;while(st.chunks.length>1&&(st.chunks[0].s+st.chunks[0].a.length)/SR<keep)st.chunks.shift()}
 /** Seconds of detected speech between t0 and t1 (stream seconds). Infinity while the detector is not loaded (cannot judge). */
-function speechSecs(t0,t1){if(!st.vs)return Infinity;let n=0;for(const [ft,on] of st.vf)if(on&&ft>t0&&ft<=t1)n++;return n*512/SR}
+function speechSecs(t0,t1){if(!st.vs)return Infinity;return st.vg.secs(t0,t1)}
 function slice(t0,t1){const s0=Math.max(0,Math.floor(t0*SR)),s1=Math.min(st.end,Math.floor(t1*SR));if(s1<=s0)return new Float32Array(0);const out=new Float32Array(s1-s0);
  for(const c of st.chunks){const a=Math.max(c.s,s0),b=Math.min(c.s+c.a.length,s1);if(b>a)out.set(c.a.subarray(a-c.s,b-c.s),a-s0)}return out}
 function tick(){if(!st||!panel)return;const t=st.end/SR;
  // level meter + state chip
  const lv=st.listening?st.lvl:0;$('#rcLv').style.transform=`scaleX(${lv.toFixed(3)})`;$('#rcMic').style.setProperty('--lv',lv.toFixed(3));st.lvl*=0.85;
- if(st.listening&&!st.hold&&!st.fixOpen){const hearing=t-st.lastVoice<0.5;if(hearing!==st.hearing){st.hearing=hearing;chip(hearing?'hear':'listen',hearing?L('Hearing you…','آپ کو سن رہا ہے…'):L('Listening — start reciting','سن رہا ہے — پڑھنا شروع کریں'))}}
+ if(st.listening&&!st.hold&&!st.fixOpen&&!(performance.now()<(st.krUntil||0))){const hearing=t-st.lastVoice<0.5;if(hearing!==st.hearing){st.hearing=hearing;chip(hearing?'hear':'listen',hearing?L('Hearing you…','آپ کو سن رہا ہے…'):L('Listening — start reciting','سن رہا ہے — پڑھنا شروع کریں'))}}
  stuckTick(t);
  if(!st.listening||st.busy||st.hold||!ready||window.__reciteFake)return;
- const now=performance.now();if(now-st.sent<Q().hop)return;if(t-st.lastVoice>2.2)return; // nothing new to hear
+ const now=performance.now();if(now-st.sent<Q().hop)return;if(t-st.lastVoice>st.vg.c.hold)return; // nothing new to hear
  const s0=Math.max(st.T.winStart,st.cut/SR,t-Q().win);if(t-s0<0.5)return;
  const audio=slice(s0,t);st.sent=now;st.busy=true;const job={id:++st.idc,gen:st.gen,off:s0,t,at:now};st.job=job;getWorker().postMessage({type:'run',id:job.id,audio},[audio.buffer])}
 
 // ---------- tracking ----------
-function result(job,ws,ms,aux){autoQ(ms);if(!st.coach&&speechSecs(job.off,job.t)<0.3){st.gated=(st.gated||0)+1;return}// no speech in this window: whatever the model "heard" in noise is ignored
+function result(job,ws,ms,aux){autoQ(ms);if(!st.coach&&speechSecs(job.off,job.t)<st.vg.c.minSpeech){st.gated=(st.gated||0)+1;return}// no speech in this window: whatever the model "heard" in noise is ignored
  const H=ws.map(x=>({w:norm(x.s),t0:job.off+x.t0,t1:job.off+x.t1})).filter(x=>x.w);
  if(st.coach){coachEval(H.map(x=>x.w),job.t-st.lastVoice>=0.7&&st.coach.voiced);return}
  if(navigator.webdriver)(window.__rlog??=[]).push({t:Math.round(performance.now()),aud:job.t,ms,h:H.map(x=>x.w).join(' ')});
@@ -234,12 +234,15 @@ function coachEnd(){if(!st||!st.coach)return;st.coach=null;st.fixOpen=false;st.g
  const q=st.queue.shift();if(q)return coachStart(q.t,'bad',q.kind);
  st.hold=false;st.cut=st.end;armStuck(1500);paint();if(st.listening)chip('listen',L('Continue from the next word.','اگلے لفظ سے جاری رکھیں۔'));else if(ready)chip('ready',readyMsg())}
 // ---------- stuck help: gentle, never a miss ----------
-const STUCK_MS=3500,sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const STUCK_MS=3500,SPEECH_STUCK_MS=4000,sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function armStuck(extra=0){if(!st)return;st.progAt=performance.now()+extra;st.stuckDone=false;st.sig=sigOf()}
 const sigOf=()=>`${st.T.cursor}:${Object.keys(st.T.prov).length}:${Object.keys(st.T.marks).length}`;
 /** Called every 100 ms: progress re-arms; a quiet stall of ~3.5 s plays the expected word once. */
 function stuckTick(t){if(!st.listening||st.hold||st.coach||st.fixOpen||st.helping||st.drill)return;const now=performance.now(),g=sigOf();
- if(g!==st.sig){st.sig=g;st.progAt=now;st.stuckDone=false;if(st.helpI>=0)hideHelp();return}
+ const hrd=t-st.lastVoice<1.0;if(hrd){if(st.vSince==null)st.vSince=now}else if(t-st.lastVoice>2.0)st.vSince=null;
+ if(g!==st.sig){st.sig=g;st.progAt=now;st.stuckDone=false;st.vSince=hrd?now:null;if(st.helpI>=0)hideHelp();return}
+ /* speech is being heard but nothing advances for a few seconds: reassure and re-align (never marks anything wrong) */
+ if(hrd&&st.vSince!=null&&now-Math.max(st.progAt,st.vSince)>=(window.__speechStuckMs||SPEECH_STUCK_MS)&&now>=(st.krNext||0)&&ready){st.krNext=now+6000;st.krUntil=now+2500;st.T.forceAlign=true;chip('hear',L("Keep reading — I'm listening","پڑھتے رہیں — میں سن رہا ہوں"))}
  if(st.stuckDone||!ready&&!window.__reciteFake)return;
  if(now-st.progAt>=(window.__stuckMs||STUCK_MS)&&t-st.lastVoice>0.8&&!st.busy&&$('#rcSum').hidden)stuckHelp('auto')}
 function hideHelp(){if(!st)return;st.hseq++;st.helping=false;st.helpI=-1;if(panel){$('#rcHelpCard').hidden=true;paint()}}
@@ -362,7 +365,7 @@ function logNow(){if(!st||st.drill||st.ctx.review||!st.first)return;let ok=0,bad
  try{PG.logSession(st.P,{ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,mode:st.mode,...d,hints:st.hintN,sec:(Date.now()-st.t0)/1000});PG.addSeen(st.P,seen);PG.save(st.P);st.hintN=0;st.t0=Date.now()}catch{/* ignore */}}
 // test hooks (automation only)
 if(navigator.webdriver){
- window.__recite={feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},mode:st.mode,hint:{...st.hint},first:{...st.first},tj:st.tj&&Object.keys(st.tj).length,tjN:st.n,tjCov:st.tj&&(()=>{const by={};st.flat.forEach((x,i)=>(by[x.a]??=[]).push(i));let cov=0;const miss=[];for(const a of Object.keys(by)){if(by[a].every(i=>st.tj[i]))cov+=by[a].length;else miss.push(a)}return{words:st.flat.length,cov,ay:miss.length,miss}})(),hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
+ window.__recite={voice:(on=true)=>{if(st)st.lastVoice=on?st.end/SR:-9},feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},mode:st.mode,hint:{...st.hint},first:{...st.first},tj:st.tj&&Object.keys(st.tj).length,tjN:st.n,tjCov:st.tj&&(()=>{const by={};st.flat.forEach((x,i)=>(by[x.a]??=[]).push(i));let cov=0;const miss=[];for(const a of Object.keys(by)){if(by[a].every(i=>st.tj[i]))cov+=by[a].length;else miss.push(a)}return{words:st.flat.length,cov,ay:miss.length,miss}})(),hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
  // feed 16 kHz audio through the real ingest/decode path in real time (no microphone needed)
  window.__reciteStream=async(a,speed=1)=>{if(!st.vs&&!window.__noVad){try{await ensureVad()}catch{/* level gate */}if(st&&!st.vs)st.vs=newVadStream()}return new Promise(res=>{st.listening=true;micUI();const step=Math.round(SR*0.04);let i=0;const iv=setInterval(()=>{if(!st){clearInterval(iv);return res()}ingest(Float32Array.from(a.subarray(i,i+step)));i+=step;if(i>=a.length){ingest(new Float32Array(step));if(st.end/SR>a.length/SR+2.6){clearInterval(iv);res()}}},40/speed)})};
 }

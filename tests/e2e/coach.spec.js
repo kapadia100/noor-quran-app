@@ -73,6 +73,16 @@ test('stuck help: a quiet stall plays the expected word once, shows it, never co
  await expect(page.locator('#rcHelpCard .rc-hw')).toContainText(/[اٱ].*ل.*ل.*ه/s);
  expect((await st(page)).miss).toEqual({})});
 
+test('speech but no progress for a few seconds: gentle "keep reading, I\'m listening", nothing marked wrong, no help card',async({page})=>{
+ await page.addInitScript(()=>{window.__speechStuckMs=700;window.__stuckFirst=0;window.__startN=1});
+ await open(page);
+ await page.evaluate(()=>window.__recite.voice(true));
+ await expect(page.locator('#rcChip')).toContainText("Keep reading",{timeout:6000});
+ await expect(page.locator('#rcChip')).toContainText("listening");
+ const s=await st(page);expect(s.miss).toEqual({});expect(s.coach).toBeNull();expect(Object.values(s.marks)).toEqual([]);
+ expect(await page.evaluate(()=>localStorage.qsWeak||null)).toBeNull();
+ await expect(page.locator('#rcHelpCard')).toBeHidden()});
+
 test('stuck help: the always-visible Help button plays the expected word on demand and during a coach replays it',async({page})=>{
  await page.goto('./#/recite/1');await expect(page.locator('#recite')).toBeVisible();await expect(page.locator('#rcHelp')).toBeVisible();
  await page.click('#rcHelp');await expect(page.locator('#rcHelpCard')).toBeVisible();await expect(page.locator('#rcHelpCard .rc-hw')).toBeVisible();

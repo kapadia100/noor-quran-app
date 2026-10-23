@@ -27,14 +27,41 @@ export function refine(E,H,j,aux,cfg=GOP_CFG){if(!cfg.on||!aux||!aux.lp||!j.mark
  *  next >=2 consecutive words are STRONG matches (sim>=0.75, >=3 letters each). Returns {from,to} or null. Never optimistic: a single
  *  matched word beyond a gap is not enough. */
 export const RECOVER={gapMax:2,minRun:2,strong:0.75,minLen:3,absentGop:-2.0};
-export function recoverRun(st,flat,cur,cfg=RECOVER){
- let from=cur;while(from<cur+cfg.gapMax&&st[from]&&(st[from].st==='skip'||(st[from].st==='unclear'&&(st[from].gop??-9)<cfg.absentGop)))from++;
+/** v3.3.1: a word that stays 'unclear' decode after decode (blended into its neighbour, soft, garbled by the room) while the next >=2 words are
+ *  STRONG matches no longer freezes everything behind it: `unc` (the tracker's per-word unclear streak) >=1 earlier decode is enough. */
+export function recoverRun(st,flat,cur,cfg=RECOVER,unc=null){
+ let from=cur;while(from<cur+cfg.gapMax&&st[from]&&(st[from].st==='skip'||(st[from].st==='unclear'&&((st[from].gop??-9)<cfg.absentGop||(unc&&(unc[from]||0)>=1)))))from++;
  if(from===cur)return null;
  let to=from;while(st[to]&&st[to].st==='ok'&&(st[to].s??0)>=cfg.strong&&flat[to].length>=cfg.minLen)to++;
  return to-from>=cfg.minRun?{from,to}:null}
-export const START_N=3,START_S=0.85;const flatLen=(f,p,n)=>{let c=0;for(let q=p;q<p+n;q++)c+=(f[q]||'').length;return c};
+/** Start verification config (v3.3.1). The first words of a session are only painted once the recitation is confirmed against the expected
+ *  ayah by an ORDERED phrase match, not word by word: a run of strong words that may begin up to `lead` words into the ayah (the first word is
+ *  often soft / blended with the breath / garbled), may contain one blurred word (gapped n-gram), and is judged by total letters matched
+ *  (a long word counts for more than a short one) instead of a fixed word count. Unrelated speech still cannot satisfy it (audited).*/
+export const START={n:3,s:0.8,lead:2,leadN:3,leadS:0.85,two:{s:0.9,letters:9},exact:{s:0.99,letters:7},gap:{win:5,ok:3,s:0.85,letters:10}};
+export function startEvidence(st,flat,p,cfg=START){
+ const okAt=q=>st[q]&&st[q].st==='ok';
+ for(let q=p;q<=p+cfg.lead;q++){
+  let run=0,sum=0,let_=0;for(let k=q;okAt(k);k++){run++;sum+=st[k].s??1;let_+=(flat[k]||'').length}
+  if(!run)continue;const mean=sum/run;
+  if(q===p){
+   if(run>=cfg.n&&mean>=cfg.s)return true;
+   if(run>=2&&mean>=cfg.two.s&&let_>=cfg.two.letters)return true;
+   if(run>=2&&mean>=cfg.exact.s&&let_>=cfg.exact.letters)return true;
+  }else{
+   if(run>=cfg.leadN&&mean>=cfg.leadS)return true;
+   if(run>=2&&mean>=0.95&&let_>=cfg.gap.letters)return true;
+  }
+  // gapped n-gram: >=3 ok words inside a 5-word window (one blurred word between them)
+  let c=0,sm=0,lt=0;for(let k=q;k<q+cfg.gap.win;k++)if(okAt(k)){c++;sm+=st[k].s??1;lt+=(flat[k]||'').length}
+  if(c>=cfg.gap.ok&&sm/c>=cfg.gap.s&&lt>=cfg.gap.letters&&okAt(q))return true}
+ return false}
+/** Stuck re-alignment (v3.3.1): the reciter is clearly reading (verified start) but no new word has turned green for `stall` seconds of
+ *  decoding. Look a few words ahead (then, much stricter, further ahead): if the heard words match a LATER stretch of the text as a strong
+ *  ordered phrase, resume there. Skipped words become neutral 'unc' marks, never red. Never runs before the start is verified. */
+export const ALIGN={stall:2.5,reach:12,far:40,farStall:6,cool:1.2,run:3,mean:0.85,two:{mean:0.95,letters:11},farRun:4,farLetters:14};
 export class Tracker{
- constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[];this.verified=false;this.startN=globalThis.__startN??START_N}
+ constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[];this.verified=false;this.progT=null;this.bestCur=-1;this.lastUpT=null;this.alT=-99;this.forceAlign=false}
  // decode from just before the last locked word so it is heard in full and serves as a strong left context
  get winStart(){return this.p>0?Math.max(0,this.lockedStart-(+globalThis.__WPAD||0.2)):0}
  /** H: [{w: normalized word, t0, t1}] (absolute seconds). Returns list of events [{type:'lock'|'prov', i, st}] */
@@ -48,9 +75,9 @@ export class Tracker{
   const prov={};let cur=this.p;
   for(;;){const m=st[cur];
    if(m&&m.st==='ok'){prov[cur]=1;cur++;continue}
-   const r=recoverRun(st,this.flat,cur);if(r){for(let q=r.from;q<r.to;q++)prov[q]=1;cur=r.to;continue}
+   const r=recoverRun(st,this.flat,cur,this.rcfg||RECOVER,this.sUnc);if(r){for(let q=r.from;q<r.to;q++)prov[q]=1;cur=r.to;continue}
    break}
-  this.prov=prov;this.cursor=cur;
+  this.prov=prov;this.cursor=cur;this.st=st;
   // streaks
   const upd=(S,pred)=>{for(const k of Object.keys(S))if(!pred(+k))delete S[k]};
   upd(this.sOk,i=>st[i]?.st==='ok');upd(this.sBad,i=>st[i]&&(st[i].st==='wrong'||st[i].st==='skip'));upd(this.sUnc,i=>st[i]?.st==='unclear');
@@ -64,8 +91,11 @@ export class Tracker{
   // CONTIGUOUS run of strong matches. A single or two lookalike words (English "ism wallah" ~ "bismi llah") can be hit by
   // chance by unrelated speech; three strong consecutive words cannot (measured: see docs). A reciter who really reads gets
   // the same greens a moment later, all at once.
-  if(!this.verified){let run=0,sum=0;for(let q=this.p;st[q]&&st[q].st==='ok';q++){run++;sum+=st[q].s??1}
-   if((run>=this.startN&&sum/run>=START_S)||(run>=2&&sum/run>=0.99&&flatLen(this.flat,this.p,run)>=7))this.verified=true;else{this.prov={};this.cursor=this.p;return ev}}
+  if(!this.verified){if(startEvidence(st,this.flat,this.p,this.scfg||(globalThis.__startN?{...START,n:globalThis.__startN}:START))){this.verified=true;this.verT=t}else{this.prov={};this.cursor=this.p;return ev}}
+  // progress clock (audio seconds); gaps between decodes (silence) restart it so a pause is never counted as a stall
+  if(this.progT==null||(this.lastUpT!=null&&t-this.lastUpT>1.5)){this.progT=t}this.lastUpT=t;
+  if(this.cursor>this.bestCur){this.bestCur=this.cursor;this.progT=t}
+  else if(H.length&&(this.forceAlign?t-this.alT>=ALIGN.cool:t-this.progT>=ALIGN.stall&&t-this.alT>=ALIGN.cool)){this.alT=t;const far=t-this.progT>=ALIGN.farStall;const r=this.realign(H,t,far);this.forceAlign=false;if(r){ev.push(...r);this.progT=t;this.bestCur=this.cursor;return ev}}
   // sequential locking
   for(;;){const i=this.p,m=st[i];if(!m)break;let lock=null;
    if(m.st==='ok'&&this.sOk[i]>=LOCK_OK)lock='ok';
@@ -77,4 +107,15 @@ export class Tracker{
    if(m.j>=0&&H[m.j]){this.lockedEnd=Math.max(this.lockedEnd,H[m.j].t1);this.lockedStart=Math.max(this.lockedStart,H[m.j].t0)}
    delete this.sOk[i];delete this.sBad[i];delete this.sUnc[i];this.p=i+1}
   return ev}
+ /** Try to resume at a later stretch of the text. Returns lock events when it jumped, else null. */
+ realign(H,t,far=false){const cur=this.cursor,Hn=H.map(x=>x.w),reach=far?ALIGN.far:ALIGN.reach;let best=null;
+  for(let d=1;d<=reach;d++){const E=this.flat.slice(cur+d,cur+d+8);if(E.length<2)break;const j=judge(E,Hn,this.jopt);
+   let run=0,sum=0,lt=0,j0=-1;for(const m of j.marks){if(m.k!==run||m.st!=='ok'||(m.s??0)<0.75)break;if(run===0)j0=m.j;run++;sum+=m.s??1;lt+=E[m.k].length}
+   if(!run)continue;const mean=sum/run;
+   const ok=far?(run>=ALIGN.farRun&&mean>=ALIGN.mean)||(run>=3&&lt>=ALIGN.farLetters&&mean>=ALIGN.mean):(run>=ALIGN.run&&mean>=ALIGN.mean)||(run>=2&&mean>=ALIGN.two.mean&&lt>=ALIGN.two.letters);
+   if(ok&&(!best||lt>best.lt))best={d,run,lt,j0}}
+  if(!best)return null;const ev=[];const to=cur+best.d;
+  for(let i=this.p;i<to;i++){const kind=i<cur?'ok':'unc';this.marks[i]=kind;ev.push({type:'lock',i,st:kind,kind:'realign',heard:''})}
+  const h=H[best.j0];if(h){this.lockedStart=Math.max(this.lockedStart,h.t0);}
+  this.p=to;this.prov={};this.cursor=to;this.sOk={};this.sBad={};this.sUnc={};this.realigned=(this.realigned||0)+1;return ev}
 }
