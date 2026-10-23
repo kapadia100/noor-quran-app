@@ -8,7 +8,7 @@ describe('qaida data',()=>{
   expect(D.LETTERS.map(l=>l.c).join('')).toBe('ابتثجحخدذرزسشصضطظعغفقكلمنوهءي');
   expect(new Set(D.LETTERS.map(l=>l.c)).size).toBe(29);
   for(const l of D.LETTERS){expect(l.c).toMatch(AR);expect(l.en&&l.ur&&l.tr).toBeTruthy()}});
- it('six letters never join forward',()=>{expect([...D.NOJOIN].sort().join('')).toBe([...'ادذرزوء'].sort().join(''));
+ it('six letters (plus the hamza) never join forward',()=>{expect([...D.NOJOIN].sort().join('')).toBe([...'ادذرزوء'].sort().join(''));
   expect(D.forms('ب').nj).toBe(false);expect(D.forms('ر').nj).toBe(true)});
  it('clip mapping: hamza uses the alif clip, ya uses class 28; every file exists',()=>{
   expect(D.clipOf(0,'a')).toBe('qaida/1-a.mp3');expect(D.clipOf(27,'u')).toBe('qaida/1-u.mp3');expect(D.clipOf(26,'a')).toBe('qaida/27-a.mp3');expect(D.clipOf(28,'in')).toBe('qaida/28-in.mp3');
@@ -24,4 +24,14 @@ describe('qaida data',()=>{
  it('words carry the mark their lesson teaches',()=>{
   const has=(g,re)=>D.WORDS[g].every(w=>re.test(w.t));
   expect(has('tanween',/[\u064B\u064C\u064D]/)).toBe(true);expect(has('sukoon',/\u0652/)).toBe(true);expect(has('shadda',/\u0651/)).toBe(true)});
+});
+
+describe('qaida words vs the Quran text',()=>{
+ const n=s=>s.replace(/[\u064B-\u0652\u0670\u0640\u06D6-\u06ED]/g,'').replace(/[ٱأإآ]/g,'ا').replace(/ى/g,'ي');
+ it('every example word is the word at its surah:ayah:word position',()=>{
+  for(const ws of Object.values(D.WORDS))for(const w of ws){const [s,a,i]=w.k.split(':').map(Number);
+   const j=JSON.parse(fs.readFileSync(`public/offline/s/ar/${s}.json`,'utf8'));let words=j[a-1].trim().split(/\s+/);if(s!==1&&a===1)words=words.slice(4);
+   expect(n(words[i-1]),w.k).toBe(n(w.t))}});
+ it('leen words have waw/ya sukoon after fatha',()=>{for(const w of D.WORDS.leen)expect(w.t,w.k).toMatch(/\u064E[\u0648\u064A]\u0652/)});
+ it('madd words have a long vowel (alif after fatha, ya after kasra, waw after damma)',()=>{for(const w of D.WORDS.madd)expect(w.t,w.k).toMatch(/\u064E\u0627|\u0650\u064A|\u064F\u0648|\u064E\u0627/)});
 });

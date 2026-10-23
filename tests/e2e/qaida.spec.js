@@ -49,9 +49,9 @@ test('rule lessons list real words with word audio and a tutor link to a real su
 test('tutor link opens the live tutor on the surah',async({page})=>{
  await page.goto('./#/qaida/shadda');await page.click('#qaTutor');await expect(page.locator('#recite')).toBeVisible()});
 
-test('joined shapes: 29 rows, six non-joiners faded, building-words examples',async({page})=>{
+test('joined shapes: 29 rows, seven non-joiners faded, building-words examples',async({page})=>{
  await page.goto('./#/qaida/joined');await expect(page.locator('.q-fr')).toHaveCount(29);
- await expect(page.locator('.q-fr:has(.same)')).toHaveCount(6);await expect(page.locator('.q-ex')).toHaveCount(4)});
+ await expect(page.locator('.q-fr:has(.same)')).toHaveCount(7);await expect(page.locator('.q-ex')).toHaveCount(4)});
 
 test('Urdu labels and dark mode render without overflow',async({page})=>{
  await page.addInitScript(()=>{localStorage.setItem('settings',JSON.stringify({ui:'ur',dark:true}))});
