@@ -55,6 +55,8 @@ $('#rcMic').onclick=async()=>{if(st.listening){stopMic();endOrSummary();return}a
  else if(localStorage.getItem('qsCtc')){$('#rcBar').parentNode.hidden=false;chip('load',L('Preparing tutor…','ٹیوٹر تیار ہو رہا ہے…'));load()}
  else{$('#rcDl').hidden=false;chip('info',L('First use downloads a small tutor once. After that it works from your phone.','پہلی بار ایک چھوٹا ٹیوٹر ڈاؤن لوڈ ہوگا، پھر یہ فون پر ہی چلے گا۔'))}}
 function load(){getWorker().postMessage({type:'load',base:localStorage.getItem('qsAsrBase')||MODEL_BASE})}
+/** Forget the in-memory worker/model (used after the downloaded model is deleted from the More tab). */
+export function resetModel(){try{worker?.terminate()}catch{/* ignore */}worker=null;ready=false}
 export function close(){if(!st)return;pt++;try{st.player?.pause()}catch{/* ignore */}stopMic();clearInterval(st.timer);clearTimeout(st.nudge);clearTimeout(st.coach?.to);st.hseq++;panel?.remove();panel=null;st=null;document.querySelectorAll('.ayah.reciting').forEach(e=>e.classList.remove('reciting'))}
 
 // ---------- word line ----------
