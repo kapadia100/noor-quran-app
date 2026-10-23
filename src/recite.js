@@ -101,4 +101,5 @@ function showFix(b){const w=st.flat[b.i];const box=$('#rcFix');box.hidden=false;
 let au=null;function stopAudio(){if(au){au.pause();au=null}if(st)st.hold=false}
 function play(url){stopAudio();if(!url)return;st.hold=true;st.buf=[];st.voiced=0;au=new Audio(url);const done=()=>{if(st){st.hold=false;st.buf=[];st.voiced=0}};au.onended=done;au.onerror=done;au.play().catch(done)}
 // test hooks (automation only): feed recognized text without a model or microphone
+if(navigator.webdriver)window.__reciteAudio=a=>{st.seq++;send('commit',Float32Array.from(a))};
 if(navigator.webdriver)window.__recite={commit:t=>handle({kind:'commit',seq:st.seq},t),partial:t=>handle({kind:'partial',seq:st.seq},t),state:()=>st&&{p:st.p,marks:{...st.marks}}};
