@@ -34,7 +34,7 @@ const decode=audio=>new Promise(res=>{const id=++jobId;pending.set(id,res);getWo
  */
 export function createLive(o){
  const check=o.mode==='check';
- const S={pace:new Pace({hangFrames:check?20:14}),offset:0,pos:0,end:0,chunks:[],bursts:[],grades:{},open:0,stopped:false,mic:null,hearing:false,t:0,done:false};
+ const S={pace:new Pace({hangFrames:check?20:14}),offset:0,pos:0,end:0,chunks:[],bursts:[],grades:{},open:0,stopped:false,mic:null,hearing:false,t:0,done:false,hold:false,maxDb:-120};
  const total=()=>S.offset+S.pace.items;
  const setPos=()=>{const n=Math.max(0,Math.min(o.n,total()));if(n!==S.pos){S.pos=n;o.onPos?.(n)}};
  const slice=(t0,t1)=>{const s0=Math.max(0,Math.floor(t0*SR)),s1=Math.min(S.end,Math.floor(t1*SR));const out=new Float32Array(Math.max(0,s1-s0));
@@ -51,26 +51,35 @@ export function createLive(o){
   finishIfDone()};
  /** Feed 16 kHz mono samples (raw, no AGC) for pace + the conditioned copy for the model. */
  const ingest=(raw,cond)=>{if(S.stopped)return;
+  if(S.hold){raw=new Float32Array(raw.length);if(cond)cond=new Float32Array(cond.length)}
   if(check){S.chunks.push({s:S.end,a:cond});const keep=S.end/SR-25;while(S.chunks.length>1&&(S.chunks[0].s+S.chunks[0].a.length)/SR<keep)S.chunks.shift()}
   S.end+=raw.length;S.t=S.end/SR;
   onEvents(S.pace.push(raw));
-  const db=S.pace.lastDb;o.onLevel?.(Math.max(0,Math.min(1,(db+60)/38)));
+  const db=S.pace.lastDb;S.maxDb=Math.max(S.maxDb,db);o.onLevel?.(Math.max(0,Math.min(1,(db+80)/60)),{db,floor:S.pace.nf,trig:S.pace.trigger,items:S.pace.items,pos:S.pos});
+  if(!S.hold&&S.pace.items===0&&S.offset===0&&!S.warned2&&S.t>=S.pace.c.warm*S.pace.c.frame/SR+5){S.warned2=true;o.onStatus?.(S.maxDb<-80?'dead':'quiet')}
   const hearing=S.pace.state===1;if(hearing!==S.hearing){S.hearing=hearing;o.onStatus?.(hearing?'hear':'listen')}
-  if(S.t<0.45&&!S.warned){o.onStatus?.('warm')}else if(!S.warned){S.warned=true;o.onStatus?.('listen')}};
+  const wt=S.pace.c.warm*S.pace.c.frame/SR;if(S.t<wt&&!S.warned){o.onStatus?.('warm')}else if(!S.warned){S.warned=true;o.onStatus?.('listen')}};
  const api={
   get pos(){return S.pos},get grades(){return S.grades},get listening(){return !!S.mic||!!S.fake},
   /** Learner tapped slot i: "I am here". The next burst belongs to slot i. */
   jump(i){S.offset=i-S.pace.items;setPos()},
+  /** Mute the microphone feed while the app plays a reference sound (so it never hears itself). */
+  hold(on){S.hold=!!on},
+  get level(){return{db:S.pace.lastDb,floor:S.pace.nf,trig:S.pace.trigger}},
   /** Test / non-mic feed. */
   feed(raw){const cond=check?new Float32Array(raw):raw;ingest(raw,cond)},
   async start(){
    if(typeof window!=='undefined'&&window.__qFake){S.fake=true;o.onStatus?.('listen');return{ok:true}}
    if(!navigator.mediaDevices?.getUserMedia)return{ok:false,err:'nomic'};
-   if(check)try{await ensureModel(o.onProgress)}catch{return{ok:false,err:'model'}}
+   // iOS Safari only unlocks audio inside the tap: create + resume the AudioContext first, before any await (model download, permission prompt).
+   const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();ac.resume?.().catch(()=>{});
+   const fail=err=>{try{ac.close()}catch{/* ignore */}return{ok:false,err}};
+   if(check)try{await ensureModel(o.onProgress)}catch{return fail('model')}
    let stream;const gum=a=>navigator.mediaDevices.getUserMedia({audio:a});
    try{try{stream=await gum({echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1})}catch(e){if(e&&e.name==='OverconstrainedError')stream=await gum(true);else throw e}}
-   catch(e){const n=e&&e.name;return{ok:false,err:n==='NotFoundError'||n==='DevicesNotFoundError'?'nomic':n==='NotReadableError'||n==='TrackStartError'?'busy':'denied'}}
-   const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();await ac.resume().catch(()=>{});
+   catch(e){const n=e&&e.name;return fail(n==='NotFoundError'||n==='DevicesNotFoundError'?'nomic':n==='NotReadableError'||n==='TrackStartError'?'busy':'denied')}
+   await ac.resume().catch(()=>{});
+   if(ac.state!=='running'){stream.getTracks().forEach(t=>t.stop());return fail('suspended')}
    const src=ac.createMediaStreamSource(stream),proc=ac.createScriptProcessor(4096,1,1);const rs=new Resampler(ac.sampleRate,SR),hp=new Conditioner({agc:false}),cond=new Conditioner();
    S.mic={stream,ac,src,proc};
    ac.onstatechange=()=>{if(S.mic&&S.mic.ac===ac&&ac.state!=='running'&&!S.stopped){api.stop();o.onStatus?.('interrupted')}};

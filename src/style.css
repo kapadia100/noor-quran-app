@@ -416,15 +416,25 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .q-prac{text-align:center;padding:6px 0}.q-big{font-size:68px;line-height:1.6;margin:8px 0 0;text-align:center!important;word-spacing:.2em}.q-tr{font-size:20px;font-weight:600;margin-bottom:4px}
 .q-prac .bar,.q-done .bar{justify-content:center}.q-prac .btn{min-height:48px}
 .q-tutor{margin-top:16px}.q-done{text-align:center}
-/* Qaida live reading: blue = followed by pace only (not checked), green = confirmed, grey = not confirmed. Never red. */
-.q-lb{margin:8px 0}.q-lbtn{width:100%}
+/* Qaida live reading: green = heard (follow-along) or confirmed ✓ (checked words), soft outline = read, waiting for the verdict, grey = not confirmed. Never red. */
+.q-lb{margin:8px 0;padding:12px;border-radius:14px;border:1px solid rgba(46,160,67,.5);background:linear-gradient(135deg,rgba(46,160,67,.16),rgba(46,160,67,.05));display:flex;flex-direction:column;gap:8px}
+.q-lb-top{margin:6px 0 10px}.q-lb small{font-size:12px;line-height:1.35}
+.q-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.06em;padding:2px 9px;border-radius:999px;background:#d1242f;color:#fff}
+.q-lbtn{width:100%;min-height:52px;font-size:17px;font-weight:700;background:#2ea043!important;color:#fff!important;border:0!important;box-shadow:0 3px 12px rgba(46,160,67,.4)}
 .q-lp{position:sticky;top:6px;z-index:5;margin:8px 0;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.q-lp .q-badge{font-size:10px;padding:1px 7px;margin-inline-end:4px}
 .q-lh2{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.q-ltag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--bd);white-space:nowrap}.q-ltag.chk{color:#3fb950;border-color:#3fb950}.q-ltag.fol{color:#4aa3ff;border-color:#4aa3ff}
-.q-ldesc{font-size:12.5px;margin:4px 0}.q-lp.q-run .q-ldesc{display:none}.q-lp.q-run .q-lchip{margin:2px 0}.q-lp.q-run .bar{margin:4px 0 0}.q-lchip{margin:6px 0}.q-lsum{margin-top:8px}
-.q-fa{background:rgba(74,163,255,.16)!important;border-color:rgba(74,163,255,.55)!important}
-.q-cur{outline:2px solid #4aa3ff;outline-offset:1px}
-.q-ok{background:rgba(46,160,67,.28)!important;border-color:#2ea043!important;position:relative}.q-ok::after{content:"✓";position:absolute;top:2px;inset-inline-end:6px;font-size:12px;color:#3fb950;font-weight:700}
+.q-ltag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--bd);white-space:nowrap}.q-ltag.chk,.q-ltag.fol{color:#3fb950;border-color:#3fb950}
+.q-ldesc{font-size:12.5px;margin:4px 0}.q-lp.q-run .q-ldesc,.q-lp.q-run .q-lwarn{display:none}.q-lp.q-run .q-lchip{margin:2px 0}.q-lp.q-run .bar{margin:4px 0 0}.q-lchip{margin:6px 0}.q-lsum{margin-top:8px}
+.q-lwarn{font-size:12.5px;margin:4px 0;color:#d29922}
+.q-meter{position:relative;height:10px;border-radius:5px;background:rgba(127,127,127,.22);overflow:hidden;margin:2px 0 3px}.q-meter i{display:block;height:100%;width:100%;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,#3fb950,#d29922 85%,#f85149);transition:transform .08s linear}[dir=rtl] .q-meter i{transform-origin:right}
+.q-meter b{position:absolute;top:0;bottom:0;width:3px;margin-inline-start:-1px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+.q-dbg{font-size:10.5px;font-variant-numeric:tabular-nums;direction:ltr;text-align:start;margin:0 0 4px}
+.q-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.q-ch2{border:1px solid var(--bd);background:transparent;color:inherit;border-radius:999px;padding:4px 12px;font-size:18px}
+.q-fa{background:rgba(46,160,67,.24)!important;border-color:rgba(46,160,67,.75)!important}
+.q-pend{border-color:rgba(46,160,67,.55)!important;border-style:dashed!important}
+.q-cur{outline:2px solid #2ea043;outline-offset:1px}
+.q-ok{background:rgba(46,160,67,.34)!important;border-color:#2ea043!important;position:relative}.q-ok::after{content:"✓";position:absolute;top:2px;inset-inline-end:6px;font-size:12px;color:#3fb950;font-weight:700}
 .q-nc{background:rgba(139,148,158,.18)!important;border-color:rgba(139,148,158,.6)!important}
 .q-tile,.q-cell,.q-word{position:relative}
 @media (prefers-reduced-motion:reduce){.q-lp{scroll-behavior:auto}}

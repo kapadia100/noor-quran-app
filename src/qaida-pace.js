@@ -7,10 +7,10 @@ export const PACE={
  hangFrames:15,        // 150 ms of silence closes a burst (a pause between items)
  minBurst:0.09,        // a burst shorter than this is a click/tap/cough and the advance is taken back
  onDb:9,offDb:6,       // dB above the noise floor to start / keep going
- absDb:-52,            // never trigger below this level (dBFS)
+ absDb:-66,            // never trigger below this level (dBFS); low on purpose: phone mics with noise suppression are quiet
  floorWin:400,         // noise floor = low percentile of the last 4 s
  floorPct:0.15,
- warm:40,            // first 400 ms only measure the room (the UI says "get ready")
+ warm:80,            // the first 0.8 s only measure the room (the UI says "calibrating")
  valley:0              // >0: dB dip inside a burst that starts a new item (off by default; see docs)
 };
 export class Pace{
@@ -29,6 +29,8 @@ export class Pace{
   else{if(db>this.peak)this.peak=db;
    if(db>=off){this.quiet=0;this.last=tt}else{this.quiet++;if(this.quiet>=c.hangFrames){const end=tt-this.quiet*c.frame/16000+c.frame/16000;this.state=0;this.run=0;const dur=end-this.start;
      if(dur<c.minBurst){this.cnt--;ev.push({type:'revoke',t:end,i:this.cnt})}else ev.push({type:'end',t:end,dur,i:this.cnt-1})}}}}
+ /** Level (dBFS) a frame must exceed to start an item right now. */
+ get trigger(){const c=this.c;return Math.max(this.nf+c.onDb,c.absDb)}
  /** Number of items currently counted (revoked bursts excluded). */
  get items(){return this.cnt}
 }
