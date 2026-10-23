@@ -23,6 +23,15 @@ export function refine(E,H,j,aux,cfg=GOP_CFG){if(!cfg.on||!aux||!aux.lp||!j.mark
   if(m.st==='unclear'&&E[m.k].length>=3&&w.mean>cfg.rescue&&w.min>-2.5&&w.bad===0)return {...m,st:'ok',s:Math.max(m.s||0,0.6),rescued:true,gop:w.mean};
   return {...m,gop:w.mean}});
  return {marks,noisy}}
+/** Recovery lookahead: words cur..from-1 (1-2 words) are clearly absent (aligner skip, or unclear with no acoustic trace) and the
+ *  next >=2 consecutive words are STRONG matches (sim>=0.75, >=3 letters each). Returns {from,to} or null. Never optimistic: a single
+ *  matched word beyond a gap is not enough. */
+export const RECOVER={gapMax:2,minRun:2,strong:0.75,minLen:3,absentGop:-2.0};
+export function recoverRun(st,flat,cur,cfg=RECOVER){
+ let from=cur;while(from<cur+cfg.gapMax&&st[from]&&(st[from].st==='skip'||(st[from].st==='unclear'&&(st[from].gop??-9)<cfg.absentGop)))from++;
+ if(from===cur)return null;
+ let to=from;while(st[to]&&st[to].st==='ok'&&(st[to].s??0)>=cfg.strong&&flat[to].length>=cfg.minLen)to++;
+ return to-from>=cfg.minRun?{from,to}:null}
 export class Tracker{
  constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[]}
  // decode from just before the last locked word so it is heard in full and serves as a strong left context
@@ -31,8 +40,15 @@ export class Tracker{
  update(H,t,aux){const ev=[];const ci=this.p>0?this.p-1:0;const E=this.flat.slice(ci,ci+WIN);
   const Hn=H.map(x=>x.w);const j0=judge(E,Hn);const rf=refine(E,Hn,j0,aux,this.cfg||GOP_CFG);const j={...j0,marks:rf.marks};this.noisy=rf.noisy;const st={};
   for(const m of j.marks){const i=ci+m.k;if(i<this.p)continue;st[i]=m}
-  // provisional (optimistic) greens
-  const prov={};let cur=this.p;for(const i of Object.keys(st).map(Number).sort((a,b)=>a-b)){if(st[i].st==='ok'){prov[i]=1;cur=i+1}}
+  // provisional greens: a CONTIGUOUS prefix starting at the first not-yet-locked word. A matched word further ahead is
+  // never painted while an earlier word is still undecided (that was the "said word 1, word 2 lit up" off-by-one: the
+  // aligner may delete a badly decoded word and match the next one). Lookahead is only a RECOVERY after a clearly
+  // skipped word, and only with strong evidence (see recoverRun).
+  const prov={};let cur=this.p;
+  for(;;){const m=st[cur];
+   if(m&&m.st==='ok'){prov[cur]=1;cur++;continue}
+   const r=recoverRun(st,this.flat,cur);if(r){for(let q=r.from;q<r.to;q++)prov[q]=1;cur=r.to;continue}
+   break}
   this.prov=prov;this.cursor=cur;
   // streaks
   const upd=(S,pred)=>{for(const k of Object.keys(S))if(!pred(+k))delete S[k]};
