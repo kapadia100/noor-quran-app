@@ -103,7 +103,7 @@ function liveUI(tt,les,root,kind,sel,reg){
  const words=check?D.WORDS[les.words].map(w=>w.t):null;
  const keys=check?D.WORDS[les.words].map(w=>'w'+w.k):null;
  const clear=()=>slots.forEach(el=>el.classList.remove('q-fa','q-cur','q-ok','q-nc'));
- const paint=n=>{slots.forEach((el,i)=>{el.classList.toggle('q-fa',i<n);el.classList.toggle('q-cur',i===n)});const c=slots[Math.min(n,slots.length-1)];
+ const paint=n=>{lp.classList.toggle('q-run',n>0);slots.forEach((el,i)=>{el.classList.toggle('q-fa',i<n);el.classList.toggle('q-cur',i===n)});const c=slots[Math.min(n,slots.length-1)];
   if(c&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c.scrollIntoView({block:'center',behavior:'smooth'});else c?.scrollIntoView({block:'center'})};
  const head=()=>`<div class="q-lh2"><b>${check?tt('Checked reading','جانچ کے ساتھ پڑھنا'):tt('Follow-along','ساتھ ساتھ پڑھنا')}</b><span class="q-ltag ${check?'chk':'fol'}">${check?tt('words checked','الفاظ کی جانچ'):tt('not checked','جانچ نہیں')}</span></div>
   <p class="muted q-ldesc">${check?tt('Each word you read is checked on your phone. Green = confirmed. Grey = not confirmed: the model often cannot recognise a single word, so this is not a mistake.','ہر پڑھا ہوا لفظ فون پر جانچا جاتا ہے۔ سبز = تصدیق ہوئی۔ سرمئی = تصدیق نہیں ہوئی: ماڈل اکیلے لفظ کو اکثر پہچان نہیں پاتا، اس لیے یہ غلطی نہیں۔'):tt('The highlight moves each time you say something. It only follows your pace and does not know what you said. Tap an item to say where you are.','جب آپ کچھ بولتے ہیں تو نشان آگے بڑھتا ہے۔ یہ صرف آپ کی رفتار دیکھتا ہے، یہ نہیں جانتا کہ آپ نے کیا کہا۔ اپنی جگہ بتانے کے لیے کسی چیز کو دبائیں۔')}</p>`;
