@@ -64,7 +64,7 @@ export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],en
  <div class="rc-chip" id="rcChip"><i></i><span></span></div>
  <div class="rc-lv" aria-hidden="true"><i id="rcLv"></i></div>
  <div class="rc-key"><span class="k-ok">${L('Correct','درست')}</span><span class="k-unc">${L('Unclear','غیر واضح')}</span><span class="k-bad">${L('Check','دیکھیں')}</span></div>
- <div class="bar rc-ctl"><button class="btn" id="rcDl" hidden>${L(`Download tutor (~${MB} MB, once)`,`ٹیوٹر ڈاؤن لوڈ کریں (~${MB} MB، ایک بار)`)}</button><button class="rc-mic" id="rcMic" disabled aria-label="Microphone">${I.icon('mic')}<span>${L('Start','شروع')}</span></button><button class="btn rc-hb" id="rcHint" hidden></button><button class="btn rc-hb" id="rcHelp" aria-label="${L('Help, I am stuck','مدد، میں اٹک گیا')}">❓ ${L('Help','مدد')}<span class="rc-hx"> · ${L('I’m stuck','اٹک گیا')}</span></button></div>
+ <div class="bar rc-ctl"><button class="btn" id="rcDl" hidden>${L(`Download tutor (~${MB} MB, once)`,`ٹیوٹر ڈاؤن لوڈ کریں (~${MB} MB، ایک بار)`)}</button><button class="rc-mic" id="rcMic" disabled aria-label="Microphone">${I.icon('mic')}<span>${L('Start','شروع')}</span></button><button class="btn rc-hb" id="rcHint" hidden></button><button class="btn rc-hb" id="rcHelp" aria-label="${L('Help, I am stuck','مدد، میں اٹک گیا')}">❓ ${L('Help','مدد')}<span class="rc-hlx"> · ${L('I’m stuck','اٹک گیا')}</span></button></div>
  <p class="rc-note muted">${L('Checks your words as you recite, not full tajweed. Your voice stays on your phone.','یہ الفاظ چیک کرتا ہے، مکمل تجوید نہیں۔ آپ کی آواز فون سے باہر نہیں جاتی۔')}</p>`;
  document.body.append(panel);$('.rc-x').onclick=close;wireExtras();paint();
  $('#rcHelp').onclick=()=>{unlockAudio();helpTap()};
