@@ -3,7 +3,14 @@
 // Annotation data: quran-tajweed by Ahmed Fairuz (CC BY 4.0), projected onto this app's own text by scripts/build-tajweed.py.
 // IMPORTANT: this only COLOURS the text by the standard rules. The tutor cannot hear or grade tajweed.
 export const RULES=['madd_2','madd_246','madd_muttasil','madd_munfasil','madd_6','ghunnah','idghaam_ghunnah','idghaam_no_ghunnah','idghaam_shafawi','idghaam_mutajanisayn','idghaam_mutaqaribayn','ikhfa','ikhfa_shafawi','iqlab','qalqalah','hamzat_wasl','lam_shamsiyyah','silent'];
-const G={madd:['Madd — stretch','مد — کھینچیں','#e8590c'],ghunnah:['Ghunnah — nasal sound','غنہ — ناک کی آواز','#2f9e44'],idgham:['Idghām — merge','ادغام — ملا کر پڑھیں','#0c8599'],ikhfa:['Ikhfāʾ — hide the nūn','اخفاء — نون کو چھپائیں','#1971c2'],iqlab:['Iqlāb — nūn becomes mīm','اقلاب — نون میم بن جاتا ہے','#7048e8'],qalqalah:['Qalqalah — echo','قلقلہ — گونج','#c2255c'],silent:['Silent letter','نہ پڑھا جانے والا حرف','#868e96']};
+/** ONE palette for every screen (tutor panel, surah reader, legend, tip card). Light/dark hexes; exposed as CSS variables --tjc-<group>. */
+export const PALETTE={madd:['#c2410c','#fb923c'],ghunnah:['#15803d','#4ade80'],idgham:['#0e7490','#22d3ee'],ikhfa:['#1d4ed8','#60a5fa'],iqlab:['#6d28d9','#a78bfa'],qalqalah:['#be185d','#f472b6'],silent:['#5b6270','#9ca3af']};
+export const hex=(k,dark)=>PALETTE[k][dark?1:0];
+export const paletteCss=()=>`:root{${Object.entries(PALETTE).map(([k,v])=>`--tjc-${k}:${v[0]}`).join(';')}}[data-theme=dark]{${Object.entries(PALETTE).map(([k,v])=>`--tjc-${k}:${v[1]}`).join(';')}}`;
+export function installPalette(){if(typeof document==='undefined'||document.getElementById('tjpal'))return;const st=document.createElement('style');st.id='tjpal';st.textContent=paletteCss();document.head.append(st)}
+installPalette();
+const V=k=>`var(--tjc-${k})`;
+const G={madd:['Madd — stretch','مد — کھینچیں',V('madd')],ghunnah:['Ghunnah — nasal sound','غنہ — ناک کی آواز',V('ghunnah')],idgham:['Idghām — merge','ادغام — ملا کر پڑھیں',V('idgham')],ikhfa:['Ikhfāʾ — hide the nūn','اخفاء — نون کو چھپائیں',V('ikhfa')],iqlab:['Iqlāb — nūn becomes mīm','اقلاب — نون میم بن جاتا ہے',V('iqlab')],qalqalah:['Qalqalah — echo','قلقلہ — گونج',V('qalqalah')],silent:['Silent letter','نہ پڑھا جانے والا حرف',V('silent')]};
 const R=[ // [group, en name, ur name, en explanation, ur explanation]
  ['madd','Natural madd (2 counts)','مد طبعی (2 حرکت)','A long vowel (ا و ي): hold it for 2 counts, no more and no less.','حرفِ مد (ا و ي): اسے 2 حرکت تک کھینچیں، نہ کم نہ زیادہ۔'],
  ['madd','Madd of 2, 4 or 6 counts','مد (2، 4 یا 6 حرکت)','A long vowel before a stop or a soft letter. When you stop here you may hold it 2, 4 or 6 counts. Keep the same length each time.','وقف کے وقت یا لین کے بعد کا مد۔ یہاں رکیں تو 2، 4 یا 6 حرکت کھینچ سکتے ہیں۔ ہر بار ایک ہی مقدار رکھیں۔'],
@@ -35,3 +42,8 @@ export function tokens(text){const o=[];const re=/\S+/g;let m;while((m=re.exec(t
 /** Align the raw ayah text (as the annotations index it) with the tutor's word list. Returns one segment list per tutor word, or null when they differ. */
 export function align(raw,flat,wn,norm){const tk=tokens(raw).filter(t=>norm(t.t));const off=tk.length-wn.length;if(off<0||off>8)return null;const use=tk.slice(off);
  for(let i=0;i<use.length;i++)if(norm(use[i].t)!==wn[i])return null;return use.map(t=>segments(raw,flat,t.from,t.to))}
+
+/** Segments for the whole displayed ayah (the reader hides the Bismillah prefix of raw ayah 1, so offsets shift). null when the raw text does not end with the shown text. */
+export function ayahSegs(raw,txt,flat){if(!flat||!flat.length)return null;const off=raw.length-txt.length;if(off<0||raw.slice(off)!==txt)return null;return segments(raw,flat,off,raw.length)}
+/** HTML for coloured segments. */
+export const segHtml=(sg,esc)=>sg.map(g=>g.r<0?esc(g.s):`<span class="tj" data-r="${g.r}" style="--tj:${colorOf(g.r)}">${esc(g.s)}</span>`).join('');

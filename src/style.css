@@ -226,10 +226,10 @@ body:not(.is-home) #instBanner{display:none}
 .rc-w{display:inline-block;border-radius:8px;padding:0 3px;color:inherit;transition:color .22s ease,background-color .22s ease,box-shadow .22s ease,transform .22s cubic-bezier(.3,1.6,.5,1)}
 .rc-cur{box-shadow:inset 0 -3px 0 #4aa3ff;animation:rcPulse 1.1s ease-in-out infinite}
 @keyframes rcPulse{50%{box-shadow:inset 0 -3px 0 rgba(74,163,255,.25)}}
-.rc-live{background:rgba(46,160,67,.2);color:#3fb950;transform:scale(1.04)}
-.rc-ok{color:#3fb950;background:rgba(46,160,67,.08)}
-.rc-unc{background:rgba(210,153,34,.28);color:#d29922}
-.rc-bad{background:rgba(248,81,73,.25);color:#ff7b72}
+.rc-live{background:rgba(46,160,67,.2);box-shadow:inset 0 -3px 0 #3fb950;transform:scale(1.04)}
+.rc-ok{background:rgba(46,160,67,.1);box-shadow:inset 0 -3px 0 #3fb950}
+.rc-unc{background:rgba(210,153,34,.28);box-shadow:inset 0 -3px 0 #d29922}
+.rc-bad{background:rgba(248,81,73,.25);box-shadow:inset 0 -3px 0 #e5534b}
 .rc-fix{border:1px solid #ff7b72;border-radius:14px;padding:8px;margin:6px 0;text-align:center;animation:rcIn .22s ease}
 .rc-fh{font-size:13px;opacity:.85}.rc-fw{font-size:calc(var(--ar,30px)*1.3);color:#3fb950;background:rgba(46,160,67,.15);border-radius:10px;display:inline-block;padding:0 10px}.rc-ft{font-size:14px;margin:4px 0}
 .rc-fix .bar{justify-content:center}
@@ -376,7 +376,6 @@ body.is-home .hero{padding-bottom:12px}
 .rc-tjk{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;justify-content:center;margin:0 0 4px;opacity:.9}.rc-tjk i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-inline-end:4px}.rc-tjk small{width:100%;text-align:center;opacity:.7}
 .rc-tjc{display:flex;gap:10px;align-items:flex-start}.rc-tjc>i{width:10px;align-self:stretch;border-radius:5px;flex:none}.rc-tjc p{margin:4px 0;line-height:1.55}
 .tj{color:var(--tj);cursor:pointer}
-.rc-ok .tj,.rc-bad .tj,.rc-unc .tj,.rc-live .tj{color:inherit}
 .rc-ph{opacity:.4;letter-spacing:3px;font-size:.7em}.rc-hn{opacity:.85;color:#4aa3ff}.rc-hid{background:rgba(124,92,255,.07)}
 body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-blind .ayah.reciting .at{filter:blur(9px)}
 .rc-score{margin:4px auto 2px;display:flex;flex-direction:column;align-items:center}.rc-score b{font-size:34px;line-height:1.1;color:#7c5cff}.rc-score span{font-size:12px;opacity:.8}
@@ -469,10 +468,10 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .rc-hzp .rc-w{transition:filter .35s,color .6s;border-radius:6px;padding:0 1px}
 .rc-hzp .rc-w.rc-hid{filter:blur(7px);background:none;user-select:none;-webkit-user-select:none}
 .rc-hzp .rc-w.rc-cur{filter:blur(5px);box-shadow:0 2px 0 #4aa3ff}
-.rc-hzp .rc-ok{color:inherit;background:none}
+.rc-hzp .rc-ok{background:none;box-shadow:none}
 .rc-hzp .rc-new.rc-ok,.rc-hzp .rc-new.rc-live{animation:hzflash 1.4s ease-out}
 @keyframes hzflash{0%{color:#3fb950;background:rgba(46,160,67,.18)}100%{color:inherit;background:none}}
-.rc-hzp .rc-bad{color:#e5534b;filter:none}
+.rc-hzp .rc-bad{filter:none}
 .rc-an{display:inline-block;min-width:1.6em;text-align:center;font-size:.55em;color:var(--muted,#888);border:1px solid currentColor;border-radius:50%;padding:0 .3em;margin:0 .2em;vertical-align:middle}
 .rc-hzc .rc-syl,.rc-hzc .rc-let{display:none!important}
 .rc-hzc .rc-bigw{font-size:34px;padding:6px}
@@ -522,3 +521,7 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .mq-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.mq-rad{display:flex;gap:6px;align-items:center;font-size:.9rem}
 .mq-item{align-items:center;gap:8px;flex-wrap:wrap}.mq-act{display:flex;gap:6px;flex-wrap:wrap}.mq-act .btn{padding:6px 10px;font-size:.85rem}
 .mq-count{font-size:.85rem}.mq-warn{color:var(--warn,#b45309)}.mq-err{color:var(--bad,#b91c1c)}
+
+/* tajweed colours in the surah reader */
+.rtk{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;justify-content:center;margin:6px 0}.rtk i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:4px}
+.ayah .ar .tj{cursor:pointer}

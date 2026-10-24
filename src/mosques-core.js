@@ -3,7 +3,7 @@ export const MIRRORS=['https://overpass-api.de/api/interpreter','https://lz4.ove
 export const RADII=[1,2,3,4,5];
 /** Great-circle (haversine) distance in metres. */
 export function hav(a,b,c,d){const R=6371008.8,r=x=>x*Math.PI/180;const h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)))}
-export const buildQuery=(lat,lng,rad)=>`[out:json][timeout:25];(nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${Math.round(rad)},${lat},${lng});nwr["building"="mosque"](around:${Math.round(rad)},${lat},${lng}););out center tags;`;
+export const buildQuery=(lat,lng,rad)=>`[out:json][timeout:25];(nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${Math.round(rad)},${lat},${lng});nwr["building"="mosque"](around:${Math.round(rad)},${lat},${lng});nwr["amenity"="place_of_worship"][!"religion"]["name"~"mosque|masjid|masjed|jama|jami|مسجد|جامع|مسجد",i](around:${Math.round(rad)},${lat},${lng}););out center tags;`;
 const nameKey=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670\u0300-\u036f]/g,'').replace(/\b(masjid|mosque|jamia|jama|jami|masjed|masjid-e|e|al|the)\b|[^\p{L}\p{N}]+/gu,'');
 /** OSM elements -> [{id,name,lat,lng,named}] (centre for ways/relations). */
 export function parse(els){const out=[];for(const e of els||[]){const lat=e.lat??e.center?.lat,lng=e.lon??e.center?.lon;if(!(Number.isFinite(lat)&&Number.isFinite(lng)))continue;const t=e.tags||{};const name=t.name||t['name:en']||t['name:ur']||t['name:ar']||t['alt_name']||'';
