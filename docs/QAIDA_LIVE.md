@@ -75,3 +75,11 @@ Free decoding turns one word into something unrelated. Instead each burst is sco
 - Visible fallback: speech heard but no progress for 4 s shows "Keep reading, I'm listening" and re-aligns at once (every 6 s at most). Nothing is marked and no help card appears.
 
 **Measurements.** See the release notes: per-word green rate, time-to-lock and stall before/after on 66 real recitation clips under 8 conditions (clean, 1.25x, 1.5x, phone-mic chain, low volume, reverb, 16 kHz narrow, combined "hard"); false-green audit over 72 non-speech + speech streams (0 / 72, unrelated speech 0 / 8) and 66 real clips tracked against a different ayah (0 false greens).
+
+## v3.4.0 — Hifz Test (حفظ ٹیسٹ)
+- Entry: its own tile in **More** (`#/hifztest`) and a "Hifz Test" tile in the surah reader tools. Not on Home.
+- Setup: surah + ayah range or a juz (first surah of the juz), show translation, auto-continue; past tests listed (last 50, localStorage `qsHifzTests`).
+- Live: same pipeline as Recite & Learn (voice gate, phrase-start verification, re-align) in a hidden-text mode `hifz`. Words reveal only from tracker greens.
+- Mistake card ("Mistake here") only on tracker `bad` events (wrong/skip); shows + plays the correct word; "Retry from this ayah". Pause ~4 s → next word shown, counted as a hint (never a mistake). Hint button: first letter, then word.
+- Auto-locate (`src/hz-locate.js`): before the first verified phrase, each other ayah start in the range is tested with its own cached Tracker; moves only the start pointer; accepted only if hits are within 3 neighbouring ayat.
+- Measured (66 real clips, flat starting up to 3 ayat earlier than the recited ayah): located 54/60 clean, 54/60 phone, 55/60 hard, 0 wrong locations, 0 false reveals before the true start, 0 red; words revealed 96.0% / 95.8% / 89.1%.

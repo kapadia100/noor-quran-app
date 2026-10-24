@@ -8,6 +8,7 @@ import * as TJ from './tj-rules.js';
 import {Resampler,Conditioner} from './audio-front.js';
 import {ensureVad,newVadStream} from './vad.js';
 import {VoiceGate} from './voice-gate.js';
+import {locate} from './hz-locate.js';
 import {esc} from './lib.js';
 import * as I from './icons.js';
 import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,letters,ENCOURAGE,ESCALATE_AT} from './coach.js';
@@ -384,11 +385,9 @@ function hzTr(a){const e=panel&&$('#rcTr');if(!e)return;const x=st.ctx.showTr&&s
 function hzAyah(pa){const na=st.flat[st.T.p]?.a;if(pa==null||na==null||na===pa)return;st.hs.ayat[pa]=1;if(st.ctx.auto===false&&st.listening&&!st.coach){stopMic();chip('ok',L(`Ayah ${pa} done — tap the mic for the next ayah`,`آیت ${pa} مکمل — اگلی آیت کے لیے مائیک دبائیں`))}}
 /** Auto-locate: before the first verified phrase, if the reciter clearly started at another ayah of the range, move the
  *  start there. It only moves the pointer; every green still has to be earned by the normal verified tracker. */
-function hzLocate(H,t,aux){const T=st.T,now=performance.now();if(T.verified||Object.keys(T.marks).length||!H||H.length<4||!window.__reciteFake&&now-st.locAt<700)return;st.locAt=now;st.locT??={};
- const starts=[];st.flat.forEach((x,i)=>{if(x.k===0&&i!==T.p)starts.push(i)});if(!starts.length||starts.length>400)return;let hit=[];
- for(const i0 of starts){const tk=st.locT[i0]??=new Tracker(st.flat.slice(i0).map(x=>x.n));tk.cfg=T.cfg;try{tk.update(H,t,aux)}catch{continue}if(tk.verified)hit.push(i0)}
- // several hits are fine only when they are neighbouring ayat of one continuous reading (take the earliest)
- if(!hit.length||st.flat[hit[hit.length-1]].a-st.flat[hit[0]].a>3)return;const i0=hit[0];st.locT=null;T.p=T.cursor=i0;st.lineA=0;chip('listen',L(`Found you at ayah ${st.flat[i0].a}`,`آپ آیت ${st.flat[i0].a} پر ہیں`))}
+function hzLocate(H,t,aux){const T=st.T,now=performance.now();if(T.verified||Object.keys(T.marks).length||!window.__reciteFake&&now-st.locAt<700)return;st.locAt=now;st.locT??={};
+ const starts=[];st.flat.forEach((x,i)=>{if(x.k===0)starts.push(i)});if(starts.length>400)return;
+ const i0=locate(T,st.flat.map(x=>x.n),starts,st.locT,H,t,aux,i=>st.flat[i].a);if(i0<0)return;st.locT=null;T.p=T.cursor=i0;st.lineA=0;chip('listen',L(`Found you at ayah ${st.flat[i0].a}`,`آپ آیت ${st.flat[i0].a} پر ہیں`))}
 function hzRetry(a){const {n,ctx}=st;stopMic();open(n,a,ctx);setTimeout(()=>startMic().catch(()=>{}),0)}
 function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const hs=st.hs,T=st.T;
  for(let i=0;i<T.p&&i<st.flat.length;i++){const a=st.flat[i].a;if(st.flat[i+1]?.a!==a)hs.ayat[a]=1}
