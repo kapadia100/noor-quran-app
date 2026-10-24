@@ -61,7 +61,7 @@ export function startEvidence(st,flat,p,cfg=START){
  *  ordered phrase, resume there. Skipped words become neutral 'unc' marks, never red. Never runs before the start is verified. */
 export const ALIGN={stall:2.5,reach:12,far:40,farStall:6,cool:1.2,run:3,mean:0.85,two:{mean:0.95,letters:11},farRun:4,farLetters:14};
 export class Tracker{
- constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.events=[];this.verified=false;this.progT=null;this.bestCur=-1;this.lastUpT=null;this.alT=-99;this.forceAlign=false}
+ constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.wt={};this.events=[];this.verified=false;this.progT=null;this.bestCur=-1;this.lastUpT=null;this.alT=-99;this.forceAlign=false}
  // decode from just before the last locked word so it is heard in full and serves as a strong left context
  get winStart(){return this.p>0?Math.max(0,this.lockedStart-(+globalThis.__WPAD||0.2)):0}
  /** H: [{w: normalized word, t0, t1}] (absolute seconds). Returns list of events [{type:'lock'|'prov', i, st}] */
@@ -104,7 +104,7 @@ export class Tracker{
      let later=0;for(let q=i+1;q<i+4;q++)if(st[q]?.st==='ok')later++;if(later>=2)lock='unc'}
    if(!lock)break;
    this.marks[i]=lock;ev.push({type:'lock',i,st:lock,kind:m.st,heard:m.j>=0&&H[m.j]?H[m.j].w:''});
-   if(m.j>=0&&H[m.j]){this.lockedEnd=Math.max(this.lockedEnd,H[m.j].t1);this.lockedStart=Math.max(this.lockedStart,H[m.j].t0)}
+   if(m.j>=0&&H[m.j]){this.lockedEnd=Math.max(this.lockedEnd,H[m.j].t1);this.lockedStart=Math.max(this.lockedStart,H[m.j].t0);this.wt[i]=[H[m.j].t0,H[m.j].t1]}
    delete this.sOk[i];delete this.sBad[i];delete this.sUnc[i];this.p=i+1}
   return ev}
  /** Try to resume at a later stretch of the text. Returns lock events when it jumped, else null. */
