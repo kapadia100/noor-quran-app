@@ -67,8 +67,10 @@ const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
-const MORE_EXTRA=[['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+const MORE_EXTRA=[['#/dict','tafsir','Quran Dictionary','قرآن ڈکشنری'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
+export const dict=(a,b)=>import('./dict.js').then(m=>m.dictPage(C,tt,ur,I,a,b));
+export const dictRank=(s,a,w)=>import('./dict.js').then(m=>m.rankOf(C,s,a,w));
 export const qaida=id=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,id));
 export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=Object.keys(W).length,nD=dueItems(W).length;
  const row=(href,ic,en,u,sub,id)=>`<a class="mrc-row" href="${href}" id="${id}"><span class="mi">${ic}</span><span class="mt"><b>${tt(en,u)}</b><small>${sub}</small></span><span class="go">›</span></a>`;

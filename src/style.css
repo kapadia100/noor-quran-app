@@ -525,3 +525,30 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 /* tajweed colours in the surah reader */
 .rtk{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;justify-content:center;margin:6px 0}.rtk i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:4px}
 .ayah .ar .tj{cursor:pointer}
+/* ---- Quran Dictionary (More tab) ---- */
+.dc-wrap{padding-bottom:28px}.dc-prog{margin:8px 0}.dc-pr{display:flex;align-items:center;gap:12px;margin-bottom:8px}.dc-pct{font-size:30px;line-height:1;color:#2ea043;font-variant-numeric:tabular-nums}.dc-pr small{display:block}
+.dc-q{width:100%;box-sizing:border-box;min-height:46px;margin:8px 0;padding:8px 14px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-size:16px}
+.dc-chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.dc-chips::-webkit-scrollbar{display:none}
+.dc-chip{flex:none;min-height:36px;padding:4px 12px;border-radius:18px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}.dc-chip.on{background:rgba(46,160,67,.2);border-color:#2ea043;font-weight:600}
+.dc-sort{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0}.dc-sort select{flex:1;min-height:38px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;padding:0 8px}
+.dc-cnt{margin:2px 2px 6px;font-size:12.5px}.dc-empty{padding:14px 4px}
+.dc-row{display:flex;align-items:center;gap:10px;min-height:58px;padding:6px 12px;margin:6px 0;border-radius:16px;background:var(--card);border:1px solid var(--bd);color:inherit;text-decoration:none}
+.dc-row:active{background:rgba(127,127,127,.15)}.dc-row.known{border-color:rgba(46,160,67,.55)}
+.dc-n{width:30px;font-size:12px;opacity:.6;text-align:center;font-variant-numeric:tabular-nums;flex:none}
+.dc-ar{font-size:26px;line-height:1.5;margin:0;min-width:84px;max-width:110px;text-align:center;flex:none}
+.dc-row .mt{flex:1;min-width:0}.dc-row .mt b{display:block;font-size:14px}.dc-row .mt small{display:block;opacity:.75;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dc-c{font-size:11.5px;opacity:.65;font-variant-numeric:tabular-nums;flex:none}.dc-k{width:18px;color:#2ea043;font-weight:700;text-align:center;flex:none}
+.dc-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 8px}.dc-nav{display:flex;align-items:center;gap:6px}.dc-nv{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--bd);color:inherit;text-decoration:none;font:600 22px system-ui}.dc-nv.off{visibility:hidden}
+.dc-big,.dc-fc{text-align:center;padding:16px 12px}.dc-hear{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:4px 14px;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
+.dc-word{font-size:52px;line-height:1.5;margin:0}.dc-sp{opacity:.6;font-size:20px}.dc-tr{display:block;font-size:17px;margin:2px 0}.dc-mn{font-size:19px;font-weight:600;margin:6px 0 2px}.dc-mn2{margin:0 0 4px}
+.dc-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0}.dc-facts div{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:8px 12px}.dc-facts small{display:block;opacity:.65;font-size:11.5px}.dc-facts b{font-size:15px}.dc-facts .ar{font-size:20px;margin:0}
+.dc-note{font-size:12.5px;margin:6px 2px}.dc-act .btn{flex:1}
+.dc-ex{margin:8px 0}.dc-ay{font-size:25px;line-height:2.1;margin:6px 0}.dc-hw{font:inherit;color:inherit;background:rgba(46,160,67,.22);border:1px solid #2ea043;border-radius:8px;padding:0 6px;cursor:pointer}.dc-open{font-size:13px;color:inherit;opacity:.8}
+.dc-mode{display:block;padding:14px 16px;margin:10px 0;border-radius:16px;background:var(--card);border:1px solid var(--bd);color:inherit;text-decoration:none}.dc-mode b{display:block;font-size:16px}.dc-mode small{opacity:.75}
+.dc-opts{display:grid;gap:8px;margin:10px 0}.dc-opt{min-height:54px;padding:8px 14px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-size:16px;cursor:pointer;text-align:center}.dc-opt .ar{font-size:28px;margin:0}
+.dc-opt.ok{background:rgba(46,160,67,.25);border-color:#2ea043}.dc-opt.bad{background:rgba(220,60,60,.2);border-color:#dc3c3c}.dc-opt:disabled{opacity:1}
+.dc-fb{font-weight:600;text-align:center}.dc-ans{margin-top:10px}.dc-ans .btn{flex:1}.dc-pg{opacity:.7}
+.dc-sum{text-align:center}.dc-miss{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}.dc-pill{padding:4px 10px;border-radius:14px;background:var(--card);border:1px solid var(--bd);color:inherit;text-decoration:none;font-size:13px}.dc-pill .ar{font-size:18px;margin:0}
+#wtip .dlink{display:inline-block;margin-top:4px;padding:6px 4px;font-weight:600;color:inherit;text-decoration:underline}
+[dir=rtl] .dc-nv,body.rtl .dc-nv{transform:scaleX(-1)}
+@media (prefers-reduced-motion:reduce){.dc-chip,.dc-opt{transition:none}}
