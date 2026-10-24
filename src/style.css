@@ -510,3 +510,11 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .recite.rc-full{padding-bottom:0}
 .recite.rc-full .rc-ctl{padding-bottom:calc(8px + var(--sb));margin-bottom:0}
 .recite.rc-full:has(#rcFix:not([hidden])) .rc-key,.recite.rc-full:has(#rcSum:not([hidden])) .rc-key{display:none}
+/* v3.5.1 truthful Hifz summary */
+.rc-stats.rc-st5{gap:10px;flex-wrap:wrap}.rc-stats.rc-st5 span{min-width:58px}.rc-stats .u b{color:#d29922}
+.rc-verdict{margin:6px 6px 4px;font-size:14px;line-height:1.45}.rc-verdict.ok{color:#3fb950}.rc-verdict.unc{color:inherit}.rc-verdict.bad{color:inherit}
+.rc-legend{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;opacity:.9;margin:2px 0 4px}.rc-legend .lg-u{width:10px;height:10px;border-radius:50%;background:#d29922;display:inline-block}
+.rc-hzr.unc .rc-wi{border-color:#d29922}.rc-hzr.unc .rc-wi small{color:#d29922;opacity:1}
+.rc-hzs{min-width:40px}
+.recite.rc-full.rc-done .rc-chip,.recite.rc-full.rc-done .rc-ctl,.recite.rc-full.rc-done .rc-key,.recite.rc-full.rc-done .rc-lv{display:none}
+.rc-ay{font-size:12px;opacity:.75;margin:0 0 4px}

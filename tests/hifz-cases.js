@@ -54,7 +54,7 @@ test('finishing shows the summary and saves the test to history',async({page})=>
  await start(page,{tr:true});await expect(page.locator('#rcTr')).not.toBeEmpty();
  await feed(page,'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن الرحيم مالك يوم الدين');
  await feed(page,'إياك نعبد وإياك نستعين اهدنا الصراط المستقيم صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين');
- await expect(page.locator('#rcSum')).toContainText('Hifz Test complete');await expect(page.locator('#rcSum .rc-stats')).toContainText('7');
+ await expect(page.locator('#rcSum')).toContainText('Hifz Test complete');await expect(page.locator('#rcSum .rc-ay')).toContainText('7 ayat');
  await page.click('#sX');await page.goto('./#/hifztest');await expect(page.locator('#zH li')).toHaveCount(1)});
 
 test('auto-locate needs the same location repeated: one check alone moves nothing',async({page})=>{
@@ -80,3 +80,33 @@ test('the whole surah is shown blurred; recited words become clear in place, the
  await start(page);await feed(page,'بسم الله الرحمن الرحيم');
  const w=page.locator('#rcLine .rc-w');await expect(w.nth(0)).not.toHaveClass(/rc-hid/);await expect(w.nth(0)).toHaveCSS('filter','none');
  await expect(w.nth(10)).toHaveClass(/rc-hid/);await expect(w.nth(28)).toHaveCSS('filter',/blur/)});
+
+test('v3.5.1 truthful summary: unconfirmed (amber) words are never "well recited"; finished state is clean',async({page})=>{
+ await start(page);
+ await feed(page,'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن الرحيم مالك يوم الدين');
+ await feed(page,'إياك نعبد وإياك نستعين اهدنا الصراط المستقيم صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين');
+ // finish happened with every word green: the clean finished state
+ await expect(page.locator('#rcSum')).toContainText('every word confirmed');await expect(page.locator('#rcSum')).toContainText('well recited');
+ await expect(page.locator('#rcChip')).toBeHidden();await expect(page.locator('.rc-ctl')).toBeHidden();await expect(page.locator('#rcMic')).toBeHidden();await expect(page.locator('#rcHint')).toBeHidden();
+ await expect(page.locator('#rcSum .rc-legend')).toHaveCount(0);
+ // now the user's bug: three words stay orange
+ await page.evaluate(()=>{const s=window.__recite.raw();for(const i of [4,9,20])s.T.marks[i]='unc';s.fpDone=1;window.__recite.summary(true)});
+ const sum=page.locator('#rcSum');
+ await expect(sum).not.toContainText('well recited');await expect(sum).not.toContainText('every word confirmed');
+ await expect(sum).toContainText('3 words not confirmed');await expect(sum.locator('.rc-verdict')).toContainText('could not confirm 3 words');
+ await expect(sum.locator('.rc-legend')).toContainText('could not confirm this word');
+ await expect(sum.locator('.rc-st5 .u b')).toHaveText('3');await expect(sum.locator('.rc-hzr.unc')).toHaveCount(3);
+ await expect(sum.locator('.rc-hzs')).toHaveCount(3);await expect(sum.locator('#sUnc')).toContainText('Re-read the 3 unconfirmed words');
+ await sum.locator('.rc-hzr.unc .rc-wi').first().click();expect((await page.evaluate(()=>window.__rplays)).length).toBeGreaterThan(0);
+ await sum.locator('.rc-hzs').first().click();await expect(page.locator('#rcLine .rc-hl')).toHaveCount(1);
+ // saved for spaced review
+ expect(await page.evaluate(()=>Object.keys(window.__recite.raw().weak).length)).toBeGreaterThanOrEqual(3);
+ // re-read only the unconfirmed words
+ await page.click('#sUnc');await expect(sum).toBeHidden();expect(await page.evaluate(()=>window.__recite.raw().drill.items.length)).toBe(3)});
+
+test('v3.5.1 summary counts mistakes, skips and unconfirmed words separately',async({page})=>{
+ await start(page);
+ await feed(page,'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن');await feed(page,'الرحمن كتاب مالك يوم الدين');
+ await page.evaluate(()=>{const s=window.__recite.raw();s.T.marks[6]='unc';s.fpDone=1;window.__recite.summary(false)});
+ const sum=page.locator('#rcSum');await expect(sum).not.toContainText('well recited');await expect(sum.locator('.rc-st5 .r b').first()).toHaveText('1');
+ await expect(sum.locator('.rc-st5 .u b')).toHaveText('1');await expect(sum.locator('.rc-verdict')).toContainText('mistake')});

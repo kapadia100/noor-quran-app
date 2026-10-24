@@ -11,6 +11,7 @@ import {VoiceGate} from './voice-gate.js';
 import {locate} from './hz-locate.js';
 import {esc} from './lib.js';
 import * as I from './icons.js';
+import {finalPass} from './recite-final.js';
 import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,letters,ENCOURAGE,ESCALATE_AT} from './coach.js';
 import {TIPS,SHADDA_TIP,PLAIN_TIP,hardOf,trickyIn,hasShadda} from './tajweed.js';
 const SILENT='data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
@@ -34,6 +35,7 @@ function onMsg(e){const m=e.data;
  if(m.type==='progress'&&st){const p=m.total?Math.min(99,Math.round(100*m.loaded/m.total)):0;$('#rcBar').style.width=p+'%';chip('load',L(`Downloading tutor… ${p}%`,`ٹیوٹر ڈاؤن لوڈ ہو رہا ہے… ${p}%`))}
  if(m.type==='ready'){ready=true;localStorage.setItem('qsCtc','1');if(st){$('#rcDl').hidden=true;$('#rcBar').parentNode.hidden=true;$('#rcMic').disabled=false;chip('ready',readyMsg())}}
  if(m.type==='error'){window.__reciteErr=m.message;if(st){if(!ready){$('#rcDl').disabled=false;$('#rcDl').hidden=false;$('#rcBar').parentNode.hidden=true}chip('warn',L('Could not load the tutor. Check your connection and try again.','ٹیوٹر لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔'))}}
+ if(m.type==='run'&&finalWait.has(m.id)){const f=finalWait.get(m.id);finalWait.delete(m.id);f(m);return}
  if(m.type==='run'&&st){st.busy=false;const job=st.job;st.job=null;st.decMs=st.decMs?st.decMs*0.7+m.ms*0.3:m.ms;if(job&&job.gen===st.gen)result(job,m.words,m.ms,m.lp?{lp:m.lp,T:m.T}:null)}}
 const readyMsg=()=>st?.drill?L('Ready — tap the mic. You will hear each word, then repeat it.','تیار — مائیک دبائیں۔ ہر لفظ سنیں، پھر دہرائیں۔'):L('Ready — tap the mic and recite','تیار — مائیک دبائیں اور پڑھیں');
 function chip(kind,text){if(!panel)return;const c=$('#rcChip');c.className='rc-chip '+kind;c.querySelector('span').textContent=text}
@@ -112,7 +114,7 @@ function micUI(){const b=$('#rcMic');b.classList.toggle('on',st.listening);b.que
  if(st.listening)chip('listen',L('Listening — start reciting','سن رہا ہے — پڑھنا شروع کریں'));else if(ready)chip('ready',L('Paused — tap the mic to continue','رکا ہوا — جاری رکھنے کے لیے مائیک دبائیں'));paint()}
 /** Append 16 kHz mono samples; track level + voice activity; keep only the audio the tracker can still need. */
 function ingest(o){if(st.hold||!o.length)return;let e=0;for(let i=0;i<o.length;i++)e+=o[i]*o[i];const rms=Math.sqrt(e/o.length);const thr=Math.max(0.01,st.floor*2.5);
- st.chunks.push({s:st.end,a:o});st.end+=o.length;const t=st.end/SR;
+ {const ch={s:st.end,a:o};st.chunks.push(ch);if(st.mode==='hifz'||st.ctx.hifz){const F=st.full??=[];F.push(ch);st.fullN=(st.fullN||0)+o.length;while(st.fullN>FULL_MAX&&F.length>1)st.fullN-=F.shift().a.length}}st.end+=o.length;const t=st.end/SR;
  // v3.3: "voice" = the neural voice detector says SPEECH (3 of the last 5 frames), not just "louder than the room". Taps, fans, music, a cough no longer wake the recogniser.
  // Until the detector is loaded (first second) the old level test is the fallback.
  if(st.vs){const ps=st.vs.push(o);ps.forEach((p,i)=>{const ft=(st.vs.n-ps.length+i+1)*512/SR;if(st.vg.frame(ft,p)){st.lastVoice=ft;if(st.coach)st.coach.voiced=true}});
@@ -372,7 +374,7 @@ function logNow(){if(!st||st.drill||st.ctx.review||!st.first)return;let ok=0,bad
  try{PG.logSession(st.P,{ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,mode:st.mode,...d,hints:st.hintN,sec:(Date.now()-st.t0)/1000});PG.addSeen(st.P,seen);PG.save(st.P);st.hintN=0;st.t0=Date.now()}catch{/* ignore */}}
 // test hooks (automation only)
 if(navigator.webdriver){
- window.__recite={raw:()=>st,voice:(on=true)=>{if(st)st.lastVoice=on?st.end/SR:-9},feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},mode:st.mode,hint:{...st.hint},first:{...st.first},tj:st.tj&&Object.keys(st.tj).length,tjN:st.n,tjCov:st.tj&&(()=>{const by={};st.flat.forEach((x,i)=>(by[x.a]??=[]).push(i));let cov=0;const miss=[];for(const a of Object.keys(by)){if(by[a].every(i=>st.tj[i]))cov+=by[a].length;else miss.push(a)}return{words:st.flat.length,cov,ay:miss.length,miss}})(),hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
+ window.__recite={raw:()=>st,summary:(f=true)=>showSummary(f),voice:(on=true)=>{if(st)st.lastVoice=on?st.end/SR:-9},feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},mode:st.mode,hint:{...st.hint},first:{...st.first},tj:st.tj&&Object.keys(st.tj).length,tjN:st.n,tjCov:st.tj&&(()=>{const by={};st.flat.forEach((x,i)=>(by[x.a]??=[]).push(i));let cov=0;const miss=[];for(const a of Object.keys(by)){if(by[a].every(i=>st.tj[i]))cov+=by[a].length;else miss.push(a)}return{words:st.flat.length,cov,ay:miss.length,miss}})(),hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
  // feed 16 kHz audio through the real ingest/decode path in real time (no microphone needed)
  window.__reciteStream=async(a,speed=1)=>{if(!st.vs&&!window.__noVad){try{await ensureVad()}catch{/* level gate */}if(st&&!st.vs)st.vs=newVadStream()}return new Promise(res=>{st.listening=true;micUI();const step=Math.round(SR*0.04);let i=0;const iv=setInterval(()=>{if(!st){clearInterval(iv);return res()}ingest(Float32Array.from(a.subarray(i,i+step)));i+=step;if(i>=a.length){ingest(new Float32Array(step));if(st.end/SR>a.length/SR+2.6){clearInterval(iv);res()}}},40/speed)})};
 }
@@ -397,21 +399,57 @@ function hzLocate(H,t,aux){const T=st.T,now=performance.now();if(T.verified||Obj
  const starts=[];st.flat.forEach((x,i)=>{if(x.k===0)starts.push(i)});if(starts.length>400)return;
  const i0=locate(T,st.flat.map(x=>x.n),starts,st.locT,H,t,aux,i=>st.flat[i].a);if(i0<0)return;st.locT=null;T.p=T.cursor=i0;st.lineA=0;chip('listen',L(`Found you at ayah ${st.flat[i0].a}`,`آپ آیت ${st.flat[i0].a} پر ہیں`))}
 function hzRetry(a){const {n,ctx}=st;stopMic();open(n,a,ctx);setTimeout(()=>startMic().catch(()=>{}),0)}
-function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const hs=st.hs,T=st.T;
+/** Words still "unclear" (orange) in the current surah/range. */
+function uncIdx(){const T=st.T,o=[];for(let i=0;i<st.flat.length;i++)if(T.marks[i]==='unc'&&!st.hint[i])o.push(i);return o}
+const FULL_MAX=16000*60*8;
+function fslice(t0,t1){const s0=Math.max(0,Math.floor(t0*SR)),s1=Math.min(st.end,Math.floor(t1*SR));if(s1<=s0)return new Float32Array(0);const out=new Float32Array(s1-s0);
+ for(const c of st.full||[]){const a=Math.max(c.s,s0),b=Math.min(c.s+c.a.length,s1);if(b>a)out.set(c.a.subarray(a-c.s,b-c.s),a-s0)}return out}
+const finalWait=new Map();let fid=1e9;
+function decodeOnce(audio){if(window.__rfinalDec)return Promise.resolve(window.__rfinalDec(audio));if(window.__reciteFake||!worker)return Promise.resolve(null);
+ return new Promise(res=>{const id=++fid;const to=setTimeout(()=>{finalWait.delete(id);res(null)},15000);finalWait.set(id,m=>{clearTimeout(to);res(m.lp?{lp:m.lp,T:m.T}:null)});worker.postMessage({type:'run',id,audio},[audio.buffer])})}
+/** v3.5.1: late confirmation. Orange words are re-checked against the whole recording (forced alignment between the confirmed neighbours). */
+async function hzFinal(){const T=st.T;if(!st.full||!st.full.length)return 0;const marks={};for(const [k,v] of Object.entries(T.marks))marks[k]=v;
+ const r=await finalPass({flat:st.flat.map(x=>x.n),marks,wt:T.wt||{},tEnd:st.end/SR,decode:a=>decodeOnce(a),slice:fslice}).catch(()=>null);if(!r)return 0;let n=0;
+ for(const i of r.confirmed){if(T.marks[i]==='unc'){T.marks[i]='ok';st.first[i]='ok';n++}}st.hs.late=(st.hs.late||0)+n;if(n)paint();return n}
+function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');const hs=st.hs,T=st.T;hs.uncPrev??=[];hs.totPrev??=0;
+ if(final)panel.classList.add('rc-done');
+ const canFinal=!st.fpDone&&uncIdx().length&&st.full&&st.full.length&&(!window.__reciteFake||window.__rfinalDec);
+ if(canFinal){st.fpDone=1;box.hidden=false;$('#rcFix').hidden=true;box.innerHTML=`<div class="rc-sh"><b>${L('Checking your recording…','آپ کی ریکارڈنگ دوبارہ چیک ہو رہی ہے…')}</b></div><p class="rc-ft">${L('Looking again at the words I could not confirm.','جو الفاظ واضح نہیں تھے انہیں دوبارہ دیکھ رہا ہوں۔')}</p>`;
+  const sess=st;hzFinal().catch(()=>0).then(()=>{if(st===sess&&panel)hzSummary(final)});return}
+ box.hidden=false;$('#rcFix').hidden=true;
  for(let i=0;i<T.p&&i<st.flat.length;i++){const a=st.flat[i].a;if(st.flat[i+1]?.a!==a)hs.ayat[st.n+':'+a]=1}
- const okW=(hs.okW||0)+Object.entries(T.marks).filter(([k,v])=>v==='ok'&&!st.hint[+k]).length;const nx=[...(st.rangeB<Math.min(st.ctx.txts.length,st.ctx.to||1e9)?[[st.n,st.rangeB+1,st.ctx.to||st.ctx.txts.length]]:[]),...(st.ctx.next||[])];
- const goNext=()=>{hs.okW=okW;box.hidden=true;const [s2,f2]=nx[0];if(s2===st.n){const {n,ctx}=st;open(n,f2,{...ctx,hs})}else st.ctx.onNext?.(nx[0],nx.slice(1),hs)};
+ const curOk=Object.entries(T.marks).filter(([k,v])=>v==='ok'&&!st.hint[+k]).length,okW=(hs.okW||0)+curOk;
+ const uncCur=uncIdx().map(i=>({...targetOf(i),kind:'unc',ts:Date.now()}));const uncAll=[...hs.uncPrev,...uncCur];
+ const nx=[...(st.rangeB<Math.min(st.ctx.txts.length,st.ctx.to||1e9)?[[st.n,st.rangeB+1,st.ctx.to||st.ctx.txts.length]]:[]),...(st.ctx.next||[])];
+ const goNext=()=>{hs.okW=okW;hs.uncPrev=uncAll;hs.totPrev+=st.flat.length;box.hidden=true;const [s2,f2]=nx[0];if(s2===st.n){const {n,ctx}=st;open(n,f2,{...ctx,hs})}else st.ctx.onNext?.(nx[0],nx.slice(1),hs)};
  if(final&&nx.length&&st.ctx.auto!==false){goNext();return}
- const nm=hs.list.filter(x=>x.kind!=='hint'&&x.kind!=='stuck').length,nh=hs.list.filter(x=>x.kind==='hint'||x.kind==='stuck').length,ny=Object.keys(hs.ayat).length;
- if(!(final&&nx.length)&&!hs.saved){hs.saved=1;const h=hifzHistory();h.unshift({ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,ayat:ny,ok:okW,mist:nm,hints:nh});try{localStorage.setItem(HZK,JSON.stringify(h.slice(0,50)))}catch{/* ignore */}}
- const KN={wrong:['Mistake','غلطی'],skip:['Skipped','چھوٹا'],hint:['Hint','اشارہ'],stuck:['Stuck','اٹکے']};
- box.innerHTML=`<div class="rc-sh"><b>${final?L('Hifz Test complete','حفظ ٹیسٹ مکمل'):L('Hifz Test summary','حفظ ٹیسٹ کا خلاصہ')}</b></div>
- <div class="rc-stats"><span class="g"><b>${ny}</b>${L('ayat done','آیات مکمل')}</span><span class="g"><b>${okW}</b>${L('words correct','درست الفاظ')}</span><span class="r"><b>${nm}</b>${L('mistakes','غلطیاں')}</span><span><b>${nh}</b>${L('hints','اشارے')}</span></div>
- ${final&&nx.length?`<p class="rc-ft">${L(`Next: ${nx[0][0]}:${nx[0][1]}`,`اگلا: ${nx[0][0]}:${nx[0][1]}`)}</p>`:''}${hs.list.length?`<div class="rc-wl-h">${L('Tap to hear · ⟲ to retry that ayah','سننے کے لیے دبائیں · ⟲ اس آیت سے دوبارہ')}</div><div class="rc-wl">${hs.list.map((x,j)=>`<div class="rc-hzr"><button class="rc-wi" data-j="${j}"><span class="ar" dir="rtl" lang="ar">${esc(x.t)}</span><small>${L(KN[x.kind]?.[0]||'Mistake',KN[x.kind]?.[1]||'غلطی')} · ${x.sn}:${x.a}</small></button>${x.sn===st.n?`<button class="btn ghost rc-hzj" data-a="${x.a}" aria-label="Retry ${x.a}">⟲</button>`:''}</div>`).join('')}</div>`:`<p class="rc-ft">${L('No mistakes — well recited!','کوئی غلطی نہیں — ماشاءاللہ!')}</p>`}
- <p class="rc-note muted">${nm?L('Mistakes are saved to your weak words for review.','غلطیاں دہرائی کے لیے کمزور الفاظ میں محفوظ ہیں۔'):''}</p>
- <div class="bar rc-sb">${!final?`<button class="btn" id="sGo">${L('Keep going','جاری رکھیں')}</button>`:''}${final&&nx.length?`<button class="btn" id="sNx">${L('Next surah','اگلی سورت')}</button>`:''}<button class="btn" id="sRe">⟲ ${L('Test again','دوبارہ ٹیسٹ')}</button><button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
- box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=hs.list[+b.dataset.j];if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0});document.getElementById('a'+x.a)?.scrollIntoView({block:'center',behavior:'smooth'})}});
+ const nW=hs.list.filter(x=>x.kind!=='skip'&&x.kind!=='hint'&&x.kind!=='stuck').length,nS=hs.list.filter(x=>x.kind==='skip').length,nh=hs.list.filter(x=>x.kind==='hint'||x.kind==='stuck').length,ny=Object.keys(hs.ayat).length,nm=nW+nS,nu=uncAll.length;
+ const total=hs.totPrev+st.flat.length,reached=hs.totPrev+Math.min(T.p,st.flat.length),notReached=Math.max(0,total-reached);
+ const perfect=final&&nu===0&&nm===0&&nh===0&&notReached===0;
+ if(!(final&&nx.length)&&!hs.saved){hs.saved=1;const h=hifzHistory();h.unshift({ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,ayat:ny,ok:okW,mist:nm,hints:nh,unc:nu});try{localStorage.setItem(HZK,JSON.stringify(h.slice(0,50)))}catch{/* ignore */}}
+ const KN={wrong:['Mistake','غلطی'],skip:['Skipped','چھوٹا'],hint:['Hint','اشارہ'],stuck:['Stuck','اٹکے'],unc:['Not confirmed','تصدیق نہیں']};
+ const title=perfect?L('Hifz Test complete — every word confirmed ✓','حفظ ٹیسٹ مکمل — ہر لفظ کی تصدیق ✓'):final?(nm?L('Hifz Test finished — check the marked words','حفظ ٹیسٹ ختم — نشان زد الفاظ دیکھیں'):L(`Hifz Test finished — ${nu} word${nu===1?'':'s'} not confirmed`,`حفظ ٹیسٹ ختم — ${nu} الفاظ کی تصدیق نہیں ہو سکی`)):L('Hifz Test summary','حفظ ٹیسٹ کا خلاصہ');
+ const verdict=perfect?L('No mistakes, and I confirmed every word — well recited!','کوئی غلطی نہیں اور ہر لفظ کی تصدیق ہوئی — ماشاءاللہ!'):
+  nm?L(`${nm} mistake${nm===1?'':'s'} found.${nu?` ${nu} more word${nu===1?' was':'s were'} not confirmed.`:''}`,`${nm} غلطی ملی۔${nu?` ${nu} الفاظ کی تصدیق نہیں ہو سکی۔`:''}`):
+  nu?L(`I found no mistakes, but I could not confirm ${nu} word${nu===1?'':'s'}. That does not mean ${nu===1?'it was':'they were'} wrong — I just could not hear ${nu===1?'it':'them'} clearly enough.`,`مجھے کوئی غلطی نہیں ملی، لیکن ${nu} الفاظ کی تصدیق نہیں کر سکا۔ اس کا مطلب غلطی نہیں — بس میں انہیں صاف نہیں سن سکا۔`):
+  notReached?L(`No mistakes in the ${reached} words I heard. ${notReached} words were not reached.`,`سنے گئے ${reached} الفاظ میں کوئی غلطی نہیں۔ ${notReached} الفاظ تک نہیں پہنچے۔`):L('No mistakes found.','کوئی غلطی نہیں ملی۔');
+ const rows=[...uncAll.map(x=>({...x,kind:'unc'})),...hs.list.filter(x=>x.kind!=='hint'&&x.kind!=='stuck')];KN.wrong=KN.wrong;
+ box.innerHTML=`<div class="rc-sh"><b>${title}</b></div>
+ <div class="rc-stats rc-st5"><span class="g"><b>${okW}</b>${L('confirmed','تصدیق شدہ')}</span><span class="u"><b>${nu}</b>${L('not confirmed','غیر تصدیق شدہ')}</span><span class="r"><b>${nW}</b>${L('mistakes','غلطیاں')}</span><span class="r"><b>${nS}</b>${L('skipped','چھوٹے')}</span><span><b>${nh}</b>${L('hints','اشارے')}</span></div>
+ <p class="rc-verdict${perfect?' ok':nm?' bad':nu?' unc':''}" id="rcVerdict">${verdict}</p>
+ <p class="rc-ay">${L(`${ny} ayat completed`,`${ny} آیات مکمل`)}</p>
+ ${nu?`<p class="rc-legend"><i class="lg-u"></i>${L('Orange = I could not confirm this word','نارنجی = اس لفظ کی تصدیق نہیں ہو سکی')}</p>`:''}
+ ${hs.late?`<p class="rc-note muted">${L(`${hs.late} word${hs.late===1?'':'s'} confirmed after re-checking your recording.`,`ریکارڈنگ دوبارہ چیک کرنے پر ${hs.late} الفاظ کی تصدیق ہوئی۔`)}</p>`:''}
+ ${final&&nx.length?`<p class="rc-ft">${L(`Next: ${nx[0][0]}:${nx[0][1]}`,`اگلا: ${nx[0][0]}:${nx[0][1]}`)}</p>`:''}${rows.length?`<div class="rc-wl-h">${L('Tap a word to hear it · ⌖ show it in the text · ⟲ retry that ayah','لفظ دبائیں تو سنائی دے گا · ⌖ متن میں دیکھیں · ⟲ اس آیت سے دوبارہ')}</div><div class="rc-wl">${rows.map((x,j)=>`<div class="rc-hzr${x.kind==='unc'?' unc':''}"><button class="rc-wi" data-j="${j}"><span class="ar" dir="rtl" lang="ar">${esc(x.t)}</span><small>${L(KN[x.kind]?.[0]||'Mistake',KN[x.kind]?.[1]||'غلطی')} · ${x.sn}:${x.a}</small></button>${x.sn===st.n&&x.i!=null?`<button class="btn ghost rc-hzs" data-j="${j}" aria-label="${L('Show in text','متن میں دیکھیں')}">⌖</button>`:''}${x.sn===st.n?`<button class="btn ghost rc-hzj" data-a="${x.a}" aria-label="Retry ${x.a}">⟲</button>`:''}</div>`).join('')}</div>`:''}
+ <p class="rc-note muted">${nm||nu?L('These words are saved to your weak words for review.','یہ الفاظ دہرائی کے لیے کمزور الفاظ میں محفوظ ہیں۔'):''}</p>
+ <div class="bar rc-sb">${nu?`<button class="btn" id="sUnc">🔁 ${L(`Re-read the ${nu} unconfirmed word${nu===1?'':'s'}`,`${nu} غیر تصدیق شدہ الفاظ دوبارہ پڑھیں`)}</button>`:''}${!final?`<button class="btn" id="sGo">${L('Keep going','جاری رکھیں')}</button>`:''}${final&&nx.length?`<button class="btn" id="sNx">${L('Next surah','اگلی سورت')}</button>`:''}<button class="btn${nu?' ghost':''}" id="sRe">⟲ ${L('Test again','دوبارہ ٹیسٹ')}</button><button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
+ // unconfirmed words go to the weak list (once per session) so they come back in spaced review
+ if(nu&&!hs.uncSaved){hs.uncSaved=1;try{for(const x of uncAll){recMiss(st.weak,x);}weakSave(st.weak)}catch{/* ignore */}}
+ box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=rows[+b.dataset.j];if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0});document.getElementById('a'+x.a)?.scrollIntoView({block:'center',behavior:'smooth'})}});
+ box.querySelectorAll('.rc-hzs').forEach(b=>b.onclick=()=>{const x=rows[+b.dataset.j];if(!x)return;st.helpI=x.i;st.hzBuilt=st.hzBuilt;paint();const el=panel.querySelector(`.rc-w[data-i="${x.i}"]`);el?.scrollIntoView?.({block:'center',behavior:'smooth'});setTimeout(()=>{if(st&&st.helpI===x.i){st.helpI=-1;paint()}},2500)});
  box.querySelectorAll('.rc-hzj').forEach(b=>b.onclick=()=>{const {n,ctx}=st;open(n,+b.dataset.a,{...ctx,hs:null})});
+ const un=$('#sUnc');if(un)un.onclick=async()=>{const items=uncAll.map(x=>({...x,ph:x.ph||[]}));st.drill={items,idx:0,fixes:0,skips:0,review:false,unc:true};st.fixed={};box.hidden=true;$('#rcLine').hidden=true;panel.classList.remove('rc-done');st.hold=false;
+  if(!st.listening)await startMic();if(st.listening)drillNext()};
  const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.hold=false;st.cut=st.end;st.lineA=0;paint();startMic().then(()=>armStuck(1500))};
  const nb=$('#sNx');if(nb)nb.onclick=goNext;
  $('#sRe').onclick=()=>{const {n,ctx}=st;open(n,st.rangeA,{...ctx,hs:null})};$('#sX').onclick=close}
