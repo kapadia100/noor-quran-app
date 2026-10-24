@@ -60,7 +60,7 @@ function rows(D,P,tt,ur){const ids=filtered(D,P);
   return `<a class="dc-row${k?' known':''}" href="#/dict/${w.r}" data-r="${w.r}"><span class="dc-n">${w.r}</span><span class="ar dc-ar" dir="rtl" lang="ar">${esc(w.h)}</span><span class="mt"><b>${esc(w.t)}</b><small>${esc(meaning(w,ur()))}</small></span><span class="dc-c">${w.n.toLocaleString()}×</span><span class="dc-k" aria-label="${k?tt('Known','معلوم'):''}">${k?'✓':e?.s?'★':''}</span></a>`}).join('')}
 function list(C,tt,ur,I,D,P){
  const cv=K.coverage(D.words,P.w,D.total),due=K.dueCount(P.w),nS=Object.values(P.w).filter(e=>e.s).length;
- const lvLab=(i)=>{const [a,b]=K.LEVELS[i-1];const c=D.cov.find(x=>x[0]===b);return `${a}–${b}${c?` · <bdi dir="ltr">${c[2]}%</bdi>`:''}`};
+ const lvLab=(i)=>{const [a,b]=K.LEVELS[i-1];const c=D.cov.find(x=>x[0]===b);return `<bdi dir="ltr">${a}–${b}${c?` · ${c[2]}%`:''}</bdi>`};
  const chip=(on,attr,txt)=>`<button class="dc-chip${on?' on':''}" ${attr} aria-pressed="${on?'true':'false'}">${txt}</button>`;
  C.app().innerHTML=`<section class="dsec dc-wrap">
  <div class="q-hero"><span class="ar q-hero-ar" dir="rtl" lang="ar">قُرْآن</span><div><b>${tt('Quran Dictionary','قرآن ڈکشنری')}</b><small>${tt(`The ${D.words.length} most frequent words of the Quran`,`قرآن کے ${D.words.length} سب سے زیادہ آنے والے الفاظ`)}</small></div></div>
