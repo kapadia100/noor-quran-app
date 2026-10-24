@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Install Quran Safar</title><meta name="description" content="Install Quran Safar on iPhone or Android: Quran, prayer times, duas and hadith, free and ad-free.">
+<meta name="theme-color" content="#14171d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Quran Safar">
+<link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../icon-192.png"><link rel="icon" href="../icon.svg">
+<style>
+:root{--g:#3ccf83;--gold:#d9b25f;--bg:#0d0f13;--card:#171a21;--fg:#eceef2;--mut:#9aa2b1}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,Inter,system-ui,sans-serif}
+[lang=ur] body{font-family:'Noto Nastaliq Urdu',-apple-system,sans-serif;line-height:2.1}
+.hero{padding:calc(env(safe-area-inset-top) + 28px) 20px 26px;text-align:center;background:linear-gradient(165deg,#e6dcf7,#f3e3ef 45%,#fde3cf);color:#2a2340;border-radius:0 0 30px 30px}
+.hero img.icon{width:96px;height:96px;border-radius:24px;box-shadow:0 10px 28px #6b4c9a40}
+h1{margin:12px 0 2px;font-size:28px}.hero p{margin:0;opacity:.8}
+.lang{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:14px;background:#ffffffb0;border:0;border-radius:20px;padding:6px 14px;font:inherit;color:#2a2340}
+main{max-width:560px;margin:auto;padding:18px 16px calc(40px + env(safe-area-inset-bottom))}
+.card{background:var(--card);border:1px solid #262a34;border-radius:22px;padding:18px;margin:14px 0;box-shadow:0 8px 24px #0006}
+.card h2{margin:0 0 10px;font-size:19px;color:var(--g)}
+ol{padding:0;margin:0;list-style:none;counter-reset:s}ol li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #ffffff10;opacity:.45;transition:opacity .4s,transform .4s}
+ol li.on{opacity:1;transform:translateX(4px)}ol li:last-child{border:0}
+ol li::before{content:counter(s);flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#3ccf8322;color:var(--g);font-weight:700;border:1px solid #d9b25f55}
+.ico{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;background:#2a2f3a;vertical-align:middle;margin:0 4px}.ico svg{width:20px;height:20px;stroke:#5aa9ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border:0;border-radius:16px;background:linear-gradient(160deg,#5fe0a0,#2fb874);color:#06210f;font:inherit;font-weight:700;font-size:17px;text-decoration:none;cursor:pointer;margin-top:10px}
+.btn.ghost{background:#232733;color:var(--fg)}
+.arrow{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 6px);transform:translateX(-50%);z-index:9;text-align:center;color:#fff;pointer-events:none;animation:bob 1.2s ease-in-out infinite}
+.arrow b{display:block;background:var(--g);color:#06210f;border-radius:14px;padding:6px 12px;font-size:13px;margin-bottom:4px;box-shadow:0 6px 18px #0008}.arrow span{font-size:34px;line-height:1;color:var(--g);text-shadow:0 2px 8px #000}
+@keyframes bob{50%{transform:translate(-50%,-10px)}}
+.shots{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;scroll-snap-type:x mandatory}.shots img{width:150px;border-radius:18px;border:1px solid #2a2f3a;scroll-snap-align:start;flex:none}
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:0;list-style:none}.feat li{background:#1d212a;border-radius:14px;padding:10px;font-size:14px}
+.qr{display:block;width:220px;height:220px;margin:8px auto;border-radius:16px;background:#fff;padding:8px}
+.mut{color:var(--mut);font-size:14px}.c{text-align:center}[hidden]{display:none!important}
+.url{display:block;background:#0d0f13;border:1px solid #2a2f3a;border-radius:12px;padding:10px;font:13px ui-monospace,monospace;word-break:break-all;color:#cfd5df;margin-top:8px}
+</style></head><body>
+<header class="hero"><button class="lang" id="lang">اردو</button><img class="icon" src="../icon-192.png" alt="Quran Safar icon" width="96" height="96"><h1 data-en="Quran Safar" data-ur="قرآن سفر">Quran Safar</h1><p data-en="Quran · Prayer times · Duas · Hadith — free, no ads" data-ur="قرآن · اوقاتِ نماز · دعائیں · حدیث — مفت، بغیر اشتہار">Quran · Prayer times · Duas · Hadith — free, no ads</p></header>
+<main>
+<section class="card" id="ios" hidden><h2 data-en="Install on iPhone (Safari)" data-ur="آئی فون پر انسٹال کریں (سفاری)">Install on iPhone (Safari)</h2><ol id="steps">
+ <li><div><span data-en="Tap the" data-ur="نیچے">Tap the</span> <span class="ico"><svg viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg></span> <b data-en="Share" data-ur="شیئر">Share</b> <span data-en="button at the bottom of Safari (or in the ••• menu)." data-ur="بٹن دبائیں (یا ••• مینو میں)۔">button at the bottom of Safari (or in the ••• menu).</span></div></li>
+ <li><div><span data-en="Scroll down and tap" data-ur="نیچے اسکرول کر کے دبائیں">Scroll down and tap</span> <span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span> <b data-en="Add to Home Screen" data-ur="Add to Home Screen">Add to Home Screen</b>.</div></li>
+ <li><div><span data-en="Tap" data-ur="اوپر دائیں">Tap</span> <b>Add</b> <span data-en="(top right). Open Quran Safar from your Home Screen." data-ur="دبائیں۔ اب ہوم اسکرین سے قرآن سفر کھولیں۔">(top right). Open Quran Safar from your Home Screen.</span></div></li>
+</ol><p class="mut" data-en="Already installed an older version? Delete the old icon first (press and hold the icon, then Remove App), then add it again." data-ur="اگر پرانا ورژن انسٹال ہے تو پہلے پرانا آئیکن ہٹا دیں (دبائے رکھیں → Remove App)، پھر دوبارہ شامل کریں۔">Already installed an older version? Delete the old icon first (press and hold the icon, then Remove App), then add it again.</p></section>
+<div class="arrow" id="arrow" hidden><b data-en="Tap Share" data-ur="شیئر دبائیں">Tap Share</b><span>⬇</span></div>
+<section class="card" id="inapp" hidden><h2 data-en="Open in Safari to install" data-ur="انسٹال کے لیے سفاری میں کھولیں">Open in Safari to install</h2>
+ <p data-en="You are viewing this inside another app (WhatsApp, Grok, Instagram…). iPhone can only install web apps from Safari." data-ur="آپ یہ کسی دوسری ایپ (واٹس ایپ، گروک…) کے اندر دیکھ رہے ہیں۔ آئی فون پر انسٹال صرف سفاری سے ہوتا ہے۔">You are viewing this inside another app (WhatsApp, Grok, Instagram…). iPhone can only install web apps from Safari.</p>
+ <ol class="plain"><li class="on"><div data-en="Tap the ••• or share/compass button in this app and choose “Open in Safari”, or" data-ur="اس ایپ میں ••• یا شیئر بٹن دبا کر “Open in Safari” منتخب کریں، یا">Tap the ••• or share/compass button in this app and choose “Open in Safari”, or</div></li><li class="on"><div data-en="Copy the link below, open Safari and paste it into the address bar." data-ur="نیچے سے لنک کاپی کریں، سفاری کھولیں اور ایڈریس بار میں پیسٹ کریں۔">Copy the link below, open Safari and paste it into the address bar.</div></li></ol>
+ <code class="url" id="url"></code><button class="btn" id="copy" data-en="Copy link" data-ur="لنک کاپی کریں">Copy link</button></section>
+<section class="card" id="android" hidden><h2 data-en="Install on Android" data-ur="اینڈرائیڈ پر انسٹال کریں">Install on Android</h2><button class="btn" id="installBtn" hidden data-en="Install app" data-ur="ایپ انسٹال کریں">Install app</button>
+ <p id="andManual" class="mut" data-en="In Chrome, tap ⋮ (top right), then “Install app” or “Add to Home screen”." data-ur="کروم میں اوپر ⋮ دبائیں، پھر “Install app” یا “Add to Home screen”۔">In Chrome, tap ⋮ (top right), then “Install app” or “Add to Home screen”.</p></section>
+<section class="card c" id="desktop" hidden><h2 data-en="Scan with your phone" data-ur="اپنے فون سے اسکین کریں">Scan with your phone</h2><img class="qr" src="qr.png" alt="QR code for the install page" width="220" height="220"><p class="mut" data-en="Open the camera on your iPhone or Android and point it at the code." data-ur="آئی فون یا اینڈرائیڈ کا کیمرہ کھول کر کوڈ کی طرف کریں۔">Open the camera on your iPhone or Android and point it at the code.</p></section>
+<section class="card"><h2 data-en="Inside the app" data-ur="ایپ میں کیا ہے">Inside the app</h2><div class="shots"><img src="s0.webp" alt="Home" loading="lazy"><img src="s1.webp" alt="Quran" loading="lazy"><img src="s2.webp" alt="Ibadat" loading="lazy"><img src="s3.webp" alt="Hadith" loading="lazy"></div>
+ <ul class="feat"><li data-en="Full Quran, offline" data-ur="مکمل قرآن، آف لائن">Full Quran, offline</li><li data-en="Prayer times & alerts" data-ur="نماز کے اوقات و الرٹس">Prayer times & alerts</li><li data-en="Duas & azkar" data-ur="دعائیں و اذکار">Duas & azkar</li><li data-en="Hadith search" data-ur="حدیث تلاش">Hadith search</li></ul>
+ <a class="btn ghost" href="../" data-en="Open in browser without installing" data-ur="انسٹال کیے بغیر کھولیں">Open in browser without installing</a></section>
+</main>
+<script>
+(function(){var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;if(standalone){location.replace('../');return}
+var ua=navigator.userAgent,iOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),android=/Android/.test(ua);
+var inApp=/FBAN|FBAV|Instagram|WhatsApp|Line\/|GSA\/|CriOS|FxiOS|EdgiOS|OPiOS|Grok|Twitter|Snapchat|LinkedInApp/.test(ua)||(iOS&&!/Safari\//.test(ua));
+var mode=iOS?(inApp?'inapp':'ios'):android?'android':'desktop';var q=new URLSearchParams(location.search).get('mode');if(q)mode=q;document.documentElement.dataset.mode=mode;
+document.getElementById(mode).hidden=false;var link=location.origin+location.pathname;document.getElementById('url').textContent=link;
+if(mode==='ios'){document.getElementById('arrow').hidden=false;var li=document.querySelectorAll('#steps li'),i=0;var tick=function(){li.forEach(function(x,k){x.classList.toggle('on',k===i)});i=(i+1)%li.length};tick();setInterval(tick,1800)}
+document.getElementById('copy').onclick=function(){var b=this,done=function(){b.textContent=document.documentElement.lang==='ur'?'کاپی ہو گیا ✓':'Copied ✓'};if(navigator.clipboard)navigator.clipboard.writeText(link).then(done,fallback);else fallback();function fallback(){var t=document.createElement('textarea');t.value=link;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done()}};
+var dp;addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;document.getElementById('installBtn').hidden=false;document.getElementById('andManual').hidden=true});
+document.getElementById('installBtn').onclick=function(){if(!dp)return;dp.prompt();dp.userChoice.then(function(c){if(c.outcome==='accepted')location.href='../'})};
+addEventListener('appinstalled',function(){try{localStorage.setItem('gcInstalled','1');window.goatcounter&&window.goatcounter.count&&window.goatcounter.count({path:'pwa-installed',title:'pwa-installed',event:true})}catch(e){}setTimeout(function(){location.href='../'},400)});
+var lang=localStorage.getItem('installLang')||(/^ur/.test(navigator.language)?'ur':'en');function setLang(l){lang=l;localStorage.setItem('installLang',l);document.documentElement.lang=l;document.documentElement.dir=l==='ur'?'rtl':'ltr';document.querySelectorAll('[data-'+l+']').forEach(function(e){e.textContent=e.getAttribute('data-'+l)});document.getElementById('lang').textContent=l==='ur'?'EN':'اردو'}
+setLang(lang);document.getElementById('lang').onclick=function(){setLang(lang==='ur'?'en':'ur')};
+if('serviceWorker' in navigator)navigator.serviceWorker.register('../sw.js',{scope:'../'}).catch(function(){})})();
+</script>
+<script>/* Anonymous cookie-free counts (GoatCounter). Skipped with Do Not Track and in automated browsers. */
+(function(){if(navigator.webdriver&&localStorage.getItem('gcDebug')!=='1')return;if(navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;
+window.goatcounter={path:'/install/'};var s=document.createElement('script');s.async=true;s.src='https://gc.zgo.at/count.js';s.setAttribute('data-goatcounter','https://quransafar.goatcounter.com/count');
+s.onload=function(){try{window.goatcounter.count({path:'install-page-view',title:'install-page-view',event:true});window.goatcounter.count({path:'install-mode-'+document.documentElement.dataset.mode,title:'install mode',event:true})}catch(e){}};document.head.appendChild(s)})();
+</script></body></html>
