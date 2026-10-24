@@ -147,5 +147,6 @@ function summary(C,tt,ur,I,D){
  C.app().innerHTML=`<section class="dsec dc-wrap"><div class="card dc-sum" id="dcSum"><b class="dc-pct">${Q.right} / ${n}</b><p>${tt('right this session','اس نشست میں درست')}</p>
  <p>${tt(`You now know ${cv.words} words — ${cv.pct}% of the Quran’s words.`,`اب آپ ${cv.words} الفاظ جانتے ہیں — قرآن کے الفاظ کا ${cv.pct}%۔`)}</p>
  ${miss.length?`<small class="muted">${tt('To review soon:','جلد دہرائیں:')}</small><div class="dc-miss">${miss.map(r=>`<a class="dc-pill" href="#/dict/${r}"><span class="ar" dir="rtl" lang="ar">${esc(D.words[r-1].h)}</span> ${esc(K.brief(meaning(D.words[r-1],ur())))}</a>`).join('')}</div>`:''}
- <div class="bar"><a class="btn" href="#/dict/quiz/${Q.kind}${Q.star?'-star':''}" id="dcAgain">${tt('Practise again','دوبارہ مشق')}</a><a class="btn ghost" href="#/dict">${tt('Dictionary','ڈکشنری')}</a></div></div></section>`;
- Q=null}
+ <div class="bar"><button class="btn" id="dcAgain">${tt('Practise again','دوبارہ مشق')}</button><a class="btn ghost" href="#/dict">${tt('Dictionary','ڈکشنری')}</a></div></div></section>`;
+ const mode=Q.kind+(Q.star?'-star':'');Q=null;
+ C.app().querySelector('#dcAgain').onclick=()=>quiz(C,tt,ur,I,D,load(),mode)}
