@@ -22,6 +22,7 @@ const qPref=()=>{const v=localStorage.getItem('qsQuality');return v==='fast'||v=
 const qLevel=()=>{const p=qPref();return p==='auto'?(st?.autoQ||'balanced'):p};
 const Q=()=>QUAL[qLevel()];
 const PREF={mode:'follow'};
+let _ac;const tone=()=>{try{if(localStorage.getItem('qsHaptic')==='0')return;const A=window.AudioContext||window.webkitAudioContext;if(!A)return;_ac??=new A();_ac.resume?.();const t=_ac.currentTime;[[440,0],[330,.14]].forEach(([f,d])=>{const o=_ac.createOscillator(),g=_ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.07,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.2);o.connect(g).connect(_ac.destination);o.start(t+d);o.stop(t+d+.22)})}catch{/* no audio */}};
 const buzz=p=>{try{if(localStorage.getItem('qsHaptic')!=='0')navigator.vibrate?.(p)}catch{/* not supported (iPhone Safari) */}};
 let worker=null,ready=false,panel=null,st=null;
 const $=s=>panel.querySelector(s);
@@ -168,7 +169,7 @@ async function playWord(t,o={}){const r=await playPart(t.au,{...o,tag:'word'});i
 async function playPhrase(t,onWord){const ph=t.ph||[];
  if(ph.length&&ph.every(x=>x.au)){for(let j=0;j<ph.length;j++){onWord?.(j);const r=await playPart(ph[j].au,{tag:'phrase'});if(r==='cancel'||r==='blocked')return r;if(r==='error')break;if(j===ph.length-1)return 'end'}onWord?.(-1)}
  const u=await st.ctx.ayahUrl?.(t.a,t.sn);const lo=t.ci-t.pi;return u?playPart(u,{tag:'phrase-slice',slice:{cn:t.cn,i0:lo,i1:lo+Math.max(ph.length,1)-1,pad:0.15}}):'error'}
-function flag(i,kind,heard=''){const t=targetOf(i);(st.kinds??={})[kind]=(st.kinds[kind]||0)+1;buzz([30,40,30]);try{PG.addMistake(st.P,{ts:Date.now(),sn:st.n,a:t.a,t:t.t,nw:t.nw,type:kind,heard});PG.save(st.P)}catch{/* ignore */}st.flagged[t.key]=t;if(st.hs)st.hs.list.push({...t,ph:[],kind,ts:Date.now()});st.miss[t.key]=(st.miss[t.key]||0)+1;recMiss(st.weak,t);weakSave(st.weak);
+function flag(i,kind,heard=''){const t=targetOf(i);(st.kinds??={})[kind]=(st.kinds[kind]||0)+1;buzz([30,40,30]);tone();try{PG.addMistake(st.P,{ts:Date.now(),sn:st.n,a:t.a,t:t.t,nw:t.nw,type:kind,heard});PG.save(st.P)}catch{/* ignore */}st.flagged[t.key]=t;if(st.hs)st.hs.list.push({...t,ph:[],kind,ts:Date.now()});st.miss[t.key]=(st.miss[t.key]||0)+1;recMiss(st.weak,t);weakSave(st.weak);
  if(st.coach)st.queue.push({t,kind});else coachStart(t,'bad',kind)}
 function nudge(i){(st.kinds??={}).unclear=(st.kinds.unclear||0)+1;const t=targetOf(i),el=$('#rcNudge');el.hidden=false;
  el.innerHTML=`<span class="ar" dir="rtl" lang="ar">${esc(t.t)}</span><span>${L('Not clear — say it again?','واضح نہیں — دوبارہ کہیں؟')}</span><button class="btn" id="nRep">${L('Repeat','دہرائیں')}</button>`;

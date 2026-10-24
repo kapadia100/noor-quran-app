@@ -72,7 +72,7 @@ export function createLive(o){
   /** Test / non-mic feed. */
   feed(raw){const cond=check?new Float32Array(raw):raw;ingest(raw,cond)},
   async start(){
-   if(typeof window!=='undefined'&&window.__qFake){S.fake=true;try{await ensureVad();S.pace=mkPace()}catch{}o.onStatus?.('listen');return{ok:true}}
+   if(typeof window!=='undefined'&&window.__qFake){S.fake=true;S.fakeReady=(async()=>{try{await ensureVad();S.pace=mkPace()}catch{/* keep the fallback pace */}})();await S.fakeReady;o.onStatus?.('listen');return{ok:true}}
    if(!navigator.mediaDevices?.getUserMedia)return{ok:false,err:'nomic'};
    // iOS Safari only unlocks audio inside the tap: create + resume the AudioContext first, before any await (model download, permission prompt).
    const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();ac.resume?.().catch(()=>{});
@@ -95,7 +95,7 @@ export function createLive(o){
   stop(){if(S.stopped)return;S.stopped=true;try{S.wl?.release()}catch{/* ignore */}
    if(S.mic){try{S.mic.proc.disconnect();S.mic.src.disconnect();S.mic.stream.getTracks().forEach(t=>t.stop());S.mic.ac.close()}catch{/* ignore */}S.mic=null}S.fake=false;o.onStatus?.('stopped')},
   /** Test hooks (webdriver): simulate one spoken burst / one decoded result without audio. */
-  _burst(){if(!S.fake)return;S.pace.cnt++;S.bursts.push({t0:S.t});setPos();finishIfDone()},
-  _grade(i,ok){if(!S.fake)return;S.grades[i]=ok?'ok':'nc';o.onGrade?.(i,ok?'ok':'nc');finishIfDone()}
+  async _burst(){await S.fakeReady;if(!S.fake)return;S.pace.cnt++;S.bursts.push({t0:S.t});setPos();finishIfDone()},
+  async _grade(i,ok){await S.fakeReady;if(!S.fake)return;S.grades[i]=ok?'ok':'nc';o.onGrade?.(i,ok?'ok':'nc');finishIfDone()}
  };
  return api}

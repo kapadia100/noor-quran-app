@@ -72,6 +72,14 @@ test('letters: big Live start card on top, honest "tracked by voice" label, item
  await page.click('#qlStop');await expect(page.locator('#qlSum')).toContainText(/Read again/);await expect(page.locator('.q-tile.q-ok')).toHaveCount(0);
  const P=await page.evaluate(()=>localStorage.qsQaida);expect(P||'{}').not.toContain('"got":{"');});
 
+test.describe('slow voice-model load',()=>{test.use({serviceWorkers:'block'});
+test('letters: bursts sent while the voice model is still loading are not lost (slow network)',async({page})=>{
+ await fakeMic(page);await page.route('**/vad/silero16k.bin',async r=>{await new Promise(x=>setTimeout(x,700));await r.continue()});
+ await page.goto('./#/qaida/huroof');await page.click('.q-lbtn');await expect(page.locator('#qLp')).toBeVisible();
+ await page.evaluate(()=>{window.__qlive._burst()}); // lands before the model has loaded
+ await page.waitForTimeout(1200);for(let k=2;k<=3;k++)await page.evaluate(()=>window.__qlive._burst());
+ await expect(page.locator('.q-tile.q-fa')).toHaveCount(3);await expect(page.locator('.q-tile.q-cur')).toHaveAttribute('data-i','3');errors=errors.filter(e=>!/reading 'update'/.test(e))})}); // (blocked service worker makes register() resolve undefined: test artefact)
+
 test('Live card is the first thing in the lesson, above the grid and the fold; items turn green; meter, Hear it and badge are there',async({page})=>{
  await fakeMic(page);await page.goto('./#/qaida/huroof');
  const [lb,gr]=await Promise.all(['.q-lb-top','.q-grid'].map(s=>page.locator(s).boundingBox()));expect(lb.y).toBeLessThan(gr.y);expect(lb.y+lb.height).toBeLessThan(500);
