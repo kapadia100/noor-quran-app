@@ -67,7 +67,7 @@ export class Tracker{
  get winStart(){return this.p>0?Math.max(0,this.lockedStart-(+globalThis.__WPAD||0.2)):0}
  /** H: [{w: normalized word, t0, t1}] (absolute seconds). Returns list of events [{type:'lock'|'prov', i, st}] */
  update(H,t,aux){const ev=[];const ci=this.p>0?this.p-1:0;const E=this.flat.slice(ci,ci+WIN);
-  this.seqN=0;if(this.sq!==false&&globalThis.__SEQ!==0&&globalThis.__SEQAUG!==0){const a=seqAugment(H,E,aux,this.sqcfg);if(a){H=a.H;this.seqN=a.syn}}
+  this.seqN=0;if(this.sq!==false&&globalThis.__SEQ!==0&&globalThis.__SEQAUG!==0&&(this.verified||globalThis.__AUGPRE)){const a=seqAugment(H,E,aux,this.sqcfg);if(a){H=a.H;this.seqN=a.syn}}
   const Hn=H.map(x=>x.w);const j0=judge(E,Hn,this.jopt);const rf=refine(E,Hn,j0,aux,this.cfg||GOP_CFG);const j={...j0,marks:rf.marks};this.noisy=rf.noisy;const st={};
   for(const m of j.marks){const i=ci+m.k;if(i<this.p)continue;st[i]=m}
   // provisional greens: a CONTIGUOUS prefix starting at the first not-yet-locked word. A matched word further ahead is
@@ -101,7 +101,7 @@ export class Tracker{
   else if(H.length&&(this.forceAlign?t-this.alT>=ALIGN.cool:t-this.progT>=ALIGN.stall&&t-this.alT>=ALIGN.cool)){this.alT=t;const far=t-this.progT>=ALIGN.farStall;const r=this.realign(H,t,far);this.forceAlign=false;if(r){ev.push(...r);this.progT=t;this.bestCur=this.cursor;return ev}}
   // v3.6.1: SEQ RELOCATE. A fast reciter can outrun the word aligner (blurred words, dropped letters) and then read on past its
   // reach. Wide char-level alignment of the posteriors finds where he is; two consecutive decodes must agree before we jump.
-  if(this.sq!==false&&globalThis.__SEQ!==0&&H.length&&aux&&t-this.progT>=(this.locStall??(+globalThis.__LOCSTALL||1.5))&&t-(this.locT||-9)>=LOC.cooldown){
+  if(this.sq!==false&&globalThis.__SEQ!==0&&globalThis.__SEQLOC!==0&&H.length&&aux&&t-this.progT>=(this.locStall??(+globalThis.__LOCSTALL||1.5))&&t-(this.locT||-9)>=LOC.cooldown){
    this.locT=t;const base=this.cursor;const b=seqLocate(this.flat.slice(base,base+LOC.reach),aux,this.loccfg);
    if(b&&b.k0>=1){const abs=base+b.k0;const c=this.locCand;
     if(c&&Math.abs(c.abs-abs)<=1&&t-c.t<2.5){const to=Math.min(c.abs,abs);for(let i=this.p;i<to;i++){const kind=i<this.cursor?'ok':'unc';this.marks[i]=kind;ev.push({type:'lock',i,st:kind,kind:'seqloc',heard:''})}
