@@ -60,7 +60,7 @@ export const isStrong=(w,cfg=STRONG)=>w&&w.n>=cfg.minLen&&w.cov>=(w.n>=5?cfg.cov
  */
 // A printed word of about the same length sitting on exactly this stretch of audio and clearly NOT the expected word is a real
 // substitution (the reciter said something else): never paper over it with the expected text. Longer printed blobs are blended words.
-function veto(H,w,t0,t1,cfg){if(globalThis.__VETO===0)return false;const vs=(cfg.vetoSim??+globalThis.__VSIM)||0.4,dl=cfg.vetoLen??1;
+function veto(H,w,t0,t1,cfg){if(globalThis.__VETO===0)return false;const vs=(cfg.vetoSim??+globalThis.__VSIM)||0.7,dl=cfg.vetoLen??1;
  for(const h of H){if(h.syn)continue;const c=(h.t0+h.t1)/2;if(c<t0-0.02||c>t1+0.02)continue;const x=norm(h.w);
   if(x.length>=3&&Math.abs(x.length-w.length)<=dl&&sim(x,w)<vs)return true}return false}
 export function seqAugment(H,E,aux,cfg={}){

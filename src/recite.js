@@ -19,7 +19,7 @@ const SILENT='data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAAB
 const MODEL_BASE='https://kapadia100.github.io/noor-quran-app/models/',MB=19;
 const SR=16000,FLAT_MAX=400;
 // Quality levels trade how often the audio is re-checked (battery / heat) for how quickly words light up. All use the same on-device model.
-const QUAL={fast:{hop:400,win:8,gop:{...GOP_CFG,on:false}},balanced:{hop:250,win:10,gop:GOP_CFG},accurate:{hop:180,win:12,gop:{...GOP_CFG,red:-2,sim:-3.5}}};
+const QUAL={fast:{hop:250,win:8,gop:GOP_CFG},balanced:{hop:250,win:10,gop:GOP_CFG},accurate:{hop:180,win:12,gop:{...GOP_CFG,red:-2,sim:-3.5}}};
 const qPref=()=>{const v=localStorage.getItem('qsQuality');return v==='fast'||v==='balanced'||v==='accurate'?v:'auto'};
 const qLevel=()=>{const p=qPref();return p==='auto'?(st?.autoQ||'balanced'):p};
 const Q=()=>QUAL[qLevel()];
@@ -37,7 +37,7 @@ function onMsg(e){const m=e.data;
  if(m.type==='ready'){ready=true;localStorage.setItem('qsCtc','1');if(st){$('#rcDl').hidden=true;$('#rcBar').parentNode.hidden=true;$('#rcMic').disabled=false;chip('ready',readyMsg())}}
  if(m.type==='error'){window.__reciteErr=m.message;if(st){if(!ready){$('#rcDl').disabled=false;$('#rcDl').hidden=false;$('#rcBar').parentNode.hidden=true}chip('warn',L('Could not load the tutor. Check your connection and try again.','ٹیوٹر لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔'))}}
  if(m.type==='run'&&finalWait.has(m.id)){const f=finalWait.get(m.id);finalWait.delete(m.id);f(m);return}
- if(m.type==='run'&&st){st.busy=false;const job=st.job;st.job=null;st.decMs=st.decMs?st.decMs*0.7+m.ms*0.3:m.ms;if(job&&job.gen===st.gen)result(job,m.words,m.ms,m.lp?{lp:m.lp,T:m.T}:null)}}
+ if(m.type==='run'&&st){st.busy=false;const job=st.job;st.job=null;st.decMs=st.decMs?st.decMs*0.7+m.ms*0.3:m.ms;if(job&&job.gen===st.gen)result(job,m.words,m.ms,m.lp?{lp:m.lp,T:m.T,off:job?job.off:0}:null)}}
 const readyMsg=()=>st?.drill?L('Ready — tap the mic. You will hear each word, then repeat it.','تیار — مائیک دبائیں۔ ہر لفظ سنیں، پھر دہرائیں۔'):L('Ready — tap the mic and recite','تیار — مائیک دبائیں اور پڑھیں');
 function chip(kind,text){if(!panel)return;const c=$('#rcChip');c.className='rc-chip '+kind;c.querySelector('span').textContent=text}
 
@@ -435,7 +435,7 @@ function fslice(t0,t1){const s0=Math.max(0,Math.floor(t0*SR)),s1=Math.min(st.end
  for(const c of st.full||[]){const a=Math.max(c.s,s0),b=Math.min(c.s+c.a.length,s1);if(b>a)out.set(c.a.subarray(a-c.s,b-c.s),a-s0)}return out}
 const finalWait=new Map();let fid=1e9;
 function decodeOnce(audio){if(window.__rfinalDec)return Promise.resolve(window.__rfinalDec(audio));if(window.__reciteFake||!worker)return Promise.resolve(null);
- return new Promise(res=>{const id=++fid;const to=setTimeout(()=>{finalWait.delete(id);res(null)},15000);finalWait.set(id,m=>{clearTimeout(to);res(m.lp?{lp:m.lp,T:m.T}:null)});worker.postMessage({type:'run',id,audio},[audio.buffer])})}
+ return new Promise(res=>{const id=++fid;const to=setTimeout(()=>{finalWait.delete(id);res(null)},15000);finalWait.set(id,m=>{clearTimeout(to);res(m.lp?{lp:m.lp,T:m.T,off:job?job.off:0}:null)});worker.postMessage({type:'run',id,audio},[audio.buffer])})}
 /** v3.5.1: late confirmation. Orange words are re-checked against the whole recording (forced alignment between the confirmed neighbours). */
 async function hzFinal(){const T=st.T;if(!st.full||!st.full.length)return 0;const marks={};for(const [k,v] of Object.entries(T.marks))marks[k]=v;
  const r=await finalPass({flat:st.flat.map(x=>x.n),marks,wt:T.wt||{},tEnd:st.end/SR,decode:a=>decodeOnce(a),slice:fslice}).catch(()=>null);if(!r)return 0;let n=0;

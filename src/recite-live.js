@@ -101,7 +101,7 @@ export class Tracker{
   else if(H.length&&(this.forceAlign?t-this.alT>=ALIGN.cool:t-this.progT>=ALIGN.stall&&t-this.alT>=ALIGN.cool)){this.alT=t;const far=t-this.progT>=ALIGN.farStall;const r=this.realign(H,t,far);this.forceAlign=false;if(r){ev.push(...r);this.progT=t;this.bestCur=this.cursor;return ev}}
   // v3.6.1: SEQ RELOCATE. A fast reciter can outrun the word aligner (blurred words, dropped letters) and then read on past its
   // reach. Wide char-level alignment of the posteriors finds where he is; two consecutive decodes must agree before we jump.
-  if(this.sq!==false&&globalThis.__SEQ!==0&&globalThis.__SEQLOC!==0&&H.length&&aux&&t-this.progT>=(this.locStall??(+globalThis.__LOCSTALL||1.5))&&t-(this.locT||-9)>=LOC.cooldown){
+  if(this.sq!==false&&globalThis.__SEQ!==0&&globalThis.__SEQLOC!==0&&H.length&&aux&&t-this.progT>=(this.locStall??(+globalThis.__LOCSTALL||2.5))&&t-(this.locT||-9)>=LOC.cooldown){
    this.locT=t;const base=this.cursor;const b=seqLocate(this.flat.slice(base,base+LOC.reach),aux,this.loccfg);
    if(b&&b.k0>=1){const abs=base+b.k0;const c=this.locCand;
     if(c&&Math.abs(c.abs-abs)<=1&&t-c.t<2.5){const to=Math.min(c.abs,abs);for(let i=this.p;i<to;i++){const kind=i<this.cursor?'ok':'unc';this.marks[i]=kind;ev.push({type:'lock',i,st:kind,kind:'seqloc',heard:''})}
