@@ -45,8 +45,8 @@ export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],en
  for(let i=a;!ctx.review&&i<=Math.min(ctx.txts.length,ctx.to||1e9)&&st.flat.length<FLAT_MAX;i++){const w=ctx.words?.[i];const list=w?w.map(x=>({t:x.t,tr:x.tr,m:x.m,au:x.au})):ctx.txts[i-1].split(/\s+/).filter(x=>norm(x)).map(t=>({t}));
   list.forEach((x,k)=>st.flat.push({...x,a:i,k,n:norm(x.t)}))}
  st.flat=st.flat.filter(x=>x.n);st.T=new Tracker(st.flat.map(x=>x.n));st.T.cfg=Q().gop;st.rangeA=a;st.rangeB=st.flat.length?st.flat[st.flat.length-1].a:a;
- if(ctx.hifz){ctx.hs??={t0:Date.now(),list:[],okW:0,ayat:{}};st.hs=ctx.hs;st.locAt=0}
- panel=document.createElement('section');panel.id='recite';panel.className='recite';panel.setAttribute('aria-label','Recite and Learn');
+ if(ctx.hifz){ctx.hs??={t0:Date.now(),list:[],okW:0,ayat:{}};st.hs=ctx.hs;st.locAt=0;setTimeout(()=>{if(st&&st.ctx===ctx&&!st.listening)startMic().catch(()=>{})},0)}
+ panel=document.createElement('section');panel.id='recite';panel.className='recite'+(ctx.hifz?' rc-full':'');panel.setAttribute('aria-label','Recite and Learn');
  panel.innerHTML=`<div class="rc-h"><span class="rc-ic">${I.icon('tutor')}</span><div class="rc-t"><b>${ctx.hifz?L('Hifz Test','حفظ ٹیسٹ'):L('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${ctx.hifz?L('From memory','یاد سے'):L('Live tutor','لائیو ٹیوٹر')} · <span class="rc-ref"></span></small></div><button class="rc-x" aria-label="Close">✕</button></div>
  <button class="rc-optb" id="rcOptB" aria-expanded="false" aria-controls="rcOpt"><span id="rcOptS"></span><i aria-hidden="true">⚙</i></button>
  <div class="rc-ocard" id="rcOpt" hidden></div>
@@ -82,7 +82,7 @@ export function close(){if(!st)return;logNow();document.removeEventListener('vis
 
 // ---------- word line ----------
 function wordClass(i){const T=st.T,m=T.marks[i];if(m)return 'rc-'+m+(st.fx?.[i]?' rc-fx':'');if(T.prov[i])return 'rc-live';return ''}
-function paint(){if(!st||!panel||st.drill)return;const T=st.T,fl=st.flat;const ci=st.listening?Math.min(T.cursor,fl.length-1):T.p;const cur=fl[ci];
+function paint(){if(!st||!panel||st.drill)return;if(st.mode==='hifz')return hzPaint();const T=st.T,fl=st.flat;const ci=st.listening?Math.min(T.cursor,fl.length-1):T.p;const cur=fl[ci];
  if(!cur){$('#rcLine').innerHTML=`<span class="rc-done">✓ ${L('Surah complete','سورت مکمل')}</span>`;return}
  if(st.lineA!==cur.a){st.lineA=cur.a;$('.rc-ref').textContent=`${st.n}:${cur.a}`;
   hzTr(cur.a);$('#rcLine').innerHTML=fl.map((x,i)=>[x,i]).filter(([y])=>y.a===cur.a).map(([,i])=>`<span class="rc-w" data-i="${i}">${wordInner(i)}</span>`).join(' ');tjLegend();
@@ -178,8 +178,8 @@ function setSay(text,cls=''){const e=panel&&$('#rcSay');if(e){e.textContent=text
 function coachStart(t,kind,why){st.gen++;st.hold=true;st.fixOpen=true;hideNudge();hideHelp();$('#rcSum').hidden=true;
  const c=st.coach={t,kind,why,tries:0,esc:false,voiced:false,seq:0,done:false,sy:syllables(t.t)};c.sw=syllWeights(c.sy);
  if(!st.coachEvt){st.coachEvt=true;st.ctx.gc?.('feature-recite-coach')}
- const box=$('#rcFix');box.hidden=false;box.className='rc-fix rc-coach'+(kind==='unc'?' soft':'');
- const head=kind==='bad'&&st.mode==='hifz'?L('Mistake here','یہاں غلطی ہے')+' — '+(why==='skip'?L('word skipped','لفظ چھوٹ گیا'):L('different word','دوسرا لفظ')):kind==='bad'?(why==='skip'?L('Skipped word','لفظ چھوٹ گیا'):L('Different word heard — let’s fix it','دوسرا لفظ سنائی دیا — آئیں درست کریں')):kind==='unc'?L('Say it once more','ایک بار پھر کہیں'):L('Practice','مشق');
+ const box=$('#rcFix');box.hidden=false;box.className='rc-fix rc-coach'+(kind==='unc'?' soft':'')+(st.mode==='hifz'?' rc-hzc':'');
+ const head=kind==='bad'&&st.mode==='hifz'?L('Mistake — listen','غلطی — سنیں')+' · '+(why==='skip'?L('word skipped','لفظ چھوٹ گیا'):L('different word','دوسرا لفظ')):kind==='bad'?(why==='skip'?L('Skipped word','لفظ چھوٹ گیا'):L('Different word heard — let’s fix it','دوسرا لفظ سنائی دیا — آئیں درست کریں')):kind==='unc'?L('Say it once more','ایک بار پھر کہیں'):L('Practice','مشق');
  box.innerHTML=`<div class="rc-fh">${head} · ${t.sn}:${t.a}</div><div class="ar rc-bigw" dir="rtl" lang="ar">${esc(t.t)}</div>
  <div class="rc-syl ar" id="rcSyl" dir="rtl" lang="ar" hidden>${c.sy.map(s=>`<span>${esc(s)}</span>`).join('')}</div>
 <div class="rc-let ar" id="rcLet" dir="rtl" lang="ar" hidden>${letters(t.t).map(u=>`<span class="${hardOf(u)?'hard':''}">${esc(u)}</span>`).join('')}</div>
@@ -380,9 +380,16 @@ if(navigator.webdriver){
 const HZK='qsHifzTests';
 export const hifzHistory=()=>{try{return JSON.parse(localStorage.getItem(HZK))||[]}catch{return []}};
 function hzSave(){try{const c=JSON.parse(localStorage.getItem('qsHzCfg')||'{}');c.showTr=!!st.ctx.showTr;c.auto=st.ctx.auto!==false;localStorage.setItem('qsHzCfg',JSON.stringify(c))}catch{/* ignore */}}
-function hzTr(a){const e=panel&&$('#rcTr');if(!e)return;const x=st.ctx.showTr&&st.ctx.trOf?.(a);e.hidden=!x;e.textContent=x||''}
+// v3.4.1 Hifz Test page: the whole surah is shown blurred; each correctly recited word becomes clear in place (brief green, then normal).
+function hzPaint(){const T=st.T,fl=st.flat,line=$('#rcLine');const ci=Math.min(st.listening?T.cursor:T.p,fl.length-1);const cur=fl[ci];
+ if(!st.hzBuilt||!line.querySelector(".rc-w")){st.hzBuilt=1;line.classList.add('rc-hzp');let h='',pa=-1;fl.forEach((x,i)=>{if(x.a!==pa&&pa>0)h+=`<span class="rc-an">${pa}</span> `;pa=x.a;h+=`<span class="rc-w rc-hid" data-i="${i}"></span> `});h+=`<span class="rc-an">${pa}</span>`;line.innerHTML=h}
+ if(cur&&st.lineA!==cur.a){st.lineA=cur.a;$('.rc-ref').textContent=`${st.n}:${cur.a}`;hzTr(cur.a)}
+ for(const s of line.querySelectorAll('.rc-w')){const i=+s.dataset.i;const rv=revealed(i);const c=(rv?wordClass(i)||'rc-ok':'')+(i===st.helpI?' rc-hl':'')+(i===ci&&!rv&&st.listening?' rc-cur':'');const h=rv||st.hint[i]?wordInner(i):esc(fl[i].t);
+  if(s.dataset.c!==c||s.dataset.h!==h){const was=s.dataset.rv==='1';s.dataset.h=h;s.innerHTML=h;s.dataset.c=c;s.dataset.rv=rv?'1':'';s.className='rc-w '+c+(rv||st.hint[i]?'':' rc-hid')+(rv&&!was?' rc-new':'')}}
+ if(cur&&st.hzCi!==ci){st.hzCi=ci;const el=line.querySelector(`.rc-w[data-i="${ci}"]`);el?.scrollIntoView?.({block:'center',behavior:'smooth'})}}
+function hzTr(a){const e=panel&&$('#rcTr');if(!e)return;const x=st.ctx.showTr&&st.ctx.trOf?.(a);e.hidden=!x;e.textContent=x||'';const ur=/[\u0600-\u06FF]/.test(x||'');e.dir=ur?'rtl':'ltr';e.lang=ur?'ur':'en'}
 /** Pause between ayat when auto-continue is off. */
-function hzAyah(pa){const na=st.flat[st.T.p]?.a;if(pa==null||na==null||na===pa)return;st.hs.ayat[pa]=1;if(st.ctx.auto===false&&st.listening&&!st.coach){stopMic();chip('ok',L(`Ayah ${pa} done — tap the mic for the next ayah`,`آیت ${pa} مکمل — اگلی آیت کے لیے مائیک دبائیں`))}}
+function hzAyah(pa){const na=st.flat[st.T.p]?.a;if(pa==null||na==null||na===pa)return;st.hs.ayat[st.n+':'+pa]=1;if(st.ctx.auto===false&&st.listening&&!st.coach){stopMic();chip('ok',L(`Ayah ${pa} done — tap the mic for the next ayah`,`آیت ${pa} مکمل — اگلی آیت کے لیے مائیک دبائیں`))}}
 /** Auto-locate: before the first verified phrase, if the reciter clearly started at another ayah of the range, move the
  *  start there. It only moves the pointer; every green still has to be earned by the normal verified tracker. */
 function hzLocate(H,t,aux){const T=st.T,now=performance.now();if(T.verified||Object.keys(T.marks).length||!window.__reciteFake&&now-st.locAt<700)return;st.locAt=now;st.locT??={};
@@ -390,17 +397,20 @@ function hzLocate(H,t,aux){const T=st.T,now=performance.now();if(T.verified||Obj
  const i0=locate(T,st.flat.map(x=>x.n),starts,st.locT,H,t,aux,i=>st.flat[i].a);if(i0<0)return;st.locT=null;T.p=T.cursor=i0;st.lineA=0;chip('listen',L(`Found you at ayah ${st.flat[i0].a}`,`آپ آیت ${st.flat[i0].a} پر ہیں`))}
 function hzRetry(a){const {n,ctx}=st;stopMic();open(n,a,ctx);setTimeout(()=>startMic().catch(()=>{}),0)}
 function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const hs=st.hs,T=st.T;
- for(let i=0;i<T.p&&i<st.flat.length;i++){const a=st.flat[i].a;if(st.flat[i+1]?.a!==a)hs.ayat[a]=1}
- const okW=Object.entries(T.marks).filter(([k,v])=>v==='ok'&&!st.hint[+k]).length;
+ for(let i=0;i<T.p&&i<st.flat.length;i++){const a=st.flat[i].a;if(st.flat[i+1]?.a!==a)hs.ayat[st.n+':'+a]=1}
+ const okW=(hs.okW||0)+Object.entries(T.marks).filter(([k,v])=>v==='ok'&&!st.hint[+k]).length;const nx=[...(st.rangeB<Math.min(st.ctx.txts.length,st.ctx.to||1e9)?[[st.n,st.rangeB+1,st.ctx.to||st.ctx.txts.length]]:[]),...(st.ctx.next||[])];
+ const goNext=()=>{hs.okW=okW;box.hidden=true;const [s2,f2]=nx[0];if(s2===st.n){const {n,ctx}=st;open(n,f2,{...ctx,hs})}else st.ctx.onNext?.(nx[0],nx.slice(1),hs)};
+ if(final&&nx.length&&st.ctx.auto!==false){goNext();return}
  const nm=hs.list.filter(x=>x.kind!=='hint'&&x.kind!=='stuck').length,nh=hs.list.filter(x=>x.kind==='hint'||x.kind==='stuck').length,ny=Object.keys(hs.ayat).length;
- if(!hs.saved){hs.saved=1;const h=hifzHistory();h.unshift({ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,ayat:ny,ok:okW,mist:nm,hints:nh});try{localStorage.setItem(HZK,JSON.stringify(h.slice(0,50)))}catch{/* ignore */}}
+ if(!(final&&nx.length)&&!hs.saved){hs.saved=1;const h=hifzHistory();h.unshift({ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,ayat:ny,ok:okW,mist:nm,hints:nh});try{localStorage.setItem(HZK,JSON.stringify(h.slice(0,50)))}catch{/* ignore */}}
  const KN={wrong:['Mistake','غلطی'],skip:['Skipped','چھوٹا'],hint:['Hint','اشارہ'],stuck:['Stuck','اٹکے']};
  box.innerHTML=`<div class="rc-sh"><b>${final?L('Hifz Test complete','حفظ ٹیسٹ مکمل'):L('Hifz Test summary','حفظ ٹیسٹ کا خلاصہ')}</b></div>
  <div class="rc-stats"><span class="g"><b>${ny}</b>${L('ayat done','آیات مکمل')}</span><span class="g"><b>${okW}</b>${L('words correct','درست الفاظ')}</span><span class="r"><b>${nm}</b>${L('mistakes','غلطیاں')}</span><span><b>${nh}</b>${L('hints','اشارے')}</span></div>
- ${hs.list.length?`<div class="rc-wl-h">${L('Tap to hear · ⟲ to retry that ayah','سننے کے لیے دبائیں · ⟲ اس آیت سے دوبارہ')}</div><div class="rc-wl">${hs.list.map((x,j)=>`<div class="rc-hzr"><button class="rc-wi" data-j="${j}"><span class="ar" dir="rtl" lang="ar">${esc(x.t)}</span><small>${L(KN[x.kind]?.[0]||'Mistake',KN[x.kind]?.[1]||'غلطی')} · ${x.sn}:${x.a}</small></button><button class="btn ghost rc-hzj" data-a="${x.a}" aria-label="Retry ${x.a}">⟲</button></div>`).join('')}</div>`:`<p class="rc-ft">${L('No mistakes — well recited!','کوئی غلطی نہیں — ماشاءاللہ!')}</p>`}
+ ${final&&nx.length?`<p class="rc-ft">${L(`Next: ${nx[0][0]}:${nx[0][1]}`,`اگلا: ${nx[0][0]}:${nx[0][1]}`)}</p>`:''}${hs.list.length?`<div class="rc-wl-h">${L('Tap to hear · ⟲ to retry that ayah','سننے کے لیے دبائیں · ⟲ اس آیت سے دوبارہ')}</div><div class="rc-wl">${hs.list.map((x,j)=>`<div class="rc-hzr"><button class="rc-wi" data-j="${j}"><span class="ar" dir="rtl" lang="ar">${esc(x.t)}</span><small>${L(KN[x.kind]?.[0]||'Mistake',KN[x.kind]?.[1]||'غلطی')} · ${x.sn}:${x.a}</small></button>${x.sn===st.n?`<button class="btn ghost rc-hzj" data-a="${x.a}" aria-label="Retry ${x.a}">⟲</button>`:''}</div>`).join('')}</div>`:`<p class="rc-ft">${L('No mistakes — well recited!','کوئی غلطی نہیں — ماشاءاللہ!')}</p>`}
  <p class="rc-note muted">${nm?L('Mistakes are saved to your weak words for review.','غلطیاں دہرائی کے لیے کمزور الفاظ میں محفوظ ہیں۔'):''}</p>
- <div class="bar rc-sb">${!final?`<button class="btn" id="sGo">${L('Keep going','جاری رکھیں')}</button>`:''}<button class="btn" id="sRe">⟲ ${L('Test again','دوبارہ ٹیسٹ')}</button><button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
+ <div class="bar rc-sb">${!final?`<button class="btn" id="sGo">${L('Keep going','جاری رکھیں')}</button>`:''}${final&&nx.length?`<button class="btn" id="sNx">${L('Next surah','اگلی سورت')}</button>`:''}<button class="btn" id="sRe">⟲ ${L('Test again','دوبارہ ٹیسٹ')}</button><button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
  box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=hs.list[+b.dataset.j];if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0});document.getElementById('a'+x.a)?.scrollIntoView({block:'center',behavior:'smooth'})}});
  box.querySelectorAll('.rc-hzj').forEach(b=>b.onclick=()=>{const {n,ctx}=st;open(n,+b.dataset.a,{...ctx,hs:null})});
  const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.hold=false;st.cut=st.end;st.lineA=0;paint();startMic().then(()=>armStuck(1500))};
+ const nb=$('#sNx');if(nb)nb.onclick=goNext;
  $('#sRe').onclick=()=>{const {n,ctx}=st;open(n,st.rangeA,{...ctx,hs:null})};$('#sX').onclick=close}

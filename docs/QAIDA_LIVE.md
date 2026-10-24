@@ -83,3 +83,10 @@ Free decoding turns one word into something unrelated. Instead each burst is sco
 - Mistake card ("Mistake here") only on tracker `bad` events (wrong/skip); shows + plays the correct word; "Retry from this ayah". Pause ~4 s → next word shown, counted as a hint (never a mistake). Hint button: first letter, then word.
 - Auto-locate (`src/hz-locate.js`): before the first verified phrase, each other ayah start in the range is tested with its own cached Tracker; moves only the start pointer; accepted only if hits are within 3 neighbouring ayat.
 - Measured (66 real clips, flat starting up to 3 ayat earlier than the recited ayah): located 54/60 clean, 54/60 phone, 55/60 hard, 0 wrong locations, 0 false reveals before the true start, 0 red; words revealed 96.0% / 95.8% / 89.1%.
+
+## v3.4.1 — Hifz Test: simple blurred page, strict auto-locate
+- Pick a surah → whole surah blurred, mic auto-starts, correct words unblur in place; mistake → pause, vibrate, "Mistake — listen", word recited aloud. Settings (range/juz/translation off/auto) in ⚙.
+- Auto-locate needs ≥4 ordered words (≥14 letters, phrase-start verified) at the same place on 2 consecutive checks; regression replay of far-mic synthetic English speech: 0 moves, 0 greens (v3.4.0: 4).
+- Non-reading audit: 0 false greens. Real recordings (located/words revealed): clean 54/60, 96.0%; phone 54/60, 96.0%; hard 51/60, 87.1%; 0 wrong locations, 0 red; locate median ~4.5 s.
+- Spliced mistakes (48 each, 35 located): skip flagged 28/35 (14 red + 14 held→coach), replace 25/35 (11+14), 1 replaced word wrongly revealed, 0 false red elsewhere.
+- Urdu UI → Urdu translation; juz test chains all surahs of the juz.

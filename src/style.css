@@ -463,3 +463,18 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .rc-trl{font-size:.9rem;color:var(--muted,#888);margin:.25rem 0 .5rem;line-height:1.5;overflow-wrap:anywhere}
 .rc-hzr{display:flex;gap:6px;align-items:stretch}.rc-hzr .rc-wi{flex:1;min-width:0}.rc-hzj{min-width:44px;padding:0 10px}
 .hzt-i p{margin:.3rem 0 0}.chk{display:flex;gap:8px;align-items:center}.seg{display:flex;gap:8px}.seg .btn{flex:1}
+/* v3.4.1 Hifz Test: full-surah blurred page */
+.recite.rc-full{left:0;right:0;top:0;max-width:none;max-height:none;display:flex;flex-direction:column;border-radius:0;overflow:hidden;padding-top:calc(10px + env(safe-area-inset-top))}
+.recite.rc-full .rc-line.rc-hzp{flex:1;overflow-y:auto;max-height:none;text-align:justify;line-height:2.3;font-size:calc(var(--ar,26px)*.95);padding:6px 4px 40vh}
+.rc-hzp .rc-w{transition:filter .35s,color .6s;border-radius:6px;padding:0 1px}
+.rc-hzp .rc-w.rc-hid{filter:blur(7px);background:none;user-select:none;-webkit-user-select:none}
+.rc-hzp .rc-w.rc-cur{filter:blur(5px);box-shadow:0 2px 0 #4aa3ff}
+.rc-hzp .rc-ok{color:inherit;background:none}
+.rc-hzp .rc-new.rc-ok,.rc-hzp .rc-new.rc-live{animation:hzflash 1.4s ease-out}
+@keyframes hzflash{0%{color:#3fb950;background:rgba(46,160,67,.18)}100%{color:inherit;background:none}}
+.rc-hzp .rc-bad{color:#e5534b;filter:none}
+.rc-an{display:inline-block;min-width:1.6em;text-align:center;font-size:.55em;color:var(--muted,#888);border:1px solid currentColor;border-radius:50%;padding:0 .3em;margin:0 .2em;vertical-align:middle}
+.rc-hzc .rc-syl,.rc-hzc .rc-let{display:none!important}
+.rc-hzc .rc-bigw{font-size:34px;padding:6px}
+.hz-sl{display:grid;grid-template-columns:1fr;gap:6px;margin:8px 0}.hz-s{display:flex;gap:10px;align-items:center;text-align:start;width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:14px;background:var(--card);color:inherit;font:inherit;min-width:0}.hz-s b.num{flex:none}.hz-s span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hz-s .ar{flex:none;font-size:18px}
+.hz-gear{margin:6px 0 10px}.hz-gear summary{cursor:pointer;list-style:none;display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:12px;border:1px solid var(--bd)}.hz-gear summary::-webkit-details-marker{display:none}.hz-gear[open] .form{margin-top:8px}
