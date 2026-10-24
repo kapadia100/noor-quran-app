@@ -413,7 +413,7 @@ const snm=k=>{const m=st.ctx.snames?.[k-1];return m?(ur()?(m.name||'').replace(/
 function wrFire(ev){if(ev.kind==='soft'){chip('listen',L('Keep reading — I am listening for the ayah','پڑھتے رہیں — میں آیت سننے کا منتظر ہوں'));(window.__wrLog??=[]).push({kind:'soft'});return}
  const T=st.T,i=Math.min(T.cursor,st.flat.length-1),t=targetOf(i);(window.__wrLog??=[]).push({kind:ev.kind,sn:ev.sn,a:ev.a});
  st.gen++;st.hold=true;st.fixOpen=true;hideNudge();hideHelp();buzz([30,40,30]);tone();(st.kinds??={}).different=(st.kinds.different||0)+1;st.wr={t,ev,seq:0};
- const here=ev.kind==='other'&&(ev.sn!==st.n||!st.flat.some(x=>x.a===ev.a));const same=ev.kind==='other'&&ev.sn===st.n&&st.flat.some(x=>x.a===ev.a);
+ const same=ev.kind==='other'&&ev.sn===st.n&&st.flat.some(x=>x.a===ev.a);
  const box=$('#rcFix');box.hidden=false;box.className='rc-fix rc-coach rc-hzc rc-wrongc';
  box.innerHTML=`<div class="rc-fh" id="rcWH">${L('You’re reading something different — listen','آپ کچھ اور پڑھ رہے ہیں — سنیں')}</div>
  ${ev.kind==='other'?`<div class="rc-ft rc-wo">${L(`This sounds like ayah ${ev.a} (surah ${snm(ev.sn)})`,`یہ آیت ${ev.a} (سورۃ ${snm(ev.sn)}) جیسی لگ رہی ہے`)}</div>`:''}
@@ -462,7 +462,7 @@ function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');
   nm?L(`${nm} mistake${nm===1?'':'s'} found.${nu?` ${nu} more word${nu===1?' was':'s were'} not confirmed.`:''}`,`${nm} غلطی ملی۔${nu?` ${nu} الفاظ کی تصدیق نہیں ہو سکی۔`:''}`):
   nu?L(`I found no mistakes, but I could not confirm ${nu} word${nu===1?'':'s'}. That does not mean ${nu===1?'it was':'they were'} wrong — I just could not hear ${nu===1?'it':'them'} clearly enough.`,`مجھے کوئی غلطی نہیں ملی، لیکن ${nu} الفاظ کی تصدیق نہیں کر سکا۔ اس کا مطلب غلطی نہیں — بس میں انہیں صاف نہیں سن سکا۔`):
   notReached?L(`No mistakes in the ${reached} words I heard. ${notReached} words were not reached.`,`سنے گئے ${reached} الفاظ میں کوئی غلطی نہیں۔ ${notReached} الفاظ تک نہیں پہنچے۔`):L('No mistakes found.','کوئی غلطی نہیں ملی۔');
- const rows=[...uncAll.map(x=>({...x,kind:'unc'})),...hs.list.filter(x=>x.kind!=='hint'&&x.kind!=='stuck')];KN.wrong=KN.wrong;
+ const rows=[...uncAll.map(x=>({...x,kind:'unc'})),...hs.list.filter(x=>x.kind!=='hint'&&x.kind!=='stuck')];
  box.innerHTML=`<div class="rc-sh"><b>${title}</b></div>
  <div class="rc-stats rc-st5"><span class="g"><b>${okW}</b>${L('confirmed','تصدیق شدہ')}</span><span class="u"><b>${nu}</b>${L('not confirmed','غیر تصدیق شدہ')}</span><span class="r"><b>${nW}</b>${L('mistakes','غلطیاں')}</span><span class="r"><b>${nS}</b>${L('skipped','چھوٹے')}</span><span><b>${nh}</b>${L('hints','اشارے')}</span></div>
  <p class="rc-verdict${perfect?' ok':nm?' bad':nu?' unc':''}" id="rcVerdict">${verdict}</p>
@@ -475,7 +475,7 @@ function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');
  // unconfirmed words go to the weak list (once per session) so they come back in spaced review
  if(nu&&!hs.uncSaved){hs.uncSaved=1;try{for(const x of uncAll){recMiss(st.weak,x);}weakSave(st.weak)}catch{/* ignore */}}
  box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=rows[+b.dataset.j];if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0});document.getElementById('a'+x.a)?.scrollIntoView({block:'center',behavior:'smooth'})}});
- box.querySelectorAll('.rc-hzs').forEach(b=>b.onclick=()=>{const x=rows[+b.dataset.j];if(!x)return;st.helpI=x.i;st.hzBuilt=st.hzBuilt;paint();const el=panel.querySelector(`.rc-w[data-i="${x.i}"]`);el?.scrollIntoView?.({block:'center',behavior:'smooth'});setTimeout(()=>{if(st&&st.helpI===x.i){st.helpI=-1;paint()}},2500)});
+ box.querySelectorAll('.rc-hzs').forEach(b=>b.onclick=()=>{const x=rows[+b.dataset.j];if(!x)return;st.helpI=x.i;paint();const el=panel.querySelector(`.rc-w[data-i="${x.i}"]`);el?.scrollIntoView?.({block:'center',behavior:'smooth'});setTimeout(()=>{if(st&&st.helpI===x.i){st.helpI=-1;paint()}},2500)});
  box.querySelectorAll('.rc-hzj').forEach(b=>b.onclick=()=>{const {n,ctx}=st;open(n,+b.dataset.a,{...ctx,hs:null})});
  const un=$('#sUnc');if(un)un.onclick=async()=>{const items=uncAll.map(x=>({...x,ph:x.ph||[]}));st.drill={items,idx:0,fixes:0,skips:0,review:false,unc:true};st.fixed={};box.hidden=true;$('#rcLine').hidden=true;panel.classList.remove('rc-done');st.hold=false;
   if(!st.listening)await startMic();if(st.listening)drillNext()};

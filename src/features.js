@@ -262,12 +262,12 @@ export function zakat(){C.setTitle(tt('Zakat calculator','زکوٰۃ کیلکو�
 
 // ---------- nearby mosques (OpenStreetMap data, list only, no map) ----------
 export async function mosques(){C.setTitle(tt('Nearby mosques','قریبی مساجد'));const P=PR.P;const M=await import('./mosques-core.js');
- const rad0=Math.min(5,Math.max(1,+LS.get('mosqRad',2)||2));let seq=0,last=null;
+ const rad0=Math.min(5,Math.max(1,+LS.get('mosqRad',2)||2));let seq=0;
  app().innerHTML=`<div class="bar mq-bar"><button class="btn" id="mGps">${I_('gps')} ${tt('Use my location','میری لوکیشن')}</button><label class="mq-rad">${tt('Radius','دائرہ')} <select id="mRad" aria-label="${tt('Radius','دائرہ')}">${M.RADII.map(r=>`<option value="${r}" ${r===rad0?'selected':''}>${r} km</option>`).join('')}</select></label></div>
  <small class="muted" id="mWhere">${I_('pin')} ${esc(P.city)}</small><p class="muted" id="mNote" hidden></p><ul class="list" id="ml" aria-live="polite"><li class="muted">${C.t('loading')}</li></ul>`;
  const note=(s,cls)=>{const n=$('#mNote');n.textContent=s||'';n.hidden=!s;n.className='muted '+(cls||'')};
  const nm=m=>m.named?(ur()&&m.alt.ur)||m.name:tt('Mosque','مسجد');
- const render=r=>{last=r;const ua=navigator.userAgent||'';const cnt=r.list.length;
+ const render=r=>{const ua=navigator.userAgent||'';const cnt=r.list.length;
   $('#ml').innerHTML=cnt?`<li class="muted mq-count">${cnt} ${tt(cnt===1?'mosque':'mosques','مساجد')} · ${tt('nearest first','قریب ترین پہلے')}</li>`+r.list.map(m=>`<li class="row mq-item"><span class="grow"><b>${I_('mosques')} <bdi>${esc(nm(m))}</bdi></b><small>${M.fmtDist(m.d)}</small></span><span class="mq-act"><a class="btn" data-mq="g" target="_blank" rel="noopener" href="${M.gmapsDir(m.lat,m.lng)}">${tt('Directions','راستہ')}</a>${/iPhone|iPad|iPod|Android/i.test(ua)?`<a class="btn ghost" data-mq="o" href="${esc(M.otherMapHref(m.lat,m.lng,m.name,ua))}">${tt('Other map app','دوسری میپ ایپ')}</a>`:''}</span></li>`).join(''):`<li class="muted mq-empty">${tt('No mosques found within this radius. Try a larger radius.','اس دائرے میں کوئی مسجد نہیں ملی۔ بڑا دائرہ منتخب کریں۔')}</li>`;
   note(r.fromCache?tt('Offline — showing saved results from ','آف لائن — محفوظ شدہ نتائج، ')+new Date(Date.now()-r.age).toLocaleDateString(ur()?'ur-PK':'en-GB'):'')};
  const run=async()=>{const id=++seq,lat=PR.P.lat,lng=PR.P.lng,rad=+$('#mRad').value*1000;LS.set('mosqRad',+$('#mRad').value);$('#mWhere').innerHTML=`${I_('pin')} ${esc(PR.P.city)}`;$('#ml').innerHTML=`<li class="muted">${C.t('loading')}</li>`;note('');

@@ -1,5 +1,4 @@
 import {test,expect} from '@playwright/test';
-const rgb=s=>s.match(/\d+/g).slice(0,3).join(',');
 const LEG=['Madd','Ghunnah','Idgh','Ikhf','Iql','Qalqalah','Silent'];
 async function colours(page){return page.evaluate(()=>{const cs=n=>getComputedStyle(n).color;const out={legend:[...document.querySelectorAll('#rtk i')].map(i=>getComputedStyle(i).backgroundColor),letters:{}};
  document.querySelectorAll('#ays .tj').forEach(t=>{const g=t.getAttribute('style').match(/tjc-(\w+)/)[1];(out.letters[g]??=new Set()).add(cs(t))});for(const k in out.letters)out.letters[k]=[...out.letters[k]];return out})}

@@ -14,8 +14,8 @@ describe('Quran text integrity (v3.5.1 recheck vs Tanzil Uthmani + King Fahd dat
  it('Fatiha: 7 ayat, 1:1 starts at the ba with no BOM, no tatweel before the dagger alef',()=>{expect(AR[0].length).toBe(7);expect(AR[0][0].codePointAt(0)).toBe(0x628);expect(AR[0].join('').includes('\u0640')).toBe(false)});
  it('tajweed data: in range, sorted, valid rule ids; letter-specific rules sit on the right letters',()=>{
   for(let n=0;n<114;n++)TJ[n].length===AR[n].length||expect(TJ[n].length).toBe(AR[n].length);
-  const BASE=/[\u0621-\u064A\u0671]/;
-  for(let n=0;n<114;n++)for(let i=0;i<AR[n].length;i++){const t=AR[n][i],raw=i===0&&n!==0&&n!==8?null:t,f=TJ[n][i];expect(f.length%3).toBe(0);
+ 
+  for(let n=0;n<114;n++)for(let i=0;i<AR[n].length;i++){const t=AR[n][i],f=TJ[n][i];expect(f.length%3).toBe(0);
    for(let k=0;k<f.length;k+=3){const [r,s,e]=[f[k],f[k+1],f[k+2]];expect(r).toBeGreaterThanOrEqual(0);expect(r).toBeLessThan(RULES.length);expect(s).toBeGreaterThanOrEqual(0);expect(e).toBeGreaterThan(s);
     if(i>0||n===0||n===8){expect(e).toBeLessThanOrEqual(t.length);const seg=t.slice(s,e);if(RULES[r]==='hamzat_wasl')expect(seg).toContain('\u0671');if(RULES[r]==='qalqalah')expect('قطبجد'.includes(seg[0])).toBe(true)}}}});
  it('1:1 tajweed offsets align (first ٱ is a hamzat wasl)',()=>{const f=TJ[0][0];const hw=RULES.indexOf('hamzat_wasl');const segs=[];for(let k=0;k<f.length;k+=3)if(f[k]===hw)segs.push(AR[0][0].slice(f[k+1],f[k+2]));expect(segs.length).toBeGreaterThan(0);segs.forEach(x=>expect(x).toBe('\u0671'))});

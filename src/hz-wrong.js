@@ -14,7 +14,7 @@ export class QIndex{constructor(texts){this.pos=[];this.W=[];this.bi=new Map();t
  /** D: decoded normalized words. Best consistent in-order run elsewhere: {sn,a,votes,gi,len} or null. */
  find(D,cfg=WR){const S=D.map(sk).filter(Boolean);const diag=new Map();
   for(let i=0;i+1<S.length;i++){const a=this.bi.get(S[i]+'|'+S[i+1]);if(!a||a.length>cfg.maxFreq)continue;for(const g of a){const d=g-i;let e=diag.get(d);if(!e)diag.set(d,e={v:0,g:g,i});e.v++}}
-  let best=null;for(const [d,e] of diag){if(!best||e.v>best.v)best=e;}
+  let best=null;for(const [,e] of diag){if(!best||e.v>best.v)best=e;}
   // merge neighbouring diagonals (decoder dropped/added a word): sum votes on d, d±1
   let top=null;for(const [d,e] of diag){const v=e.v+(diag.get(d+1)?.v||0)+(diag.get(d-1)?.v||0);if(!top||v>top.v)top={v,d,g:e.g,i:e.i}}
   if(!top||top.v<cfg.minVotes)return null;const [sn,a]=this.pos[Math.max(0,Math.min(this.pos.length-1,top.g))];return {sn,a,votes:top.v,gi:top.g}}
