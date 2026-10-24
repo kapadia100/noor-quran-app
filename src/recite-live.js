@@ -1,6 +1,7 @@
 // Live word tracker: consumes a stream of (re-decoded) heard-word lists and turns them into stable highlights.
 // Green is optimistic (as soon as a word is matched); words are LOCKED only after the same verdict repeats on
 // consecutive decodes. Red needs a persistent, enclosed wrong/skip verdict (zero-false-alarm priority).
+import {seqAugment,seqLocate,LOC} from './recite-seq.js';
 import {judge} from './recite-core.js';
 import {gopScores} from './recite-gop.js';
 export const WIN=45,LOCK_OK=2,LOCK_BAD=3,LOCK_UNC=3;
@@ -61,11 +62,12 @@ export function startEvidence(st,flat,p,cfg=START){
  *  ordered phrase, resume there. Skipped words become neutral 'unc' marks, never red. Never runs before the start is verified. */
 export const ALIGN={stall:2.5,reach:12,far:40,farStall:6,cool:1.2,run:3,mean:0.85,two:{mean:0.95,letters:11},farRun:4,farLetters:14};
 export class Tracker{
- constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.cursor=0;this.wt={};this.events=[];this.verified=false;this.progT=null;this.bestCur=-1;this.lastUpT=null;this.alT=-99;this.forceAlign=false}
+ constructor(flat){this.flat=flat;this.p=0;this.marks={};this.prov={};this.lockedEnd=-1;this.lockedStart=-1;this.sOk={};this.sBad={};this.sUnc={};this.sNon={};this.sNon={};this.cursor=0;this.wt={};this.events=[];this.verified=false;this.progT=null;this.bestCur=-1;this.lastUpT=null;this.alT=-99;this.forceAlign=false}
  // decode from just before the last locked word so it is heard in full and serves as a strong left context
  get winStart(){return this.p>0?Math.max(0,this.lockedStart-(+globalThis.__WPAD||0.2)):0}
  /** H: [{w: normalized word, t0, t1}] (absolute seconds). Returns list of events [{type:'lock'|'prov', i, st}] */
  update(H,t,aux){const ev=[];const ci=this.p>0?this.p-1:0;const E=this.flat.slice(ci,ci+WIN);
+  this.seqN=0;if(this.sq!==false&&globalThis.__SEQ!==0&&globalThis.__SEQAUG!==0){const a=seqAugment(H,E,aux,this.sqcfg);if(a){H=a.H;this.seqN=a.syn}}
   const Hn=H.map(x=>x.w);const j0=judge(E,Hn,this.jopt);const rf=refine(E,Hn,j0,aux,this.cfg||GOP_CFG);const j={...j0,marks:rf.marks};this.noisy=rf.noisy;const st={};
   for(const m of j.marks){const i=ci+m.k;if(i<this.p)continue;st[i]=m}
   // provisional greens: a CONTIGUOUS prefix starting at the first not-yet-locked word. A matched word further ahead is
@@ -83,8 +85,9 @@ export class Tracker{
   upd(this.sOk,i=>st[i]?.st==='ok');upd(this.sBad,i=>st[i]&&(st[i].st==='wrong'||st[i].st==='skip'));upd(this.sUnc,i=>st[i]?.st==='unclear');
   for(const i of Object.keys(st).map(Number)){const m=st[i];
    if(m.st==='ok')this.sOk[i]=(this.sOk[i]||0)+1;
-   else if(m.st==='wrong'||m.st==='skip'){const o=this.sBad[i];this.sBad[i]=o&&o.st===m.st?{st:m.st,n:o.n+1}:{st:m.st,n:1}}
-   else this.sUnc[i]=(this.sUnc[i]||0)+1}
+   else if(m.st==='wrong'||m.st==='skip'){const o=this.sBad[i];this.sBad[i]=o&&o.st===m.st?{st:m.st,n:o.n+1,t0:o.t0}:{st:m.st,n:1,t0:t}}
+   else this.sUnc[i]=(this.sUnc[i]||0)+1
+   if(m.st!=='ok')this.sNon[i]=(this.sNon[i]||0)+1}
   // fix sBad stored mixed shapes
   for(const k of Object.keys(this.sBad)){if(typeof this.sBad[k]==='number')this.sBad[k]={st:st[k].st,n:this.sBad[k]}}
   // START VERIFICATION: nothing is painted or locked until the first words of a session are confirmed by a short
@@ -96,16 +99,27 @@ export class Tracker{
   if(this.progT==null||(this.lastUpT!=null&&t-this.lastUpT>1.5)){this.progT=t}this.lastUpT=t;
   if(this.cursor>this.bestCur){this.bestCur=this.cursor;this.progT=t}
   else if(H.length&&(this.forceAlign?t-this.alT>=ALIGN.cool:t-this.progT>=ALIGN.stall&&t-this.alT>=ALIGN.cool)){this.alT=t;const far=t-this.progT>=ALIGN.farStall;const r=this.realign(H,t,far);this.forceAlign=false;if(r){ev.push(...r);this.progT=t;this.bestCur=this.cursor;return ev}}
+  // v3.6.1: SEQ RELOCATE. A fast reciter can outrun the word aligner (blurred words, dropped letters) and then read on past its
+  // reach. Wide char-level alignment of the posteriors finds where he is; two consecutive decodes must agree before we jump.
+  if(this.sq!==false&&globalThis.__SEQ!==0&&H.length&&aux&&t-this.progT>=(this.locStall??(+globalThis.__LOCSTALL||1.5))&&t-(this.locT||-9)>=LOC.cooldown){
+   this.locT=t;const base=this.cursor;const b=seqLocate(this.flat.slice(base,base+LOC.reach),aux,this.loccfg);
+   if(b&&b.k0>=1){const abs=base+b.k0;const c=this.locCand;
+    if(c&&Math.abs(c.abs-abs)<=1&&t-c.t<2.5){const to=Math.min(c.abs,abs);for(let i=this.p;i<to;i++){const kind=i<this.cursor?'ok':'unc';this.marks[i]=kind;ev.push({type:'lock',i,st:kind,kind:'seqloc',heard:''})}
+     this.lockedStart=Math.max(this.lockedStart,Math.min(c.t0,b.t0));this.p=to;this.prov={};this.cursor=to;this.sOk={};this.sBad={};this.sUnc={};this.sNon={};this.locCand=null;this.relocs=(this.relocs||0)+1;this.progT=t;this.bestCur=to;return ev}
+    this.locCand={abs,t,t0:b.t0}}
+   else if(this.locCand&&t-this.locCand.t>=2.5)this.locCand=null}
   // sequential locking
   for(;;){const i=this.p,m=st[i];if(!m)break;let lock=null;
    if(m.st==='ok'&&this.sOk[i]>=LOCK_OK)lock='ok';
-   else if((m.st==='wrong'||m.st==='skip')&&this.sBad[i]?.n>=LOCK_BAD)lock='bad';
+   else if((m.st==='wrong'||m.st==='skip')&&this.sBad[i]?.n>=LOCK_BAD&&t-this.sBad[i].t0>=(this.badMs??0.6))lock='bad';
    else if(m.st==='unclear'&&this.sUnc[i]>=LOCK_UNC){// only once the reciter has clearly moved on (>=2 later words matched ok)
      let later=0;for(let q=i+1;q<i+4;q++)if(st[q]?.st==='ok')later++;if(later>=2)lock='unc'}
+   // v3.6.1: a word whose verdict keeps flipping (unclear / skip / ok) while the reciter is clearly >=3 matched words ahead is moved past as neutral
+   if(!lock&&m.st!=='ok'&&(this.sNon[i]||0)>=(this.nonN??4)){let later=0;for(let q=i+1;q<i+6;q++)if(st[q]?.st==='ok')later++;if(later>=3)lock='unc'}
    if(!lock)break;
    this.marks[i]=lock;ev.push({type:'lock',i,st:lock,kind:m.st,heard:m.j>=0&&H[m.j]?H[m.j].w:''});
    if(m.j>=0&&H[m.j]){this.lockedEnd=Math.max(this.lockedEnd,H[m.j].t1);this.lockedStart=Math.max(this.lockedStart,H[m.j].t0);this.wt[i]=[H[m.j].t0,H[m.j].t1]}
-   delete this.sOk[i];delete this.sBad[i];delete this.sUnc[i];this.p=i+1}
+   delete this.sOk[i];delete this.sBad[i];delete this.sUnc[i];delete this.sNon[i];this.p=i+1}
   return ev}
  /** Try to resume at a later stretch of the text. Returns lock events when it jumped, else null. */
  realign(H,t,far=false){const cur=this.cursor,Hn=H.map(x=>x.w),reach=far?ALIGN.far:ALIGN.reach;let best=null;
@@ -117,5 +131,5 @@ export class Tracker{
   if(!best)return null;const ev=[];const to=cur+best.d;
   for(let i=this.p;i<to;i++){const kind=i<cur?'ok':'unc';this.marks[i]=kind;ev.push({type:'lock',i,st:kind,kind:'realign',heard:''})}
   const h=H[best.j0];if(h){this.lockedStart=Math.max(this.lockedStart,h.t0);}
-  this.p=to;this.prov={};this.cursor=to;this.sOk={};this.sBad={};this.sUnc={};this.realigned=(this.realigned||0)+1;return ev}
+  this.p=to;this.prov={};this.cursor=to;this.sOk={};this.sBad={};this.sUnc={};this.sNon={};this.realigned=(this.realigned||0)+1;return ev}
 }
