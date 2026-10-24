@@ -115,7 +115,7 @@ export class Tracker{
    else if(m.st==='unclear'&&this.sUnc[i]>=LOCK_UNC){// only once the reciter has clearly moved on (>=2 later words matched ok)
      let later=0;for(let q=i+1;q<i+4;q++)if(st[q]?.st==='ok')later++;if(later>=2)lock='unc'}
    // v3.6.1: a word whose verdict keeps flipping (unclear / skip / ok) while the reciter is clearly >=3 matched words ahead is moved past as neutral
-   if(!lock&&m.st!=='ok'&&(this.sNon[i]||0)>=(this.nonN??4)){let later=0;for(let q=i+1;q<i+6;q++)if(st[q]?.st==='ok')later++;if(later>=3)lock='unc'}
+   if(!lock&&m.st!=='ok'&&(this.sNon[i]||0)>=(globalThis.__NONOFF?1e9:(this.nonN??4))){let later=0;for(let q=i+1;q<i+6;q++)if(st[q]?.st==='ok')later++;if(later>=3)lock='unc'}
    if(!lock)break;
    this.marks[i]=lock;ev.push({type:'lock',i,st:lock,kind:m.st,heard:m.j>=0&&H[m.j]?H[m.j].w:''});
    if(m.j>=0&&H[m.j]){this.lockedEnd=Math.max(this.lockedEnd,H[m.j].t1);this.lockedStart=Math.max(this.lockedStart,H[m.j].t0);this.wt[i]=[H[m.j].t0,H[m.j].t1]}

@@ -1,4 +1,5 @@
 // v3.6.1 — sequence-level acoustic alignment for FAST recitation.
+import {norm,sim} from "./recite-core.js";
 // A hafiz at speed drops letters, blends words (no space token) and the greedy transcript turns into blobs that the word-level
 // aligner cannot match. This module aligns the EXPECTED upcoming text straight against the CTC posteriors (not the printed
 // transcript): a Viterbi over the CTC lattice in which any expected letter may be SKIPPED at a fixed price, word separators
@@ -57,12 +58,18 @@ export const isStrong=(w,cfg=STRONG)=>w&&w.n>=cfg.minLen&&w.cov>=(w.n>=5?cfg.cov
  * from what was really heard. Returns {H,syn} (syn = number of synthesized words) or null.
  * E: expected words from the tracker pointer; aux: {lp,T,off}. H: [{w,t0,t1}] absolute seconds.
  */
+// A printed word of about the same length sitting on exactly this stretch of audio and clearly NOT the expected word is a real
+// substitution (the reciter said something else): never paper over it with the expected text. Longer printed blobs are blended words.
+function veto(H,w,t0,t1,cfg){if(globalThis.__VETO===0)return false;const vs=(cfg.vetoSim??+globalThis.__VSIM)||0.4,dl=cfg.vetoLen??1;
+ for(const h of H){if(h.syn)continue;const c=(h.t0+h.t1)/2;if(c<t0-0.02||c>t1+0.02)continue;const x=norm(h.w);
+  if(x.length>=3&&Math.abs(x.length-w.length)<=dl&&sim(x,w)<vs)return true}return false}
 export function seqAugment(H,E,aux,cfg={}){
  if(!aux||!aux.lp||aux.off==null||!E.length)return null;const n=Math.min(E.length,cfg.look??26);
  const r=seqAlign(aux.lp,aux.T,E.slice(0,n),{lead:cfg.lead??1,...(cfg.align||{})});if(!r)return null;
  const sc={...STRONG,...(cfg.strong||{})};const W=r.words;const syn=[];let k=0;
  while(k<n){if(!isStrong(W[k],sc)){k++;continue}let e=k;while(e+1<n&&isStrong(W[e+1],sc))e++;
-  if(e-k+1>=sc.run){for(let q=k;q<=e;q++)syn.push({k:q,w:E[q],t0:aux.off+W[q].t0*0.04,t1:aux.off+(W[q].t1+1)*0.04})}k=e+1}
+  if(e-k+1>=sc.run){for(let q=k;q<=e;q++){if(veto(H,E[q],aux.off+W[q].t0*0.04,aux.off+(W[q].t1+1)*0.04,cfg))continue;syn.push({k:q,w:E[q],t0:aux.off+W[q].t0*0.04,t1:aux.off+(W[q].t1+1)*0.04})}}k=e+1}
+ if(globalThis.__SEQDBG)console.error("SQD",W.slice(0,8).map(w=>w?[w.n,(+w.cov).toFixed(2),(+w.mean).toFixed(2),(+w.min).toFixed(1)].join("/"):"-").join(" "),"syn",syn.map(s=>s.k).join(","));
  if(!syn.length)return null;
  // drop printed words that sit inside a synthesized stretch (by time centre)
  const spans=[];for(const s of syn){const l=spans[spans.length-1];if(l&&s.t0<=l[1]+0.25)l[1]=Math.max(l[1],s.t1);else spans.push([s.t0,s.t1])}
