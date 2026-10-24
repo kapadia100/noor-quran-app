@@ -3,7 +3,7 @@ import * as TJ from '../../src/tj-rules.js';
 import {Resampler,Conditioner} from '../../src/audio-front.js';
 const norm=s=>s.replace(/[^\u0621-\u064A ]/g,'');
 describe('tj-rules',()=>{
- it('info/legend give english and urdu names and a colour',()=>{const e=TJ.info(0,false),u=TJ.info(0,true);expect(e.name).toBeTruthy();expect(u.name).not.toBe(e.name);expect(e.color).toMatch(/^#|rgb|hsl/);expect(TJ.info(999)).toBeNull();expect(TJ.legend(false).length).toBe(7)});
+ it('info/legend give english and urdu names and a colour',()=>{const e=TJ.info(0,false),u=TJ.info(0,true);expect(e.name).toBeTruthy();expect(u.name).not.toBe(e.name);expect(e.color).toMatch(/^#|rgb|hsl|var\(--tjc-/);expect(TJ.info(999)).toBeNull();expect(TJ.legend(false).length).toBe(7)});
  it('segments cover the text exactly and keep order',()=>{const t='abcdefghij';const s=TJ.segments(t,[5,2,4,7,6,8]);expect(s.map(x=>x.s).join('')).toBe(t);expect(s.filter(x=>x.r>=0).map(x=>x.r)).toEqual([5,7])});
  it('segments clip to a word range',()=>{const s=TJ.segments('abcdefghij',[1,1,6],3,8);expect(s.map(x=>x.s).join('')).toBe('defgh');expect(s[0]).toEqual({s:'def',r:1})});
  it('align drops a leading bismillah and verifies words, null on mismatch',()=>{const raw='بسم الله الرحمن الرحيم الحمد لله';const wn=['الحمد','لله'];const a=TJ.align(raw,[1,0,3],wn,norm);expect(a.length).toBe(2);expect(a[0].map(x=>x.s).join('')).toBe('الحمد');
