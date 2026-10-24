@@ -504,3 +504,9 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .recite.rc-full #rcFix .rc-bigw{padding:4px 0;font-size:calc(var(--ar,26px)*1.3)}
 .recite.rc-full .rc-prog{margin:2px 0}.recite.rc-full .rc-chip{margin:2px 0}
 .recite.rc-full .rc-ctl{position:sticky;bottom:0;background:var(--card);padding-top:4px}
+
+/* v3.5.0 polish: short Help label on the full page, controls own the bottom safe area so nothing shows under them */
+.recite.rc-full .rc-hx{display:none}
+.recite.rc-full{padding-bottom:0}
+.recite.rc-full .rc-ctl{padding-bottom:calc(8px + var(--sb));margin-bottom:0}
+.recite.rc-full:has(#rcFix:not([hidden])) .rc-key,.recite.rc-full:has(#rcSum:not([hidden])) .rc-key{display:none}
