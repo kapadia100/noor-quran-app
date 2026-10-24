@@ -1,1 +1,1 @@
-import '../e2e/hifztest.spec.js';
+import '../hifz-cases.js';
