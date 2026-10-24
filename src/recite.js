@@ -435,7 +435,7 @@ function fslice(t0,t1){const s0=Math.max(0,Math.floor(t0*SR)),s1=Math.min(st.end
  for(const c of st.full||[]){const a=Math.max(c.s,s0),b=Math.min(c.s+c.a.length,s1);if(b>a)out.set(c.a.subarray(a-c.s,b-c.s),a-s0)}return out}
 const finalWait=new Map();let fid=1e9;
 function decodeOnce(audio){if(window.__rfinalDec)return Promise.resolve(window.__rfinalDec(audio));if(window.__reciteFake||!worker)return Promise.resolve(null);
- return new Promise(res=>{const id=++fid;const to=setTimeout(()=>{finalWait.delete(id);res(null)},15000);finalWait.set(id,m=>{clearTimeout(to);res(m.lp?{lp:m.lp,T:m.T,off:job?job.off:0}:null)});worker.postMessage({type:'run',id,audio},[audio.buffer])})}
+ return new Promise(res=>{const id=++fid;const to=setTimeout(()=>{finalWait.delete(id);res(null)},15000);finalWait.set(id,m=>{clearTimeout(to);res(m.lp?{lp:m.lp,T:m.T}:null)});worker.postMessage({type:'run',id,audio},[audio.buffer])})}
 /** v3.5.1: late confirmation. Orange words are re-checked against the whole recording (forced alignment between the confirmed neighbours). */
 async function hzFinal(){const T=st.T;if(!st.full||!st.full.length)return 0;const marks={};for(const [k,v] of Object.entries(T.marks))marks[k]=v;
  const r=await finalPass({flat:st.flat.map(x=>x.n),marks,wt:T.wt||{},tEnd:st.end/SR,decode:a=>decodeOnce(a),slice:fslice}).catch(()=>null);if(!r)return 0;let n=0;

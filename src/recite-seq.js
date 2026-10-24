@@ -34,7 +34,7 @@ export function seqAlign(lp,T,words,opt={}){
    if(s>1&&(s&1)&&sym(s)!==sym(s-2)&&D[pr+s-2]>b){b=D[pr+s-2];bk=2;bp=s-2}
    A[s]=b;Ab[s]=bk;Ap[s]=bp}
   // skipping letter(s): arrive at label state s (odd) without emitting label s-2 (and further back), price skip each
-  for(let s=3;s<S;s+=2){const li=(s-3)>>1;// label being skipped = li (state 2li+1 = s-2)
+  for(let s=3;s<S;s+=2){// label being skipped = li (state 2li+1 = s-2)
    const c=A[s-2]+cfg.skip;// A[s-2] = best arrival into label state s-2 ... skipping it means we arrive into s instead
    if(c>A[s]&&A[s-2]>NEG/2){A[s]=c;Ab[s]=3;Ap[s]=s-2}}
   for(let s=0;s<S;s++){if(A[s]>NEG/2){D[cu+s]=A[s]+em(t,s);B[cu+s]=Ab[s];SK[cu+s]=Ap[s]}}}
