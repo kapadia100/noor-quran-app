@@ -518,3 +518,7 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .rc-hzs{min-width:40px}
 .recite.rc-full.rc-done .rc-chip,.recite.rc-full.rc-done .rc-ctl,.recite.rc-full.rc-done .rc-key,.recite.rc-full.rc-done .rc-lv{display:none}
 .rc-ay{font-size:12px;opacity:.75;margin:0 0 4px}
+.rc-wrongc .rc-wo{color:#d29922;font-weight:600}.rc-wrongc .rc-cb{flex-wrap:wrap}
+.mq-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.mq-rad{display:flex;gap:6px;align-items:center;font-size:.9rem}
+.mq-item{align-items:center;gap:8px;flex-wrap:wrap}.mq-act{display:flex;gap:6px;flex-wrap:wrap}.mq-act .btn{padding:6px 10px;font-size:.85rem}
+.mq-count{font-size:.85rem}.mq-warn{color:var(--warn,#b45309)}.mq-err{color:var(--bad,#b91c1c)}

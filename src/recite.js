@@ -9,7 +9,8 @@ import {Resampler,Conditioner} from './audio-front.js';
 import {ensureVad,newVadStream} from './vad.js';
 import {VoiceGate} from './voice-gate.js';
 import {locate} from './hz-locate.js';
-import {esc} from './lib.js';
+import {esc,ayahText} from './lib.js';
+import {QIndex,WrongWatch,WR} from './hz-wrong.js';
 import * as I from './icons.js';
 import {finalPass} from './recite-final.js';
 import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,letters,ENCOURAGE,ESCALATE_AT} from './coach.js';
@@ -48,7 +49,7 @@ export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],en
  for(let i=a;!ctx.review&&i<=Math.min(ctx.txts.length,ctx.to||1e9)&&st.flat.length<FLAT_MAX;i++){const w=ctx.words?.[i];const list=w?w.map(x=>({t:x.t,tr:x.tr,m:x.m,au:x.au})):ctx.txts[i-1].split(/\s+/).filter(x=>norm(x)).map(t=>({t}));
   list.forEach((x,k)=>st.flat.push({...x,a:i,k,n:norm(x.t)}))}
  st.flat=st.flat.filter(x=>x.n);st.T=new Tracker(st.flat.map(x=>x.n));st.T.cfg=Q().gop;st.rangeA=a;st.rangeB=st.flat.length?st.flat[st.flat.length-1].a:a;
- if(ctx.hifz){ctx.hs??={t0:Date.now(),list:[],okW:0,ayat:{}};st.hs=ctx.hs;st.locAt=0;setTimeout(()=>{if(st&&st.ctx===ctx&&!st.listening)startMic().catch(()=>{})},0)}
+ if(ctx.hifz){ctx.hs??={t0:Date.now(),list:[],okW:0,ayat:{}};st.hs=ctx.hs;st.locAt=0;wrInit();setTimeout(()=>{if(st&&st.ctx===ctx&&!st.listening)startMic().catch(()=>{})},0)}
  panel=document.createElement('section');panel.id='recite';panel.className='recite'+(ctx.hifz?' rc-full':'');panel.setAttribute('aria-label','Recite and Learn');
  panel.innerHTML=`<div class="rc-h"><span class="rc-ic">${I.icon('tutor')}</span><div class="rc-t"><b>${ctx.hifz?L('Hifz Test','حفظ ٹیسٹ'):L('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${ctx.hifz?L('From memory','یاد سے'):L('Live tutor','لائیو ٹیوٹر')} · <span class="rc-ref"></span></small></div><button class="rc-x" aria-label="Close">✕</button></div>
  <button class="rc-optb" id="rcOptB" aria-expanded="false" aria-controls="rcOpt"><span id="rcOptS"></span><i aria-hidden="true">⚙</i></button>
@@ -146,7 +147,7 @@ function step(H,t,aux){const before=new Set(Object.keys(st.T.prov));const pa=st.
  if(navigator.webdriver)for(const k of Object.keys(st.T.prov))if(!before.has(k))(window.__rgreen??=[]).push({i:+k,wall:Math.round(performance.now()),aud:t});
  for(const e of ev){if(e.type==='lock')st.first[e.i]=e.st;if(e.st==='bad')flag(e.i,e.kind,e.heard);else if(e.st==='unc'&&!st.coach)nudge(e.i)}
  paint();if(st.mode==='lr'&&st.listening&&!st.coach&&!st.drill){const c=st.flat[Math.min(st.T.cursor,st.flat.length-1)];if(c&&c.a!==st.lrA&&st.T.p<st.flat.length)lrPlay()}
- if(st.mode==='hifz')hzAyah(pa);
+ if(st.mode==='hifz'){hzAyah(pa);wrTick(H,t)}
  if(st.T.p>=st.flat.length&&!st.coach&&!st.queue.length){buzz([20,40,20,40,80]);chip('ok',L(st.rangeB>=st.ctx.txts.length?'Surah complete ✓':'Range complete ✓',st.rangeB>=st.ctx.txts.length?'سورت مکمل ✓':'حصہ مکمل ✓'));stopMic();paint();showSummary(true)}}
 // ---------- coach: hear it, say it again; escalate after repeated misses ----------
 const SYL_RATE=0.6;
@@ -374,7 +375,7 @@ function logNow(){if(!st||st.drill||st.ctx.review||!st.first)return;let ok=0,bad
  try{PG.logSession(st.P,{ts:Date.now(),sn:st.n,from:st.rangeA,to:st.rangeB,mode:st.mode,...d,hints:st.hintN,sec:(Date.now()-st.t0)/1000});PG.addSeen(st.P,seen);PG.save(st.P);st.hintN=0;st.t0=Date.now()}catch{/* ignore */}}
 // test hooks (automation only)
 if(navigator.webdriver){
- window.__recite={raw:()=>st,summary:(f=true)=>showSummary(f),voice:(on=true)=>{if(st)st.lastVoice=on?st.end/SR:-9},feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},mode:st.mode,hint:{...st.hint},first:{...st.first},tj:st.tj&&Object.keys(st.tj).length,tjN:st.n,tjCov:st.tj&&(()=>{const by={};st.flat.forEach((x,i)=>(by[x.a]??=[]).push(i));let cov=0;const miss=[];for(const a of Object.keys(by)){if(by[a].every(i=>st.tj[i]))cov+=by[a].length;else miss.push(a)}return{words:st.flat.length,cov,ay:miss.length,miss}})(),hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
+ window.__recite={raw:()=>st,wr:(H,t)=>wrTick(H,t),summary:(f=true)=>showSummary(f),voice:(on=true)=>{if(st)st.lastVoice=on?st.end/SR:-9},feed:(text,reps=3)=>{const w=text.split(/\s+/).map(norm).filter(Boolean);for(let r=0;r<reps;r++){const b=Math.max(0,st.T.lockedEnd)+0.1;step(w.map((x,i)=>({w:x,t0:b+i*0.4,t1:b+i*0.4+0.3})),b+w.length*0.4)}},say:(text,ended=true)=>coachEval(text.split(/\s+/).map(norm).filter(Boolean),ended),skip:()=>coachSkip(),state:()=>st&&{p:st.T.p,cursor:st.T.cursor,marks:{...st.T.marks},prov:{...st.T.prov},coach:st.coach&&{kind:st.coach.kind,key:st.coach.t.key,esc:st.coach.esc,pron:!!st.coach.pron,tries:st.coach.tries,done:st.coach.done,word:st.coach.t.t},miss:{...st.miss},mode:st.mode,hint:{...st.hint},first:{...st.first},tj:st.tj&&Object.keys(st.tj).length,tjN:st.n,tjCov:st.tj&&(()=>{const by={};st.flat.forEach((x,i)=>(by[x.a]??=[]).push(i));let cov=0;const miss=[];for(const a of Object.keys(by)){if(by[a].every(i=>st.tj[i]))cov+=by[a].length;else miss.push(a)}return{words:st.flat.length,cov,ay:miss.length,miss}})(),hold:st.hold,helping:st.helping,stuckDone:st.stuckDone,helpI:st.helpI,drill:st.drill&&{idx:st.drill.idx,n:st.drill.items.length,fixes:st.drill.fixes,skips:st.drill.skips}}};
  // feed 16 kHz audio through the real ingest/decode path in real time (no microphone needed)
  window.__reciteStream=async(a,speed=1)=>{if(!st.vs&&!window.__noVad){try{await ensureVad()}catch{/* level gate */}if(st&&!st.vs)st.vs=newVadStream()}return new Promise(res=>{st.listening=true;micUI();const step=Math.round(SR*0.04);let i=0;const iv=setInterval(()=>{if(!st){clearInterval(iv);return res()}ingest(Float32Array.from(a.subarray(i,i+step)));i+=step;if(i>=a.length){ingest(new Float32Array(step));if(st.end/SR>a.length/SR+2.6){clearInterval(iv);res()}}},40/speed)})};
 }
@@ -399,6 +400,34 @@ function hzLocate(H,t,aux){const T=st.T,now=performance.now();if(T.verified||Obj
  const starts=[];st.flat.forEach((x,i)=>{if(x.k===0)starts.push(i)});if(starts.length>400)return;
  const i0=locate(T,st.flat.map(x=>x.n),starts,st.locT,H,t,aux,i=>st.flat[i].a);if(i0<0)return;st.locT=null;T.p=T.cursor=i0;st.lineA=0;chip('listen',L(`Found you at ayah ${st.flat[i0].a}`,`آپ آیت ${st.flat[i0].a} پر ہیں`))}
 function hzRetry(a){const {n,ctx}=st;stopMic();open(n,a,ctx);setTimeout(()=>startMic().catch(()=>{}),0)}
+// ---------- v3.5.1 wrong-reading detector (Hifz Test) ----------
+// When the voice keeps going for several seconds and the decoded words are NOT the expected next words, tracking pauses and the
+// reciter hears the expected word and phrase. Speech that is not Quran (talking, TV, noise) only gets a soft "Keep reading".
+let QIp=null;
+function qIndex(){return QIp??=Promise.all(Array.from({length:114},(_,i)=>fetch((import.meta.env.BASE_URL||'/')+`offline/s/ar/${i+1}.json`).then(r=>r.json()).then(a=>a.map((t,q)=>ayahText(i+1,q+1,t))))).then(tx=>new QIndex(tx)).catch(e=>{QIp=null;throw e})}
+function wrInit(){const sess=st;if(!st.ctx.hifz||window.__noWrong)return;qIndex().then(qi=>{if(st===sess)st.WW=new WrongWatch(qi,window.__wrCfg?{...WR,...window.__wrCfg}:WR)}).catch(()=>{})}
+function wrTick(H,t){const w=st.WW;if(!w||st.mode!=='hifz'||!st.listening||st.coach||st.drill||st.hold||st.fixOpen||!$('#rcSum').hidden||st.T.p>=st.flat.length)return;
+ st.flatN??=st.flat.map(x=>x.n);
+ const ev=w.feed({t,H,flatN:st.flatN,p:st.T.p,progKey:st.T.p+'|'+Object.keys(st.T.prov).length,speech:speechSecs});if(ev)wrFire(ev)}
+const snm=k=>{const m=st.ctx.snames?.[k-1];return m?(ur()?(m.name||'').replace(/^سُورَةُ\s*/,''):m.englishName):`${k}`};
+function wrFire(ev){if(ev.kind==='soft'){chip('listen',L('Keep reading — I am listening for the ayah','پڑھتے رہیں — میں آیت سننے کا منتظر ہوں'));(window.__wrLog??=[]).push({kind:'soft'});return}
+ const T=st.T,i=Math.min(T.cursor,st.flat.length-1),t=targetOf(i);(window.__wrLog??=[]).push({kind:ev.kind,sn:ev.sn,a:ev.a});
+ st.gen++;st.hold=true;st.fixOpen=true;hideNudge();hideHelp();buzz([30,40,30]);tone();(st.kinds??={}).different=(st.kinds.different||0)+1;st.wr={t,ev,seq:0};
+ const here=ev.kind==='other'&&(ev.sn!==st.n||!st.flat.some(x=>x.a===ev.a));const same=ev.kind==='other'&&ev.sn===st.n&&st.flat.some(x=>x.a===ev.a);
+ const box=$('#rcFix');box.hidden=false;box.className='rc-fix rc-coach rc-hzc rc-wrongc';
+ box.innerHTML=`<div class="rc-fh" id="rcWH">${L('You’re reading something different — listen','آپ کچھ اور پڑھ رہے ہیں — سنیں')}</div>
+ ${ev.kind==='other'?`<div class="rc-ft rc-wo">${L(`This sounds like ayah ${ev.a} (surah ${snm(ev.sn)})`,`یہ آیت ${ev.a} (سورۃ ${snm(ev.sn)}) جیسی لگ رہی ہے`)}</div>`:''}
+ <div class="rc-ft">${L('Expected next','اگلا متوقع لفظ')} · ${st.n}:${t.a}</div><div class="ar rc-bigw" dir="rtl" lang="ar">${esc(t.t)}</div>
+ ${t.tr?`<div class="rc-ft"><i>${esc(t.tr)}</i>${t.m?` · ${esc(t.m)}`:''}</div>`:''}
+ <div class="rc-phr ar" id="rcPhr" dir="rtl" lang="ar">${(t.ph||[]).map((x,j)=>`<span class="${j===t.pi?'me':''}">${esc(x.t)}</span>`).join(' ')}</div>
+ <div class="bar rc-cb"><button class="btn" id="wHear">▶ ${L('Hear again','دوبارہ سنیں')}</button>${ev.kind==='other'?`<button class="btn" id="wThere">${L('Continue from there','وہیں سے جاری رکھیں')}</button><button class="btn" id="wBack">${L('Go back to the expected ayah','متوقع آیت پر واپس')}</button>`:`<button class="btn" id="wBack">${L('Continue','جاری رکھیں')}</button>`}</div>`;
+ const hear=async()=>{const w=st.wr;if(!w)return;const my=++w.seq;pt++;try{pl().pause()}catch{/* ignore */}chip('hear',L('Playing…','چل رہا ہے…'));const gone=()=>!st||st.wr!==w||w.seq!==my;
+  const r=await playWord(t);if(gone()||r==='blocked')return;await playPhrase(t,hlPhrase);hlPhrase(-1)};
+ const done=()=>{if(!st)return;pt++;try{pl().pause()}catch{/* ignore */}st.wr=null;st.fixOpen=false;st.hold=false;st.cut=st.end;st.gen++;box.hidden=true;st.WW?.reset();armStuck(1500);paint();if(st.listening)chip('listen',L('Continue reading','پڑھتے رہیں'))};
+ $('#wHear').onclick=hear;$('#wBack').onclick=done;
+ const th=$('#wThere');if(th)th.onclick=()=>{if(!same){const {ctx,hs}=st;st.wr=null;if(ctx.onNext){stopMic();ctx.onNext([ev.sn,ev.a,undefined],[],hs)}else done();return}
+  const j=st.flat.findIndex(x=>x.a===ev.a);done();if(j>=0){st.T.p=st.T.cursor=j;st.lineA=0;paint()}};
+ chip('hear',L('Playing…','چل رہا ہے…'));hear()}
 /** Words still "unclear" (orange) in the current surah/range. */
 function uncIdx(){const T=st.T,o=[];for(let i=0;i<st.flat.length;i++)if(T.marks[i]==='unc'&&!st.hint[i])o.push(i);return o}
 const FULL_MAX=16000*60*8;

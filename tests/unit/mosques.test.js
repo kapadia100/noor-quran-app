@@ -1,0 +1,25 @@
+import {describe,it,expect} from 'vitest';
+import {hav,buildQuery,parse,dedupe,rank,fmtDist,gmapsDir,otherMapHref,overpass,find,cacheGet,cachePut} from '../../src/mosques-core.js';
+const mem=()=>{const m={};return {getItem:k=>m[k]??null,setItem:(k,v)=>{m[k]=v},m}};
+describe('mosques core',()=>{
+ it('haversine is correct (known distances)',()=>{expect(hav(0,0,0,0)).toBe(0);expect(hav(24.8607,67.0011,24.8607,67.0011)).toBe(0);
+  expect(hav(0,0,0,1)/1000).toBeCloseTo(111.19,1);expect(hav(51.5074,-0.1278,48.8566,2.3522)/1000).toBeGreaterThan(342);expect(hav(51.5074,-0.1278,48.8566,2.3522)/1000).toBeLessThan(345);
+  expect(hav(24.8607,67.0011,24.8607+0.018,67.0011)).toBeCloseTo(2001.5,-1)});
+ it('query covers amenity+religion and building=mosque for nodes/ways/relations with centre',()=>{const q=buildQuery(24.86,67,2000);expect(q).toContain('nwr["amenity"="place_of_worship"]["religion"="muslim"](around:2000,24.86,67)');expect(q).toContain('nwr["building"="mosque"]');expect(q).toContain('out center');expect(q).not.toMatch(/out center \d/)});
+ it('parses nodes, ways (centre) and drops entries without coordinates',()=>{const l=parse([{type:'node',id:1,lat:1,lon:2,tags:{name:'A'}},{type:'way',id:2,center:{lat:3,lon:4},tags:{}},{type:'relation',id:3,tags:{name:'x'}}]);expect(l.length).toBe(2);expect(l[1].named).toBe(false)});
+ it('dedupes node+building, same-name nearby, keeps distinct',()=>{const l=parse([{type:'node',id:1,lat:24.8,lon:67,tags:{name:'Masjid Noor'}},{type:'way',id:2,center:{lat:24.80001,lon:67.00001},tags:{name:'Noor Mosque'}},{type:'way',id:3,center:{lat:24.80002,lon:67.00002},tags:{}},{type:'node',id:4,lat:24.81,lon:67,tags:{name:'Masjid Noor'}},{type:'node',id:5,lat:24.8,lon:67,tags:{name:'Masjid Noor'}}]);
+  const d=dedupe(l);expect(d.map(x=>x.id).sort()).toEqual(['node1','node4']);expect(dedupe([...l,...l]).length).toBe(2)});
+ it('ranks nearest first and enforces the radius',()=>{const r=rank([{lat:0.01,lng:0},{lat:0.001,lng:0},{lat:0.05,lng:0}],0,0,2000);expect(r.map(x=>Math.round(x.d))).toEqual([111,1112]);});
+ it('formats distance and links',()=>{expect(fmtDist(432)).toBe('430 m');expect(fmtDist(1250)).toBe('1.3 km');expect(gmapsDir(24.8607,67.0011)).toBe('https://www.google.com/maps/dir/?api=1&destination=24.860700,67.001100');
+  expect(otherMapHref(1,2,'A b','iPhone')).toContain('maps.apple.com');expect(otherMapHref(1,2,'A b','Android')).toMatch(/^geo:1\.000000,2\.000000\?q=/)});
+ it('falls over to the next mirror and retries',async()=>{let n=0;const f=async u=>{n++;if(n<3)throw new Error('x');return {ok:true,json:async()=>({elements:[{type:'node',id:1,lat:1,lon:1}]})}};const r=await overpass('q',{fetchFn:f,mirrors:['a','b','c'],wait:async()=>{}});expect(r.mirror).toBe('c');expect(n).toBe(3);
+  let m=0;const g=async()=>{m++;if(m<4)return {ok:false,status:504};return {ok:true,json:async()=>({elements:[]})}};expect((await overpass('q',{fetchFn:g,mirrors:['a','b'],wait:async()=>{}})).els).toEqual([]);expect(m).toBe(4)});
+ it('times out slow mirrors',async()=>{const f=(u,{signal})=>new Promise((_,rej)=>signal.addEventListener('abort',()=>rej(new Error('abort'))));await expect(overpass('q',{fetchFn:f,mirrors:['a'],timeout:20,rounds:1,wait:async()=>{}})).rejects.toThrow()});
+ it('caches and serves offline; reports offline/error states',async()=>{const st=mem();const els=[{type:'node',id:1,lat:24.8607,lon:67.0021,tags:{name:'Masjid A'}},{type:'node',id:2,lat:24.8607,lon:67.0411,tags:{name:'Far'}}];
+  const f=async()=>({ok:true,json:async()=>({elements:els})});const a=await find(24.8607,67.0011,5000,{store:st,fetchFn:f,mirrors:['a'],rounds:1});expect(a.fromCache).toBe(false);expect(a.list.length).toBe(2);
+  const b=await find(24.8607,67.0011,2000,{store:st,online:false});expect(b.fromCache).toBe(true);expect(b.list.map(x=>x.name)).toEqual(['Masjid A']);
+  const bad=async()=>{throw new Error('net')};const c=await find(24.8607,67.0011,2000,{store:st,fetchFn:bad,mirrors:['a'],rounds:1,wait:async()=>{}});expect(c.fromCache).toBe(true);
+  await expect(find(10,10,2000,{store:mem(),online:false})).rejects.toMatchObject({code:'offline'});await expect(find(10,10,2000,{store:mem(),fetchFn:bad,mirrors:['a'],rounds:1})).rejects.toMatchObject({code:'error'});
+  expect(cacheGet(24.8607,67.0011,6000,st)).toBeNull();cachePut(1,1,1000,[],st);expect(cacheGet(1,1,1000,st)).not.toBeNull()});
+ it('empty result is an empty list, not an error',async()=>{const r=await find(0,0,1000,{store:mem(),fetchFn:async()=>({ok:true,json:async()=>({elements:[]})}),mirrors:['a'],rounds:1});expect(r.list).toEqual([])});
+});

@@ -6,10 +6,10 @@
 // Pure (no DOM); shared by the app and the evaluation harness.
 import {norm,words} from './recite-core.js';
 export const sk=w=>norm(w).replace(/[اويء]/g,'');
-export const WR={secs:2.4,minWords:3,minWordsWrong:4,minVotes:2,cov:0.5,vocab:0.85,vocabHit:0.75,vocabN:4,longN:3,cool:2.5,softSecs:5,expWin:14,maxFreq:40};
+export const WR={secs:1.8,minWords:3,minWordsWrong:4,minVotes:2,cov:0.5,vocab:0.85,vocabHit:0.75,vocabN:4,longN:3,cool:2.5,softSecs:5,expWin:14,maxFreq:40};
 /** texts: array (index = surah-1) of arrays of ayah strings (already basmala-stripped as the app shows them). */
 export class QIndex{constructor(texts){this.pos=[];this.W=[];this.bi=new Map();this.vocab=new Set();
- texts.forEach((ay,si)=>{(ay||[]).forEach((t,ai)=>{for(const w of words(t)){const k=sk(w);if(!k)continue;this.pos.push([si+1,ai+1]);this.W.push(k);if(w.length>=2)this.vocab.add(w)}})});
+ texts.forEach((ay,si)=>{(ay||[]).forEach((t,ai)=>{for(const w of words(t)){const k=sk(w);if(!k)continue;this.pos.push([si+1,ai+1]);this.W.push(k);if(k.length>=2)this.vocab.add(k)}})});
  for(let i=0;i+1<this.W.length;i++){const k=this.W[i]+'|'+this.W[i+1];let a=this.bi.get(k);if(!a)this.bi.set(k,a=[]);a.push(i)}}
  /** D: decoded normalized words. Best consistent in-order run elsewhere: {sn,a,votes,gi,len} or null. */
  find(D,cfg=WR){const S=D.map(sk).filter(Boolean);const diag=new Map();
@@ -19,7 +19,7 @@ export class QIndex{constructor(texts){this.pos=[];this.W=[];this.bi=new Map();t
   let top=null;for(const [d,e] of diag){const v=e.v+(diag.get(d+1)?.v||0)+(diag.get(d-1)?.v||0);if(!top||v>top.v)top={v,d,g:e.g,i:e.i}}
   if(!top||top.v<cfg.minVotes)return null;const [sn,a]=this.pos[Math.max(0,Math.min(this.pos.length-1,top.g))];return {sn,a,votes:top.v,gi:top.g}}
  /** share of decoded words (skeleton length>=2) that are Quran words */
- vocabShare(D,cfg=WR){const S=D.filter(k=>k.length>=2);if(S.length<cfg.vocabN)return {n:S.length,share:0,long:0};let c=0,l=0;for(const k of S)if(this.vocab.has(k)){c++;if(k.length>=4)l++}return {n:S.length,share:c/S.length,long:l}}}
+ vocabShare(D,cfg=WR){const S=D.filter(k=>k.length>=2);if(S.length<cfg.vocabN)return {n:S.length,share:0,long:0};let c=0,l=0;for(const k0 of S){const k=sk(k0);if(this.vocab.has(k)){c++;if(k.length>=4)l++}}return {n:S.length,share:c/S.length,long:l}}}
 /** How many consecutive decoded bigrams also appear in the expected next words (so the tracker is just slow, not wrong). */
 export function inExpected(D,flatN,p,cfg=WR){const E=flatN.slice(Math.max(0,p-2),p+cfg.expWin).map(sk),S=D.map(sk).filter(Boolean);let hit=0;
  for(let i=0;i+1<S.length;i++){for(let j=0;j+1<E.length;j++)if(S[i]===E[j]&&S[i+1]===E[j+1]){hit++;break}}return hit}

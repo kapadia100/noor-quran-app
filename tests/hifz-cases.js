@@ -110,3 +110,30 @@ test('v3.5.1 summary counts mistakes, skips and unconfirmed words separately',as
  await page.evaluate(()=>{const s=window.__recite.raw();s.T.marks[6]='unc';s.fpDone=1;window.__recite.summary(false)});
  const sum=page.locator('#rcSum');await expect(sum).not.toContainText('well recited');await expect(sum.locator('.rc-st5 .r b').first()).toHaveText('1');
  await expect(sum.locator('.rc-st5 .u b')).toHaveText('1');await expect(sum.locator('.rc-verdict')).toContainText('mistake')});
+
+const wrFeed=(page,text,t0,t1)=>page.evaluate(([w,t0,t1])=>{const a=w.split(' ').filter(Boolean);const H=a.map((x,i)=>({w:x,t0:t0+i*0.5,t1:t0+i*0.5+0.4}));window.__recite.wr(H,t1)},[text,t0,t1]);
+const wrStart=async page=>{await start(page);await expect.poll(()=>page.evaluate(()=>!!window.__recite.raw().WW)).toBe(true);await feed(page,'بسم الله');await wrFeed(page,'',0,2)};
+test('v3.5.1 wrong-reading: another ayah of the surah -> card, tone, expected word then phrase, continue from there',async({page})=>{
+ await wrStart(page);
+ await wrFeed(page,'اهدنا الصراط المستقيم صراط الذين',3,7);
+ const card=page.locator('#rcFix');await expect(card).toBeVisible();await expect(card).toContainText('You’re reading something different');await expect(card).toContainText('ayah 6');
+ await expect.poll(async()=>(await page.evaluate(()=>window.__rplays||[])).map(x=>x.tag).join(',')).toMatch(/word.*phrase|word/);
+ expect((await page.evaluate(()=>window.__wrLog))[0].kind).toBe('other');
+ expect(await page.evaluate(()=>window.__recite.raw().hold)).toBe(true);
+ await page.click('#wThere');await expect(card).toBeHidden();
+ const s=await st(page);expect(s.p).toBe(17);});
+test('v3.5.1 wrong-reading: "go back" resumes at the expected word and nothing is marked',async({page})=>{
+ await wrStart(page);await wrFeed(page,'اهدنا الصراط المستقيم صراط الذين',3,7);
+ await expect(page.locator('#rcFix')).toBeVisible();const p0=(await st(page)).p;await page.click('#wBack');await expect(page.locator('#rcFix')).toBeHidden();
+ const s=await st(page);expect(s.p).toBe(p0);expect(await page.evaluate(()=>window.__recite.raw().hold)).toBe(false);expect(s.hs.list).toEqual([])});
+test('v3.5.1 wrong-reading: a different surah offers to continue there',async({page})=>{
+ await wrStart(page);await wrFeed(page,'قل هو الله احد الله الصمد',3,8);
+ await expect(page.locator('#rcFix')).toContainText('surah');await expect(page.locator('#wThere')).toBeVisible();
+ await page.click('#wThere');await expect(page).toHaveURL(/#\/surah\/112/)});
+test('v3.5.1 wrong-reading: non-Quran speech only gets a soft "Keep reading", never an accusation',async({page})=>{
+ await wrStart(page);await wrFeed(page,'زقزق مهملا فلانن طرطر',3,9);
+ await expect(page.locator('#rcFix')).toBeHidden();await expect(page.locator('#rcChip')).toContainText('Keep reading');
+ expect((await page.evaluate(()=>window.__wrLog))[0].kind).toBe('soft')});
+test('v3.5.1 wrong-reading: reading the expected words (even slowly) never triggers',async({page})=>{
+ await wrStart(page);await wrFeed(page,'الرحمن الرحيم مالك يوم',3,9);await wrFeed(page,'الرحمن الرحيم مالك يوم الدين',10,16);
+ await expect(page.locator('#rcFix')).toBeHidden();expect(await page.evaluate(()=>window.__wrLog||[])).toEqual([])});
