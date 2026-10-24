@@ -478,3 +478,15 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .rc-hzc .rc-bigw{font-size:34px;padding:6px}
 .hz-sl{display:grid;grid-template-columns:1fr;gap:6px;margin:8px 0}.hz-s{display:flex;gap:10px;align-items:center;text-align:start;width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:14px;background:var(--card);color:inherit;font:inherit;min-width:0}.hz-s b.num{flex:none}.hz-s span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hz-s .ar{flex:none;font-size:18px}
 .hz-gear{margin:6px 0 10px}.hz-gear summary{cursor:pointer;list-style:none;display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:12px;border:1px solid var(--bd)}.hz-gear summary::-webkit-details-marker{display:none}.hz-gear[open] .form{margin-top:8px}
+
+/* v3.5.0 Home: Quran row + three equal live cards (Quran Live, Qaida, Hifz) */
+.hq-row{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:0 0 8px;border-radius:16px;color:#fff;text-decoration:none;background:linear-gradient(140deg,#c79a4a,#8a5a1f)}
+[data-theme=dark] .hq-row{background:linear-gradient(140deg,#a8793a,#6a4318)}
+.hq-row .ti{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.2)}.hq-row .ti .ic{width:19px;height:19px}.hq-row b{font-size:15px}.hq-row small{margin-inline-start:auto;font-size:12px;opacity:.92}
+.hcards .hc{min-height:104px;padding:9px 8px 8px;border-radius:18px}.hcards .hc .ti{width:30px;height:30px;border-radius:10px}.hcards .hc .ti .ic{width:18px;height:18px}.hcards .hc b{font-size:14px}.hcards .hc small{font-size:10.5px}
+.hc-hifz{background:linear-gradient(135deg,#2f6fd6,#5b3fc4);box-shadow:0 8px 20px rgba(60,70,200,.3)}
+/* v3.5.0 Hifz full page: cover the tab bar so nothing hides behind it; controls sit above the home indicator */
+.recite.rc-full{bottom:0;z-index:1050;height:100dvh;padding-bottom:calc(8px + var(--sb));overscroll-behavior:contain}
+.recite.rc-full>*:not(.rc-hzp){flex:none}
+.recite.rc-full .rc-line.rc-hzp{min-height:0;padding-bottom:30vh;scroll-padding-bottom:30vh}
+.recite.rc-full #rcSum:not([hidden]),.recite.rc-full #rcFix:not([hidden]){max-height:58dvh;overflow-y:auto;overscroll-behavior:contain}

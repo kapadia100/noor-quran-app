@@ -48,9 +48,9 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
   <div class="htop"><a class="round" href="#/more" aria-label="${tt('Menu','مینو')}">${I.icon('menu')}</a><div class="htitle"><b class="appname">${tt('Quran Safar','قرآن سفر')}</b><small>${PR.hijri(new Date(),S().ui)} · <span class="streak" id="streak"><b>${st}</b> ${tt('day streak','دن مسلسل')}</span></small></div></div>
   <div class="srow"><form class="sbar" id="hs">${I.icon('search')}<input id="hq" aria-label="${tt('Search','تلاش')}" placeholder="${C.t('q')}"></form><a class="round heart" href="#/bookmarks" aria-label="${tt('Favourites','پسندیدہ')}">${I.icon('heart')}</a></div>
   ${pcard(nx)}
-  <div class="hcards"><a class="hc hc-quran" href="${lr?`#/surah/${lr.s}/${lr.a}`:'#/quran'}" id="homeQuran"><span class="ti">${I.icon('quran')}</span><b>${tt('Quran','قرآن')}</b><small>${lr?`${tt('Continue','جاری')} ${lr.s}:${lr.a}`:tt('114 surahs','114 سورتیں')}</small></a>
-  <a class="hc hc-tutor" href="#/recite" id="homeTutor"><span class="ti">${I.icon('tutor')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Words light up as you recite','بولتے ہی الفاظ روشن')}</small></a>
-  ${qaidaHomeCard(tt,I)}</div>
+  <a class="hq-row" href="${lr?`#/surah/${lr.s}/${lr.a}`:'#/quran'}" id="homeQuran"><span class="ti hq-ti">${I.icon('quran')}</span><b>${tt('Quran','قرآن')}</b><small>${lr?`${tt('Continue','جاری')} ${lr.s}:${lr.a}`:tt('114 surahs','114 سورتیں')}</small></a>
+  <div class="hcards"><a class="hc hc-tutor" href="#/recite" id="homeTutor"><span class="ti">${I.icon('tutor')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Quran Live','قرآن لائیو')}</b><small>${tt('Recite & Learn','تلاوت اور سیکھیں')}</small></a>
+  ${qaidaHomeCard(tt,I)}<a class="hc hc-hifz" href="#/hifztest" id="homeHifz"><span class="ti">${I.icon('hifz')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Hifz Test','حفظ ٹیسٹ')}</b><small>${tt('Recite from memory','یاد سے سنائیں')}</small></a></div>
   ${(()=>{const n=dueItems(weakLoad()).length;return n?`<a class="tutor-card review" href="#/recite/review" id="homeReview"><span class="ti">★</span><div><b>${tt('Review weak words','کمزور الفاظ کی دہرائی')}</b><small>${tt(n+' word'+(n>1?'s':'')+' ready to practice',n+' الفاظ مشق کے لیے تیار')}</small></div><span class="go">›</span></a>`:''})()}
  </section>
  <section class="dsec">

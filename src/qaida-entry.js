@@ -8,4 +8,4 @@ export function qaidaEntry(tt,I,{big=false}={}){
 
 /** Compact Home card (third in the row): opens Qaida, where every lesson starts with a Live button. */
 export function qaidaHomeCard(tt,I){
- return `<a class="hc hc-qaida" href="${QAIDA_HREF}" id="homeQaida"><span class="ti">${I.icon('letters')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Qaida','قاعدہ')}</b><small>${tt('Read live — letters light up','لائیو پڑھیں، حروف روشن')}</small></a>`}
+ return `<a class="hc hc-qaida" href="${QAIDA_HREF}" id="homeQaida"><span class="ti">${I.icon('letters')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Qaida','قاعدہ')}</b><small>${tt('Read letters live','حروف لائیو پڑھیں')}</small></a>`}
