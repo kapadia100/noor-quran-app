@@ -526,7 +526,7 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .rtk{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;justify-content:center;margin:6px 0}.rtk i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:4px}
 .ayah .ar .tj{cursor:pointer}
 /* ---- Quran Dictionary (More tab) ---- */
-.dc-wrap{padding-bottom:28px}.dc-prog{margin:8px 0}.dc-pr{display:flex;align-items:center;gap:12px;margin-bottom:8px}.dc-pct{font-size:30px;line-height:1;color:#2ea043;font-variant-numeric:tabular-nums}.dc-pr small{display:block}
+.dc-wrap{padding-bottom:28px}.dc-prog{margin:8px 0}.dc-pr{display:flex;align-items:center;gap:12px;margin-bottom:8px}.dc-pct{white-space:nowrap;flex:none;font-size:28px;line-height:1;color:#2ea043;font-variant-numeric:tabular-nums}.dc-pr small{display:block}
 .dc-q{width:100%;box-sizing:border-box;min-height:46px;margin:8px 0;padding:8px 14px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-size:16px}
 .dc-chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.dc-chips::-webkit-scrollbar{display:none}
 .dc-chip{flex:none;min-height:36px;padding:4px 12px;border-radius:18px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}.dc-chip.on{background:rgba(46,160,67,.2);border-color:#2ea043;font-weight:600}
@@ -552,3 +552,5 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 #wtip .dlink{display:inline-block;margin-top:4px;padding:6px 4px;font-weight:600;color:inherit;text-decoration:underline}
 [dir=rtl] .dc-nv,body.rtl .dc-nv{transform:scaleX(-1)}
 @media (prefers-reduced-motion:reduce){.dc-chip,.dc-opt{transition:none}}
+
+.dc-pct,.dc-pg,.dc-c,.dc-n,.dc-nav small,.dc-facts b:not(.ar){unicode-bidi:isolate;direction:ltr}
