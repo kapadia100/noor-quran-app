@@ -90,3 +90,11 @@ Free decoding turns one word into something unrelated. Instead each burst is sco
 - Non-reading audit: 0 false greens. Real recordings (located/words revealed): clean 54/60, 96.0%; phone 54/60, 96.0%; hard 51/60, 87.1%; 0 wrong locations, 0 red; locate median ~4.5 s.
 - Spliced mistakes (48 each, 35 located): skip flagged 28/35 (14 red + 14 held→coach), replace 25/35 (11+14), 1 replaced word wrongly revealed, 0 false red elsewhere.
 - Urdu UI → Urdu translation; juz test chains all surahs of the juz.
+
+## v3.5.0 — Hifz Test on Home, speed + accuracy re-measure, bottom-of-page layout, Qaida live test race
+
+- Home: Quran row, then three equal cards in one row — Quran Live, Qaida Live, Hifz Test (Hifz stays in More too).
+- Hifz Test page: full page above the tab bar (100dvh, z-index over the bar), safe-area padding, sticky compact bottom controls, scrollable mistake card / summary; checked at 390, 375 and 360 px (EN, UR, dark).
+- Mistake feedback: vibrate + a soft two-note tone (WebAudio, follows the same Vibrate setting; works on iPhone where vibrate does not).
+- Tracker/pipeline unchanged in logic (measured: no speed collapse at 1.25–2x); the app default (balanced, hop 250 ms) is what the tables below use.
+- Qaida live (flaky on live): `__qlive._burst()` ran against the pre-load pace while the voice model was still downloading, then `start()` swapped in a fresh pace and the count reset. Fake-mode bursts/grades now await the model load; regression test routes a slow model download.
