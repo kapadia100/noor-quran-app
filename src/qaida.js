@@ -52,7 +52,8 @@ const doneN=(P,les)=>{const keys=new Set(itemsOf(les).map(x=>x.key));return gotO
  * beneath it (Home card jumping straight to the last-used Qaida, a saved link, an old lesson link), the parents are pushed underneath so Back always lands on
  * the list, then the chooser, then wherever the user came from. */
 let curD=-1;
-addEventListener('hashchange',()=>{if(!location.hash.startsWith('#/qaida'))curD=-1});
+const BR=typeof window!=='undefined'&&typeof document!=='undefined';
+BR&&addEventListener('hashchange',()=>{if(!location.hash.startsWith('#/qaida'))curD=-1});
 function stackFor(lv,cr,les){
  const st=history.state,url=location.hash;
  if(st&&st.qb===1&&st.d===lv){curD=lv;return}
@@ -61,7 +62,7 @@ function stackFor(lv,cr,les){
  try{history.replaceState({qb:1,d:0},'',chain[0]);for(let k=1;k<=lv;k++)history.pushState({qb:1,d:k},'',chain[k])}catch{/* history unavailable */}
  curD=lv}
 // "All lessons" and "Switch Qaida" go back in history (when the parent page is beneath) instead of stacking a second copy of it.
-document.addEventListener('click',e=>{const a=e.target.closest?.('#qSwitch,.q-back');if(!a)return;const s=history.state;if(!s||s.qb!==1)return;
+BR&&document.addEventListener('click',e=>{const a=e.target.closest?.('#qSwitch,.q-back');if(!a)return;const s=history.state;if(!s||s.qb!==1)return;
  const n=s.d-(a.id==='qSwitch'?0:s.d-1);if(n>0&&n<=s.d){e.preventDefault();history.go(-n)}});
 
 /** Routes: #/qaida = chooser; #/qaida/n|m = lesson list; #/qaida/n|m/<lesson>; old links #/qaida/<lesson> still open the Noorani lesson. */
