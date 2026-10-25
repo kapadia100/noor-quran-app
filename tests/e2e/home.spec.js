@@ -48,7 +48,9 @@ test('home v3.5: Quran row, then Quran Live, Qaida Live and Hifz Test in one row
   await expect(page.locator('#homeQaida .hc-live')).toBeVisible();await expect(page.locator('#homeTutor .hc-live')).toBeVisible();await expect(page.locator('#homeHifz')).toHaveAttribute('href','#/hifztest');
   await expect(page.locator('#homeQaida')).toHaveAttribute('href','#/qaida');
   const ov=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);expect(ov).toBeLessThanOrEqual(1)}
- await page.click('#homeQaida');await expect(page).toHaveURL(/#\/qaida$/);await expect(page.locator('.q-row')).toHaveCount(9)});
+ await page.click('#homeQaida');await expect(page).toHaveURL(/#\/qaida$/);await expect(page.locator('#qChoose .q-choice')).toHaveCount(2);
+ await page.click('#qcNoorani');await expect(page).toHaveURL(/#\/qaida\/n$/);await expect(page.locator('.q-row')).toHaveCount(9);
+ await page.goto('./');await expect(page.locator('#homeQaida')).toHaveAttribute('href','#/qaida/n')});
 
 test('home v3.5: Hifz Test card opens the Hifz Test picker, and Hifz is still in More',async({page})=>{
  await init(page,{});await page.goto('./');await expect(page.locator('#homeHifz')).toContainText('Hifz Test');await expect(page.locator('#homeHifz .ti svg')).toBeVisible();

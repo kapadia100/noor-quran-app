@@ -7,8 +7,9 @@ test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>errors.push(Str
 test.afterEach(async({page})=>{expect(errors).toEqual([]);const ov=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);expect(ov).toBeLessThanOrEqual(1)});
 const plays=page=>page.evaluate(()=>window.__qplays||[]);
 
-test('More tab has a Qaida entry that opens the lesson list with 9 lessons',async({page})=>{
+test('More tab has a Qaida entry that opens the chooser; Noorani opens the lesson list with 9 lessons',async({page})=>{
  await page.goto('./#/more');await page.click('#qaidaEntry');await expect(page).toHaveURL(/#\/qaida$/);
+ await expect(page.locator('#qChoose .q-choice')).toHaveCount(2);await page.click('#qcNoorani');await expect(page).toHaveURL(/#\/qaida\/n$/);
  await expect(page.locator('.q-row')).toHaveCount(9);await expect(page.locator('.q-note')).toContainText('Start reading live');
  await expect(page.locator('#qaidaEntry')).toHaveCount(0)});
 
@@ -32,7 +33,7 @@ test('harakat lesson: 28 rows x 3 cells with the right marks; tanween has words;
  for(let i=0;i<7;i++){await page.click('#qpHear');await expect(page.locator('#qpRate')).toBeVisible();await page.click('#qpGot')}
  await expect(page.locator('#qDone')).toContainText('7 of 7');
  const P=await page.evaluate(()=>JSON.parse(localStorage.qsQaida));expect(Object.keys(P.lessons.harakat.got)).toHaveLength(7);
- await page.goto('./#/qaida');await expect(page.locator('[data-l=harakat] .q-p')).toHaveText('7/28')});
+ await page.goto('./#/qaida/n');await expect(page.locator('[data-l=harakat] .q-p')).toHaveText('7/28')});
 
 test('Again re-queues an item once; Stop saves what was rated',async({page})=>{
  await page.goto('./#/qaida/huroof');await page.click('#qaPrac');await page.click('#qpHear');await page.click('#qpAgain');
@@ -55,7 +56,7 @@ test('joined shapes: 29 rows, seven non-joiners faded, building-words examples',
 
 test('Urdu labels and dark mode render without overflow',async({page})=>{
  await page.addInitScript(()=>{localStorage.setItem('settings',JSON.stringify({ui:'ur',dark:true}))});
- await page.goto('./#/qaida');await expect(page.locator('.q-row').first()).toContainText('حروف');
+ await page.goto('./#/qaida/n');await expect(page.locator('.q-row').first()).toContainText('حروف');
  await page.goto('./#/qaida/madd');await expect(page.locator('.q-rule')).toBeVisible()});
 
 // ---- live reading (v3.1): follow-along from the pace, checked words, never red ----

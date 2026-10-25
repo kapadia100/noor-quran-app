@@ -570,3 +570,4 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .q-salah{display:grid;gap:8px;margin:8px 0}.q-ph{padding:12px 14px}.q-ph-ar{font-size:26px;line-height:1.9;margin:0 0 4px;text-align:center}.q-ph b{display:block}
 .q-signs{margin:10px 0}.q-sg{display:flex;align-items:center;gap:12px;padding:4px 0}.q-sg .ar{font-size:28px;min-width:44px;text-align:center;margin:0}
 .q-tjnote{margin-top:4px}
+.q-dr .q-cell{padding-bottom:12px}.q-dr .q-cell .ar{margin-bottom:8px}

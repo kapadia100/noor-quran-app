@@ -70,6 +70,7 @@ function chooser(C,tt,I){
   return `<a class="tutor-card q-choice${last===cr.id?' q-last':''}" href="${cr.href}" id="qc${cr.id==='m'?'Madani':'Noorani'}" data-course="${cr.id}"><span class="ti">${I.icon(icon)}</span><div><b>${tt(cr.en,cr.ur)}</b><small>${tt(...cr.intro)}</small><small class="q-cp">${got?tt(`${got} of ${all} items learned`,`${all} میں سے ${got} یاد`):tt(`${cr.LESSONS.length} lessons`,`${cr.LESSONS.length} اسباق`)}${last===cr.id?' · '+tt('last used','آخری بار')+' ✓':''}</small></div><span class="go">›</span></a>`};
  C.app().innerHTML=`<section class="dsec q-wrap" id="qChoose"><div class="q-hero"><span class="ar q-hero-ar" dir="rtl" lang="ar">ا ب ت</span><div><b>${tt('Choose your Qaida','اپنا قاعدہ چنیں')}</b><small>${tt('Both teach you to read Arabic. Your progress is kept separately for each.','دونوں عربی پڑھنا سکھاتے ہیں۔ ہر ایک کی ترقی الگ محفوظ رہتی ہے۔')}</small></div></div>
  ${card(COURSES.m,'madani')}${card(COURSES.n,'letters')}</section>`;
+ C.app().querySelectorAll('.q-choice').forEach(a=>a.addEventListener('click',()=>setPick(a.dataset.course))); // remembered at the tap, before the lesson list has loaded
 }
 
 function list(C,tt,I,cr){
