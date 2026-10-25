@@ -276,18 +276,26 @@ function sumExtra(d){if(d||!st.first)return '';let ok=0,n=0;for(const [k,v] of O
  let sk='';try{const S=PG.streak(st.P);if(S.cur>0)sk=`<span class="rc-str">🔥 ${L(`${S.cur}-day streak`,`${S.cur} دن کا سلسلہ`)}</span>`}catch{/* ignore */}
  const sc=st.mode==='memory'||st.mode==='test'?`<div class="rc-score"><b>${Math.round(100*ok/n)}%</b><span>${st.mode==='test'?L('Test score','آزمائش کا اسکور'):L('From memory','یاد سے')}${st.hintN?` · ${L(`${st.hintN} hints`,`${st.hintN} اشارے`)}`:''}</span></div>`:'';
  return `${sc}<div class="rc-types">${bits.join(' · ')}${bits.length&&sk?' · ':''}${sk}</div>`}
+// v3.6.2: what comes after a finished surah/range. Sequential by default (114 wraps to 1); an explicit queue (ctx.next) wins.
+function nextAfter(){const c=st.ctx,tot=c.txts.length;if(!tot||st.review)return null;
+ if(st.rangeB<Math.min(tot,c.to||1e9))return{kind:'cont',a:st.rangeB+1,sn:st.n,label:L(`Continue: ayah ${st.rangeB+1}`,`جاری رکھیں: آیت ${st.rangeB+1}`)};
+ if(c.to&&c.to<tot)return null;
+ const q=c.next?.[0];const sn=q?q[0]:(st.n>=114?1:st.n+1);const wrap=!q&&st.n>=114;
+ return{kind:'surah',sn,a:q?q[1]:1,to:q?q[2]:c.snames?.[sn-1]?.numberOfAyahs,wrap,label:wrap?L(`Start again: ${snm(sn)}`,`دوبارہ شروع: ${snm(sn)}`):L(`Next surah: ${snm(sn)}`,`اگلی سورت: ${snm(sn)}`)}}
+function nextGo(nx){if(!nx)return;const {n,ctx}=st;if(nx.kind==='cont'){open(n,nx.a,ctx);return}location.hash='#/recite/'+nx.sn}
 function showSummary(final){if(st.mode==='hifz'&&!st.drill)return hzSummary(final);logNow();hideNudge();hideHelp();const box=$('#rcSum');box.hidden=false;$('#rcFix').hidden=true;const d=st.drill;
  const fl=Object.values(st.flagged).sort((a,b)=>(st.fixed[a.key]?1:0)-(st.fixed[b.key]?1:0)),list=d?d.items:fl,ok=Object.values(st.T.marks).filter(m=>m==='ok').length;
- const fixed=d?d.fixes:Object.keys(st.fixed).length,todo=d?d.items.filter(x=>!st.fixed[x.key]).length:fl.filter(x=>!st.fixed[x.key]).length;
- box.innerHTML=`<div class="rc-sh"><b>${d?L('Practice finished','مشق مکمل'):final?L('Surah complete 🎉','سورت مکمل 🎉'):L('Session summary','سیشن کا خلاصہ')}</b></div>
+ const fin=final&&!d,nx=fin?nextAfter():null;const fixed=d?d.fixes:Object.keys(st.fixed).length,todo=d?d.items.filter(x=>!st.fixed[x.key]).length:fl.filter(x=>!st.fixed[x.key]).length;
+ box.innerHTML=`<div class="rc-sh"><b>${d?L('Practice finished','مشق مکمل'):final?(st.rangeB>=st.ctx.txts.length?L('Surah complete 🎉','سورت مکمل 🎉'):L('Range complete 🎉','حصہ مکمل 🎉')):L('Session summary','سیشن کا خلاصہ')}</b></div>
  ${sumExtra(d)}<div class="rc-stats">${d?'':`<span class="g"><b>${ok}</b>${L('correct','درست')}</span>`}<span class="g"><b>${fixed}</b>${L('fixed','درست کیے')}</span><span class="r"><b>${todo}</b>${L('to practice','مشق باقی')}</span></div>
  ${list.length?`<div class="rc-wl-h">${L('Words to practice','مشق کے الفاظ')}</div><div class="rc-wl">${list.map(x=>`<button class="rc-wi${st.fixed[x.key]?' fx':''}" data-k="${esc(x.key)}"><span class="ar" dir="rtl" lang="ar">${esc(x.t)}</span><small>${esc(x.m||x.tr||'')}</small><i>${st.fixed[x.key]?'✓':'•'}</i></button>`).join('')}</div>`:`<p class="rc-ft">${L('No mistakes — well recited!','کوئی غلطی نہیں — ماشاءاللہ!')}</p>`}
  <p class="rc-note muted">${list.length?L('Saved to your weak words. Review them any time from Home.','کمزور الفاظ میں محفوظ ہو گئے۔ ہوم سے کبھی بھی دہرائیں۔'):''}</p>
- <div class="bar rc-sb">${list.length?`<button class="btn" id="sAgain">${L('Practice again','دوبارہ مشق')}</button>`:''}${st.flat.length&&!final?`<button class="btn" id="sGo">${L('Keep reciting','جاری رکھیں')}</button>`:''}<button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
+ <div class="bar rc-sb">${nx?`<button class="btn" id="sNext">▶ ${nx.label}</button>`:''}${list.length?`<button class="btn${nx?' ghost':''}" id="sAgain">${L('Practice again','دوبارہ مشق')}</button>`:''}${fin?`<button class="btn ghost" id="sRep">⟲ ${L('Repeat','دوبارہ پڑھیں')}</button><button class="btn ghost" id="sPick">${L('Choose another surah','دوسری سورت چنیں')}</button>`:''}${st.flat.length&&!final?`<button class="btn" id="sGo">${L('Keep reciting','جاری رکھیں')}</button>`:''}<button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
  box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=list.find(y=>y.key===b.dataset.k);if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0})}});
  const again=$('#sAgain');if(again)again.onclick=async()=>{const items=list.slice().sort((a,b)=>(st.fixed[a.key]?1:0)-(st.fixed[b.key]?1:0));st.drill={items,idx:0,fixes:0,skips:0,review:!!d?.review};st.fixed={};box.hidden=true;$('#rcLine').hidden=true;
   if(!st.listening)await startMic();if(st.listening)drillNext()};
  const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.drill=null;st.hold=false;st.cut=st.end;$('#rcLine').hidden=false;st.lineA=0;paint();startMic().then(()=>armStuck(1500))};
+ const nb=$('#sNext');if(nb)nb.onclick=()=>nextGo(nx);const rp=$('#sRep');if(rp)rp.onclick=()=>{const {n,ctx,startA}=st;open(n,startA,ctx)};const pk=$('#sPick');if(pk)pk.onclick=()=>{location.hash='#/recite'};
  $('#sX').onclick=close}
 // ---------- practice modes, hints, tajweed colours, options, progress ----------
 const MODES=[['follow','Follow','ساتھ پڑھیں','Text visible; words light up as you read.','متن نظر آتا ہے؛ پڑھتے ہی الفاظ روشن ہوتے ہیں۔'],
@@ -452,6 +460,7 @@ function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');
  const nx=[...(st.rangeB<Math.min(st.ctx.txts.length,st.ctx.to||1e9)?[[st.n,st.rangeB+1,st.ctx.to||st.ctx.txts.length]]:[]),...(st.ctx.next||[])];
  const goNext=()=>{hs.okW=okW;hs.uncPrev=uncAll;hs.totPrev+=st.flat.length;box.hidden=true;const [s2,f2]=nx[0];if(s2===st.n){const {n,ctx}=st;open(n,f2,{...ctx,hs})}else st.ctx.onNext?.(nx[0],nx.slice(1),hs)};
  if(final&&nx.length&&st.ctx.auto!==false){goNext();return}
+ const hnx=final&&!nx.length?nextAfter():null;
  const nW=hs.list.filter(x=>x.kind!=='skip'&&x.kind!=='hint'&&x.kind!=='stuck').length,nS=hs.list.filter(x=>x.kind==='skip').length,nh=hs.list.filter(x=>x.kind==='hint'||x.kind==='stuck').length,ny=Object.keys(hs.ayat).length,nm=nW+nS,nu=uncAll.length;
  const total=hs.totPrev+st.flat.length,reached=hs.totPrev+Math.min(T.p,st.flat.length),notReached=Math.max(0,total-reached);
  const perfect=final&&nu===0&&nm===0&&nh===0&&notReached===0;
@@ -471,7 +480,7 @@ function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');
  ${hs.late?`<p class="rc-note muted">${L(`${hs.late} word${hs.late===1?'':'s'} confirmed after re-checking your recording.`,`ریکارڈنگ دوبارہ چیک کرنے پر ${hs.late} الفاظ کی تصدیق ہوئی۔`)}</p>`:''}
  ${final&&nx.length?`<p class="rc-ft">${L(`Next: ${nx[0][0]}:${nx[0][1]}`,`اگلا: ${nx[0][0]}:${nx[0][1]}`)}</p>`:''}${rows.length?`<div class="rc-wl-h">${L('Tap a word to hear it · ⌖ show it in the text · ⟲ retry that ayah','لفظ دبائیں تو سنائی دے گا · ⌖ متن میں دیکھیں · ⟲ اس آیت سے دوبارہ')}</div><div class="rc-wl">${rows.map((x,j)=>`<div class="rc-hzr${x.kind==='unc'?' unc':''}"><button class="rc-wi" data-j="${j}"><span class="ar" dir="rtl" lang="ar">${esc(x.t)}</span><small>${L(KN[x.kind]?.[0]||'Mistake',KN[x.kind]?.[1]||'غلطی')} · ${x.sn}:${x.a}</small></button>${x.sn===st.n&&x.i!=null?`<button class="btn ghost rc-hzs" data-j="${j}" aria-label="${L('Show in text','متن میں دیکھیں')}">⌖</button>`:''}${x.sn===st.n?`<button class="btn ghost rc-hzj" data-a="${x.a}" aria-label="Retry ${x.a}">⟲</button>`:''}</div>`).join('')}</div>`:''}
  <p class="rc-note muted">${nm||nu?L('These words are saved to your weak words for review.','یہ الفاظ دہرائی کے لیے کمزور الفاظ میں محفوظ ہیں۔'):''}</p>
- <div class="bar rc-sb">${nu?`<button class="btn" id="sUnc">🔁 ${L(`Re-read the ${nu} unconfirmed word${nu===1?'':'s'}`,`${nu} غیر تصدیق شدہ الفاظ دوبارہ پڑھیں`)}</button>`:''}${!final?`<button class="btn" id="sGo">${L('Keep going','جاری رکھیں')}</button>`:''}${final&&nx.length?`<button class="btn" id="sNx">${L('Next surah','اگلی سورت')}</button>`:''}<button class="btn${nu?' ghost':''}" id="sRe">⟲ ${L('Test again','دوبارہ ٹیسٹ')}</button><button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
+ <div class="bar rc-sb">${nu?`<button class="btn" id="sUnc">🔁 ${L(`Re-read the ${nu} unconfirmed word${nu===1?'':'s'}`,`${nu} غیر تصدیق شدہ الفاظ دوبارہ پڑھیں`)}</button>`:''}${!final?`<button class="btn" id="sGo">${L('Keep going','جاری رکھیں')}</button>`:''}${final&&nx.length?`<button class="btn" id="sNx">${L('Next surah','اگلی سورت')}</button>`:''}${hnx?`<button class="btn" id="sNx2">▶ ${hnx.label}</button>`:''}<button class="btn${nu?' ghost':''}" id="sRe">⟲ ${L('Repeat','دوبارہ پڑھیں')} · ${L('Test again','دوبارہ ٹیسٹ')}</button>${final?`<button class="btn ghost" id="sPick">${L('Choose another surah','دوسری سورت چنیں')}</button>`:''}<button class="btn ghost" id="sX">${L('Close','بند')}</button></div>`;
  // unconfirmed words go to the weak list (once per session) so they come back in spaced review
  if(nu&&!hs.uncSaved){hs.uncSaved=1;try{for(const x of uncAll){recMiss(st.weak,x);}weakSave(st.weak)}catch{/* ignore */}}
  box.querySelectorAll('.rc-wi').forEach(b=>b.onclick=()=>{const x=rows[+b.dataset.j];if(x){st.coach=null;playWord({...x,cn:x.cn||[],ci:x.ci||0});document.getElementById('a'+x.a)?.scrollIntoView({block:'center',behavior:'smooth'})}});
@@ -480,5 +489,5 @@ function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');
  const un=$('#sUnc');if(un)un.onclick=async()=>{const items=uncAll.map(x=>({...x,ph:x.ph||[]}));st.drill={items,idx:0,fixes:0,skips:0,review:false,unc:true};st.fixed={};box.hidden=true;$('#rcLine').hidden=true;panel.classList.remove('rc-done');st.hold=false;
   if(!st.listening)await startMic();if(st.listening)drillNext()};
  const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.hold=false;st.cut=st.end;st.lineA=0;paint();startMic().then(()=>armStuck(1500))};
- const nb=$('#sNx');if(nb)nb.onclick=goNext;
+ const nb=$('#sNx');if(nb)nb.onclick=goNext;const n2=$('#sNx2');if(n2)n2.onclick=()=>{box.hidden=true;st.ctx.onNext?.([hnx.sn,hnx.a,hnx.to],[],null)};const pk=$('#sPick');if(pk)pk.onclick=()=>{location.hash='#/hifztest'};
  $('#sRe').onclick=()=>{const {n,ctx}=st;open(n,st.rangeA,{...ctx,hs:null})};$('#sX').onclick=close}

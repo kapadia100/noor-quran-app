@@ -10,6 +10,7 @@ const T={en:{home:'Home',ibadat:'Ibadat',duas:'Duas',more:'More',quran:'Quran',h
  ur:{home:'ہوم',ibadat:'عبادات',duas:'دعائیں',more:'مزید',quran:'قرآن',hadith:'حدیث',search:'تلاش',bookmarks:'نشانیاں',prayer:'نماز',qibla:'قبلہ',settings:'ترتیبات',filter:'سورت تلاش کریں…',ayahs:'آیات',translation:'ترجمہ',reciter:'قاری',tafsir:'تفسیر',lastRead:'پڑھنا جاری رکھیں',none:'ابھی کچھ نہیں',play:'سورت سنیں',lang:'حدیث کی زبان',size:'عربی فونٹ سائز',q:'قرآن میں تلاش کریں…',edition:'تلاش بذریعہ',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',results:'نتائج',books:'کتب',uiLang:'ایپ کی زبان',dark:'ڈارک موڈ',offlineTr:'آف لائن: بلٹ اِن انگریزی ترجمہ دکھایا جا رہا ہے۔',cont:'مسلسل تلاوت',autoNext:'اگلی سورت جاری رکھیں',surahAudio:'پوری سورت کی آڈیو فائل (لاک اسکرین کے لیے بہتر)'}};
 const t=k=>T[S.ui][k]||k;
 import {esc} from './lib.js';
+import {dateKey,msToMidnight,gregText} from './dates.js';
 import * as TJ from './tj-rules.js';
 import * as F from './features.js';
 import {icon} from './icons.js';
@@ -73,7 +74,7 @@ async function juzReader(n){if(!validJuz(n)){location.hash='#/juz';return}loadin
 
 // ---------- Dates, prayer times, qibla ----------
 const pn=k=>PR.PNAME[k][S.ui==='ur'?1:0];
-function dateCard(nx){return `<div class="card datecard"><div><b class="hij">${PR.hijri(new Date(),S.ui)}</b><small>${PR.greg(new Date(),S.ui)}</small></div>${nx?`<a href="#/prayer" class="nextp"><small>${S.ui==='ur'?'اگلی نماز':'Next prayer'}</small><b>${pn(nx.key)} ${PR.fmt12(nx.time)}</b><span class="cd" data-at="${+nx.time}"></span></a>`:''}</div>`}
+function dateCard(nx){return `<div class="card datecard"><div><b class="hij" data-hij>${PR.hijri(new Date(),S.ui)}</b><small data-greg>${PR.greg(new Date(),S.ui)}</small></div>${nx?`<a href="#/prayer" class="nextp"><small>${S.ui==='ur'?'اگلی نماز':'Next prayer'}</small><b>${pn(nx.key)} ${PR.fmt12(nx.time)}</b><span class="cd" data-at="${+nx.time}"></span></a>`:''}</div>`}
 let tickT;function tick(){clearInterval(tickT);const f=()=>{const els=document.querySelectorAll('.cd');if(!els.length)return clearInterval(tickT);document.querySelectorAll('.pc-bar').forEach(b=>{const f=+b.dataset.from,a=+b.dataset.at,w=Math.max(0,Math.min(100,100*(Date.now()-f)/(a-f)));b.firstElementChild.style.setProperty('--w',w.toFixed(1)+'%')});els.forEach(e=>{let ms=+e.dataset.at-Date.now();if(ms<0){route();return}const h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4),sec=Math.floor(ms%6e4/1e3);e.textContent=`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`})};f();tickT=setInterval(f,1000)}
 function prayer(){setTitle(S.ui==='ur'?'اوقاتِ نماز':'Prayer Times');const P=PR.P,pt=PR.times(),nx=PR.next();
  app.innerHTML=`${dateCard(nx)}<div class="card"><b>${I_('pin')} ${esc(P.city)}</b> <small class="muted">${P.lat}, ${P.lng} · ${P.tz}</small><div class="bar"><button class="btn" id="gps">${I_('gps')} ${S.ui==='ur'?'میری لوکیشن':'Use GPS'}</button><select id="city" aria-label="City"><option value="">${S.ui==='ur'?'شہر منتخب کریں':'Choose city…'}</option>${PR.CITIES.map(c=>`<option ${c[0]===P.city?'selected':''}>${c[0]}</option>`).join('')}</select></div><small id="gmsg" class="muted"></small></div>
@@ -186,8 +187,11 @@ async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return
  if(tjOn())loadTjR();
  if(S.wbw)loadW();
  $('#recT').onclick=async()=>{const b=$('#recT');b.disabled=true;try{if(cur)stop();const [R,w]=await Promise.all([import('./recite.js'),words?Promise.resolve(words):F.wbw(n).catch(()=>null)]);RC=R;
-  R.open(n,lastVisible(n)||+start||1,{words:w,txts,ayahUrl:(a,sn=n)=>arUrls(sn).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite'),gc:GC.event})}catch{toast(t('err'))}finally{b.disabled=false}};
+  R.open(n,lastVisible(n)||+start||1,{words:w,txts,snames:list,ayahUrl:(a,sn=n)=>arUrls(sn).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite'),gc:GC.event})}catch{toast(t('err'))}finally{b.disabled=false}};
  if(AUTOT){AUTOT=false;$('#recT').click()}
+ // v3.6.2: if the top Recite & Learn bar has scrolled away (e.g. resuming mid-surah), keep a floating entry so Live is always one tap away
+ {const f=document.createElement('button');f.id='recFab';f.className='recfab';f.hidden=true;f.setAttribute('aria-label',ur?'تلاوت اور سیکھیں':'Recite & Learn');f.innerHTML=`${I_('tutor')}<span>${ur?'لائیو':'Live'}</span>`;f.onclick=()=>$('#recT')?.click();document.body.append(f);
+  try{window.__recIO?.disconnect();const io2=new IntersectionObserver(es=>{f.hidden=es[es.length-1].isIntersecting||!!document.getElementById('recite')});io2.observe($('#recT'));window.__recIO=io2}catch{f.hidden=false}}
  if(AUTOH&&AUTOH.s===n){const H=AUTOH;AUTOH=null;(async()=>{try{const hzTr=S.ui==='ur'&&tr.edition?.language!=='ur'?await bundledTr(n,'ur.jalandhry').catch(()=>null):null;const [R,w]=await Promise.all([import('./recite.js'),words?Promise.resolve(words):F.wbw(n).catch(()=>null)]);RC=R;
   R.open(n,H.from,{words:w,txts,to:H.to,hifz:true,snames:list,showTr:H.showTr,auto:H.auto,hs:H.hs||undefined,next:H.next||[],onNext:([s2,f2,t2],rest,hs)=>startHifzTest({...H,s:s2,from:f2,to:t2,next:rest,hs}),trOf:a=>(hzTr?.texts||tr.texts)[a-1]||'',ayahUrl:(a,sn=n)=>arUrls(sn).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite'),gc:GC.event})}catch{toast(t('err'))}})()}
  app.onclick=e=>{const tjEl=e.target.closest('.tj');if(tjEl){const r=TJ.info(+tjEl.dataset.r,ur);if(r){let tip=$('#wtip');if(!tip){tip=document.createElement('div');tip.id='wtip';tip.setAttribute('role','status');document.body.append(tip)}tip.innerHTML=`<b style="color:${r.color}">${esc(r.name)}</b><br>${esc(r.text)}`;tip.hidden=false;clearTimeout(tip._t);tip._t=setTimeout(()=>tip.hidden=true,6000)}return}
@@ -277,7 +281,7 @@ async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Pro
  $('#s_size').oninput=e=>{S.size=+e.target.value;save();applyUI()};$('#s_dark').onchange=e=>{S.dark=e.target.checked;save();applyUI()};[['cont','continuous'],['next','autoNext'],['sa','surahAudio']].forEach(([id,k])=>$('#s_'+id).onchange=e=>{S[k]=e.target.checked;save()})}
 
 // Each navigation renders into a fresh container, so a slow, stale render (e.g. a surah still loading) can never overwrite the newer screen.
-async function route(){$('#sheet').hidden=true;try{GC.route(location.hash.replace(/^#\/?/,'').split('/'))}catch{/* analytics never breaks the app */}document.body.classList.remove('is-home');const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
+async function route(){$('#sheet').hidden=true;document.getElementById('recFab')?.remove();window.__recIO?.disconnect();try{GC.route(location.hash.replace(/^#\/?/,'').split('/'))}catch{/* analytics never breaks the app */}document.body.classList.remove('is-home');const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
  $('#back').style.visibility=p[0]?'visible':'hidden';
  const sec={hsearch:'hadith',surah:'quran',juz:'quran',mushaf:'quran',search:'quran',bookmarks:'quran',notes:'quran',khatam:'quran',hifz:'quran',hifztest:'more',recite:'quran',progress:'more',qaida:'more',dict:'more',prayer:'ibadat',qibla:'ibadat',tracker:'ibadat',ramadan:'ibadat',calendar:'ibadat',tasbeeh:'ibadat',duas:'ibadat',zakat:'ibadat',mosques:'ibadat',names:'ibadat'}[p[0]]??p[0];document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
  const FR={qaida:()=>F.qaida(p[1]),quran:()=>home(),more:F.more,ibadat:F.ibadat,help:F.help,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:F.names,tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz,hifztest:()=>F.hifzTest(p[1]),progress:F.progress,dict:()=>F.dict(p[1],p[2])};
@@ -286,6 +290,15 @@ async function route(){$('#sheet').hidden=true;try{GC.route(location.hash.replac
  catch(e){if(v!==app)return;console.error(e);v.innerHTML=`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}}
 F.init({app:()=>app,S,save,t,setTitle,loading,toast,weakDrill,resetModel:()=>RC?.resetModel?.(),j,arabic,transFor,surahs,dateCard,tick,pn,playUrl,startHifz,startHifzTest});
 addEventListener('hashchange',route);applyUI();route();
+// v3.6.2 dates: refresh on app resume and at local midnight so the shown date is always today's (device clock + timezone).
+let shownDay=dateKey(),midT=null;
+function refreshDates(){const k=dateKey(),changed=k!==shownDay;shownDay=k;const now=new Date();
+ document.querySelectorAll('[data-hij]').forEach(e=>{const h=PR.hijri(now,S.ui);e.textContent=h;e.hidden=!h;const sep=e.nextElementSibling;if(sep?.hasAttribute('data-hijsep'))sep.hidden=!h});
+ document.querySelectorAll('[data-greg]').forEach(e=>{e.textContent=e.dataset.greg==='short'?gregText(now,S.ui,{weekday:'short',day:true,month:'short',year:true}):PR.greg(now,S.ui)});
+ if(changed&&!document.getElementById('recite')&&/^#?\/?(calendar(\/-?\d+)?|ramadan|prayer|tracker)?\/?$/.test(location.hash))route()}
+function armMidnight(){clearTimeout(midT);midT=setTimeout(()=>{refreshDates();armMidnight()},msToMidnight()+500)}
+['visibilitychange','pageshow','focus','resume'].forEach(ev=>addEventListener(ev,()=>{if(!document.hidden){refreshDates();armMidnight()}}));
+armMidnight();setInterval(()=>{if(!document.hidden&&dateKey()!==shownDay)refreshDates()},30000);
 if(S.aotd&&(PR.isNative()||('Notification' in window&&Notification.permission==='granted')))scheduleAotd();
 // Re-arm alerts on launch only if permission was already granted (no permission prompt without a user gesture).
 if(Object.values(PR.P.alerts).some(Boolean)&&localStorage.getItem('prayer')&&(PR.isNative()||('Notification' in window&&Notification.permission==='granted')))PR.schedule().catch(()=>{});

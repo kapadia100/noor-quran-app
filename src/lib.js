@@ -1,4 +1,5 @@
 // Pure, testable logic
+import * as DT from './dates.js';
 export const FIX={"2:181": "فَمَنۢ بَدَّلَهُۥ بَعْدَ مَا سَمِعَهُۥ فَإِنَّمَآ إِثْمُهُۥ عَلَى ٱلَّذِينَ يُبَدِّلُونَهُۥٓ ۚ إِنَّ ٱللَّهَ سَمِيعٌ عَلِيمٌۭ", "8:6": "يُجَـٰدِلُونَكَ فِى ٱلْحَقِّ بَعْدَ مَا تَبَيَّنَ كَأَنَّمَا يُسَاقُونَ إِلَى ٱلْمَوْتِ وَهُمْ يَنظُرُونَ", "12:39": "يَـٰصَـٰحِبَىِ ٱلسِّجْنِ ءَأَرْبَابٌۭ مُّتَفَرِّقُونَ خَيْرٌ أَمِ ٱللَّهُ ٱلْوَٰحِدُ ٱلْقَهَّارُ", "12:41": "يَـٰصَـٰحِبَىِ ٱلسِّجْنِ أَمَّآ أَحَدُكُمَا فَيَسْقِى رَبَّهُۥ خَمْرًۭا ۖ وَأَمَّا ٱلْـَٔاخَرُ فَيُصْلَبُ فَتَأْكُلُ ٱلطَّيْرُ مِن رَّأْسِهِۦ ۚ قُضِىَ ٱلْأَمْرُ ٱلَّذِى فِيهِ تَسْتَفْتِيَانِ", "13:37": "وَكَذَٰلِكَ أَنزَلْنَـٰهُ حُكْمًا عَرَبِيًّۭا ۚ وَلَئِنِ ٱتَّبَعْتَ أَهْوَآءَهُم بَعْدَ مَا جَآءَكَ مِنَ ٱلْعِلْمِ مَا لَكَ مِنَ ٱللَّهِ مِن وَلِىٍّۢ وَلَا وَاقٍۢ"};
 export const stripB=x=>{x=x.replace(/^\uFEFF/,'');const w=x.split(' ');const bare=y=>(y||'').replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g,'');return bare(w[0])==='بسم'&&bare(w[1])==='ٱلله'&&w.length>4?w.slice(4).join(' '):x};
 export const JUZ=[[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],[9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],[29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
@@ -33,7 +34,7 @@ export function surahMatch(s,q){q=String(q).trim().toLowerCase();if(!q)return tr
 export const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const DAY=864e5;
 /** Hijri {y,m,d} (Umm al-Qura) for a date, with ±day adjustment. */
-export function hijriParts(date=new Date(),adj=0){const x=new Date(date.getTime()+adj*DAY);const p=new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{year:'numeric',month:'numeric',day:'numeric'}).formatToParts(x);const g=k=>parseInt(p.find(v=>v.type===k).value);return {y:g('year'),m:g('month'),d:g('day')}}
+export function hijriParts(date=new Date(),adj=0){return DT.hijriParts(date,adj)||(()=>{const x=new Date(date.getTime()+adj*DAY);return DT.kuwaiti(x.getFullYear(),x.getMonth()+1,x.getDate())})()}
 export const HMONTHS=['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Ula','Jumada al-Akhirah','Rajab',"Sha'ban",'Ramadan','Shawwal',"Dhu al-Qa'dah",'Dhu al-Hijjah'];
 export const HMONTHS_UR=['محرم','صفر','ربیع الاول','ربیع الثانی','جمادی الاول','جمادی الثانی','رجب','شعبان','رمضان','شوال','ذوالقعدہ','ذوالحجہ'];
 export const EVENTS=[[1,1,'Islamic New Year','اسلامی نیا سال'],[1,10,'Day of Ashura','یوم عاشور'],[3,12,'Mawlid an-Nabi','عید میلاد النبی'],[7,27,"Isra & Mi'raj",'شب معراج'],[8,15,"Shab-e-Barat (15 Sha'ban)",'شب برات'],[9,1,'Ramadan begins','آغاز رمضان'],[9,27,'Laylat al-Qadr (27th night)','شب قدر (27ویں شب)'],[10,1,'Eid al-Fitr','عید الفطر'],[12,8,'Hajj begins (Yawm at-Tarwiyah)','آغاز حج'],[12,9,'Day of Arafah','یوم عرفہ'],[12,10,'Eid al-Adha','عید الاضحی']];
