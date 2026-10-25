@@ -72,7 +72,7 @@ const MORE_EXTRA=[['#/dict','tafsir','Quran Dictionary','قرآن ڈکشنری']
 export const progress=()=>progressPage(C,tt,ur,I);
 export const dict=(a,b)=>import('./dict.js').then(m=>m.dictPage(C,tt,ur,I,a,b));
 export const dictRank=(s,a,w)=>import('./dict.js').then(m=>m.rankOf(C,s,a,w));
-export const qaida=id=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,id));
+export const qaida=(a,b)=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,a,b));
 export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=Object.keys(W).length,nD=dueItems(W).length;
  const row=(href,ic,en,u,sub,id)=>`<a class="mrc-row" href="${href}" id="${id}"><span class="mi">${ic}</span><span class="mt"><b>${tt(en,u)}</b><small>${sub}</small></span><span class="go">›</span></a>`;
  app().innerHTML=`<section class="dsec"><div class="mrc" id="moreRecite"><div class="mrc-h"><span class="ti">${I.icon('tutor')}</span><div><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Your live Quran tutor','آپ کا لائیو قرآنی ٹیوٹر')}</small></div></div>
