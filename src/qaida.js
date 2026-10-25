@@ -48,15 +48,31 @@ export const countOf=les=>itemsOf(les).length;
 const gotOf=(P,id)=>Object.keys(P.lessons[id]?.got||{});
 const doneN=(P,les)=>{const keys=new Set(itemsOf(les).map(x=>x.key));return gotOf(P,les.id).filter(k=>keys.has(k)).length};
 
+/** History stack: chooser (depth 0) -> lesson list (1) -> lesson (2). Every Qaida history entry is marked {qb:1,d:depth}. If a page is entered without its parents
+ * beneath it (Home card jumping straight to the last-used Qaida, a saved link, an old lesson link), the parents are pushed underneath so Back always lands on
+ * the list, then the chooser, then wherever the user came from. */
+let curD=-1;
+addEventListener('hashchange',()=>{if(!location.hash.startsWith('#/qaida'))curD=-1});
+function stackFor(lv,cr,les){
+ const st=history.state,url=location.hash;
+ if(st&&st.qb===1&&st.d===lv){curD=lv;return}
+ const chain=['#/qaida',cr?'#/qaida/'+cr.id:'',les&&cr?`#/qaida/${cr.id}/${les.id}`:''];
+ if(lv===0||curD===lv-1){try{history.replaceState({...(st||{}),qb:1,d:lv},'',url)}catch{/* history unavailable */}curD=lv;return}
+ try{history.replaceState({qb:1,d:0},'',chain[0]);for(let k=1;k<=lv;k++)history.pushState({qb:1,d:k},'',chain[k])}catch{/* history unavailable */}
+ curD=lv}
+// "All lessons" and "Switch Qaida" go back in history (when the parent page is beneath) instead of stacking a second copy of it.
+document.addEventListener('click',e=>{const a=e.target.closest?.('#qSwitch,.q-back');if(!a)return;const s=history.state;if(!s||s.qb!==1)return;
+ const n=s.d-(a.id==='qSwitch'?0:s.d-1);if(n>0&&n<=s.d){e.preventDefault();history.go(-n)}});
+
 /** Routes: #/qaida = chooser; #/qaida/n|m = lesson list; #/qaida/n|m/<lesson>; old links #/qaida/<lesson> still open the Noorani lesson. */
 export async function qaidaPage(C,tt,ur,I,a,b){
  stop();
- if(!a){C.setTitle(tt('Qaida','قاعدہ'));return chooser(C,tt,I)}
+ if(!a){stackFor(0);C.setTitle(tt('Qaida','قاعدہ'));return chooser(C,tt,I)}
  let cr,les;
  if(COURSES[a]){cr=COURSES[a];les=b?cr.LESSONS.find(x=>x.id===b):null}
  else{les=D.LESSONS.find(x=>x.id===a);cr=les?COURSES.n:null}
- if(!cr){C.setTitle(tt('Qaida','قاعدہ'));return chooser(C,tt,I)}
- setPick(cr.id);C.setTitle(tt(cr.en,cr.ur));
+ if(!cr){stackFor(0);C.setTitle(tt('Qaida','قاعدہ'));return chooser(C,tt,I)}
+ setPick(cr.id);C.setTitle(tt(cr.en,cr.ur));stackFor(les?2:1,cr,les);
  if(!les)return list(C,tt,I,cr);
  return lesson(C,tt,ur,I,les);
 }
