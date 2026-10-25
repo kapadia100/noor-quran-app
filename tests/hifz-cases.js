@@ -137,3 +137,35 @@ test('v3.5.1 wrong-reading: non-Quran speech only gets a soft "Keep reading", ne
 test('v3.5.1 wrong-reading: reading the expected words (even slowly) never triggers',async({page})=>{
  await wrStart(page);await wrFeed(page,'الرحمن الرحيم مالك يوم',3,9);await wrFeed(page,'الرحمن الرحيم مالك يوم الدين',10,16);
  await expect(page.locator('#rcFix')).toBeHidden();expect(await page.evaluate(()=>window.__wrLog||[])).toEqual([])});
+
+// v3.6.4: Hifz stays inside Hifz. Session URL never changes by itself, the mistake card appears in place, and Back / X / summary return to the selection (then to where the user came from).
+const inSession=async page=>{await expect(page).toHaveURL(/#\/surah\/1\/1$/);await expect(page.locator('#recite')).toBeVisible()};
+const onSelection=async page=>{await expect(page).toHaveURL(/#\/hifztest(\/\d+)?$/);await expect(page.locator('#recite')).toHaveCount(0);await expect(page.locator('.hz-s[data-s="1"]')).toBeVisible()};
+const begin=async page=>{await page.goto('./');await page.goto('./#/more');await page.click('a[href="#/hifztest"]');await expect(page.locator('.hz-s[data-s="1"]')).toBeVisible();await page.click('.hz-s[data-s="1"]');
+ await expect(page.locator('#recite .rc-t b')).toHaveText(/Hifz Test/);await expect.poll(()=>page.evaluate(()=>window.__recite.raw().listening)).toBe(true)};
+for(const how of ['header','history']){
+ test(`v3.6.4 Hifz nav (${how==='header'?'X button':'phone back'}): correct + wrong recitation stay on Hifz, feedback in place; Back -> selection -> More`,async({page})=>{
+  await begin(page);await inSession(page);
+  await feed(page,'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن');await inSession(page);
+  await feed(page,'الرحمن كتاب مالك يوم الدين');
+  await expect(page.locator('#recite #rcFix')).toContainText('Mistake — listen');await inSession(page);
+  await page.waitForTimeout(700);await inSession(page);
+  if(how==='header')await page.click('.rc-x');else await page.goBack();   // the full-screen overlay covers the header, so its own X is the in-app back
+  await onSelection(page);
+  if(how==='header')await page.click('#back');else await page.goBack();
+  await expect(page).toHaveURL(/#\/more$/)});
+}
+test('v3.6.4 Hifz nav: the X button returns to the selection, not the Quran reader',async({page})=>{
+ await begin(page);await feed(page,'بسم الله الرحمن الرحيم');await page.click('.rc-x');await onSelection(page);
+ await expect(page.locator('#ays')).toHaveCount(0);await page.goBack();await expect(page).toHaveURL(/#\/more$/)});
+test('v3.6.4 Hifz nav: finishing keeps the summary on Hifz; Done and Back both return to the selection',async({page})=>{
+ await begin(page);
+ await feed(page,'بسم الله الرحمن الرحيم الحمد لله رب العالمين الرحمن الرحيم مالك يوم الدين');
+ await feed(page,'إياك نعبد وإياك نستعين اهدنا الصراط المستقيم صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين');
+ await expect(page.locator('#rcSum')).toContainText('Hifz Test complete');await page.waitForTimeout(800);await inSession(page);await expect(page.locator('#rcSum')).toBeVisible();
+ await page.click('#sX');await onSelection(page);
+ await page.goForward();await expect(page).toHaveURL(/#\/surah\/1\/1$/);await page.goBack();await onSelection(page)});
+test('v3.6.4 Hifz nav: starting a session while background audio is playing is not hijacked by it',async({page})=>{
+ await page.goto('./#/surah/1');await page.click('#playAll');await page.waitForTimeout(300);
+ await page.goto('./#/hifztest');await page.click('.hz-s[data-s="1"]');await expect(page.locator('#recite')).toBeVisible();
+ await page.waitForTimeout(1500);await inSession(page)});

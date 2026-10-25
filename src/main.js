@@ -124,7 +124,7 @@ async function playPos(s,i,whole=S.surahAudio){whole=isWhole(whole);if(!validSur
 function advance(manual){if(!cur)return;
  if(hifzCfg&&!manual&&!cur.whole&&cur.s===hifzCfg.s){const nx=hifzNextPos();if(!nx){hifzCfg=null;toast(S.ui==='ur'?'حفظ سیشن مکمل':'Hifz session complete ✓');audio.pause();return playerUI()}return playPos(hifzCfg.s,nx-1,false)}if(cur.whole){if(S.autoNext&&cur.s<114||manual)return playPos(cur.s+1,0,true);return stop()}
  if(!S.continuous&&!manual)return playerUI();const n=nextPos(cur.s,cur.i);if(!n)return stop();
- if(n.s!==cur.s){if(!S.autoNext&&!manual)return stop();const viewing=location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)'));playPos(n.s,n.i).then(()=>{if(viewing)location.hash=`#/surah/${n.s}`})}else playPos(n.s,n.i)}
+ if(n.s!==cur.s){if(!S.autoNext&&!manual)return stop();const viewing=location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)'));playPos(n.s,n.i).then(()=>{if(viewing&&!document.getElementById('recite'))location.hash=`#/surah/${n.s}`})}else playPos(n.s,n.i)}
 function prev(){if(!cur)return;if(cur.whole)return playPos(Math.max(1,cur.s-1),0,true);if(cur.i>0)return playPos(cur.s,cur.i-1);if(cur.s>1)playPos(cur.s-1,AYAH_COUNTS[cur.s-2]-1)}
 function stop(){audio.pause();cur=null;hifzCfg=null;playerUI();if('mediaSession' in navigator)navigator.mediaSession.playbackState='none'}
 audio.onended=()=>{if(oneShot){oneShot=false;cur=null;return playerUI()}if(cur&&!cur.whole&&cur.urls&&cur.part+1<cur.urls[cur.i].length){cur.part++;cur.altOn=false;setClip();audio.play().catch(()=>{});return}advance(false)};
@@ -151,7 +151,13 @@ async function transJuz(n){const rs=juzRanges(n);const parts=await Promise.all(r
 // Long surahs render progressively (CHUNK ayahs at a time, more appended as you scroll) so Al-Baqara opens instantly.
 let RC=null,AUTOT=false,AUTOH=null;addEventListener('hashchange',()=>RC?.close());
 const CHUNK=30;let hifzCfg=null,hifzPos=null;
-function startHifzTest(c){AUTOH=c;location.hash=`#/surah/${c.s}/${c.from}`}
+// v3.6.4: a Hifz session is [#/hifztest selection] -> [#/surah/N/from + full-screen Hifz overlay]; leaving it (X, summary, Back) always returns to the selection.
+// Moving on to the next surah replaces the session entry, so it never stacks reader pages or exposes the reader.
+function startHifzTest(c){if(cur)stop();AUTOH=c;const tgt=`#/surah/${c.s}/${c.from}`;
+ if(history.state?.hz===1&&document.getElementById('recite'))return location.replace(tgt);
+ if(!location.hash.startsWith('#/hifztest'))try{history.pushState(null,'','#/hifztest')}catch{/* ignore */}
+ location.hash=tgt}
+const exitHifz=()=>{if(history.state?.hz===1)history.back();else location.replace('#/hifztest')};
 function startHifz(c){hifzCfg=c;hifzPos={a:c.from,c:0,r:0};S.continuous=true;playPos(c.s,c.from-1,false);toast(S.ui==='ur'?'حفظ سیشن شروع':`Hifz: ${c.s}:${c.from}-${c.to} · ×${c.each} each · range ×${c.range}`)}
 async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return}loading();F.markRead();
  const [AR,tr,trs,recs,list]=await Promise.all([arabic([n]),transFor(n),editions('translation'),audioEds(),surahs()]);const meta=list[n-1];
@@ -192,8 +198,8 @@ async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return
  // v3.6.2: if the top Recite & Learn bar has scrolled away (e.g. resuming mid-surah), keep a floating entry so Live is always one tap away
  {const f=document.createElement('button');f.id='recFab';f.className='recfab';f.hidden=true;f.setAttribute('aria-label',ur?'تلاوت اور سیکھیں':'Recite & Learn');f.innerHTML=`${I_('tutor')}<span>${ur?'لائیو':'Live'}</span>`;f.onclick=()=>$('#recT')?.click();document.body.append(f);
   try{window.__recIO?.disconnect();const io2=new IntersectionObserver(es=>{f.hidden=es[es.length-1].isIntersecting||!!document.getElementById('recite')});io2.observe($('#recT'));window.__recIO=io2}catch{f.hidden=false}}
- if(AUTOH&&AUTOH.s===n){const H=AUTOH;AUTOH=null;(async()=>{try{const hzTr=S.ui==='ur'&&tr.edition?.language!=='ur'?await bundledTr(n,'ur.jalandhry').catch(()=>null):null;const [R,w]=await Promise.all([import('./recite.js'),words?Promise.resolve(words):F.wbw(n).catch(()=>null)]);RC=R;
-  R.open(n,H.from,{words:w,txts,to:H.to,hifz:true,snames:list,showTr:H.showTr,auto:H.auto,hs:H.hs||undefined,next:H.next||[],onNext:([s2,f2,t2],rest,hs)=>startHifzTest({...H,s:s2,from:f2,to:t2,next:rest,hs}),trOf:a=>(hzTr?.texts||tr.texts)[a-1]||'',ayahUrl:(a,sn=n)=>arUrls(sn).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite'),gc:GC.event})}catch{toast(t('err'))}})()}
+ if(AUTOH&&AUTOH.s===n){const H=AUTOH;AUTOH=null;try{history.replaceState({...(history.state||{}),hz:1},'')}catch{/* ignore */}(async()=>{try{const hzTr=S.ui==='ur'&&tr.edition?.language!=='ur'?await bundledTr(n,'ur.jalandhry').catch(()=>null):null;const [R,w]=await Promise.all([import('./recite.js'),words?Promise.resolve(words):F.wbw(n).catch(()=>null)]);RC=R;
+  R.open(n,H.from,{words:w,txts,to:H.to,hifz:true,exit:exitHifz,snames:list,showTr:H.showTr,auto:H.auto,hs:H.hs||undefined,next:H.next||[],onNext:([s2,f2,t2],rest,hs)=>startHifzTest({...H,s:s2,from:f2,to:t2,next:rest,hs}),trOf:a=>(hzTr?.texts||tr.texts)[a-1]||'',ayahUrl:(a,sn=n)=>arUrls(sn).then(u=>u[a-1]).catch(()=>null),event:()=>GC.event('feature-recite'),gc:GC.event})}catch{toast(t('err'))}})()}
  app.onclick=e=>{const tjEl=e.target.closest('.tj');if(tjEl){const r=TJ.info(+tjEl.dataset.r,ur);if(r){let tip=$('#wtip');if(!tip){tip=document.createElement('div');tip.id='wtip';tip.setAttribute('role','status');document.body.append(tip)}tip.innerHTML=`<b style="color:${r.color}">${esc(r.name)}</b><br>${esc(r.text)}`;tip.hidden=false;clearTimeout(tip._t);tip._t=setTimeout(()=>tip.hidden=true,6000)}return}
   const wEl=e.target.closest('.w');if(wEl&&words){const [a,k]=wEl.dataset.w.split('.').map(Number);const w=words[a][k];document.querySelectorAll('.w.on').forEach(x=>x.classList.remove('on'));wEl.classList.add('on');
    let tip=$('#wtip');if(!tip){tip=document.createElement('div');tip.id='wtip';tip.setAttribute('role','status');document.body.append(tip)}tip.innerHTML=`<span class="ar">${esc(w.t)}</span> <i>${esc(w.tr)}</i><br><b>${esc(w.m)}</b>`;tip.hidden=false;tip.dataset.k=wEl.dataset.w;clearTimeout(tip._t);tip._t=setTimeout(()=>tip.hidden=true,6000);if(w.au)playUrl(w.au,'',true);F.dictRank(n,a,k+1).then(r=>{if(r&&!tip.hidden&&tip.dataset.k===wEl.dataset.w)tip.insertAdjacentHTML('beforeend',`<br><a class="dlink" href="#/dict/${r}">📖 ${S.ui==='ur'?'ڈکشنری میں دیکھیں':'See in dictionary'} ›</a>`)}).catch(()=>{});return}

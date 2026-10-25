@@ -69,7 +69,7 @@ export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],en
  <div class="rc-key"><span class="k-ok">${L('Correct','درست')}</span><span class="k-unc">${L('Unclear','غیر واضح')}</span><span class="k-bad">${L('Check','دیکھیں')}</span></div>
  <div class="bar rc-ctl"><button class="btn" id="rcDl" hidden>${L(`Download tutor (~${MB} MB, once)`,`ٹیوٹر ڈاؤن لوڈ کریں (~${MB} MB، ایک بار)`)}</button><button class="rc-mic" id="rcMic" disabled aria-label="Microphone">${I.icon('mic')}<span>${L('Start','شروع')}</span></button><button class="btn rc-hb" id="rcHint" hidden></button><button class="btn rc-hb" id="rcHelp" aria-label="${L('Help, I am stuck','مدد، میں اٹک گیا')}">❓ ${L('Help','مدد')}<span class="rc-hlx"> · ${L('I’m stuck','اٹک گیا')}</span></button></div>
  <p class="rc-note muted">${L('Checks your words as you recite, not full tajweed. Your voice stays on your phone.','یہ الفاظ چیک کرتا ہے، مکمل تجوید نہیں۔ آپ کی آواز فون سے باہر نہیں جاتی۔')}</p>`;
- document.body.append(panel);$('.rc-x').onclick=close;wireExtras();paint();
+ document.body.append(panel);$('.rc-x').onclick=leave;wireExtras();paint();
  $('#rcHelp').onclick=()=>{unlockAudio();helpTap()};
 $('#rcMic').onclick=async()=>{if(st.listening){stopMic();endOrSummary();return}await startMic();if(!st||!st.listening)return;if(st.coach&&!st.coach.done)listen();else if(st.drill)drillNext();else if(st.mode==='lr')lrPlay(true)};
  if(st.drill){$('#rcLine').hidden=true;$('.rc-ref').textContent=L('Review','دہرائی');$('.rc-key').hidden=true}
@@ -82,6 +82,8 @@ $('#rcMic').onclick=async()=>{if(st.listening){stopMic();endOrSummary();return}a
 function load(){getWorker().postMessage({type:'load',base:localStorage.getItem('qsAsrBase')||MODEL_BASE})}
 /** Forget the in-memory worker/model (used after the downloaded model is deleted from the More tab). */
 export function resetModel(){try{worker?.terminate()}catch{/* ignore */}worker=null;ready=false}
+// Hifz: leaving (X / summary) goes back to the Hifz selection through history, never to the Quran reader underneath. Progress is saved by close().
+function leave(){const s=st;if(s&&s.ctx.hifz&&s.ctx.exit){s.ctx.exit();setTimeout(()=>{if(st===s)close()},600)}else close()}
 export function close(){if(!st)return;logNow();document.removeEventListener('visibilitychange',onVis);pt++;try{st.player?.pause()}catch{/* ignore */}stopMic();clearInterval(st.timer);clearTimeout(st.nudge);clearTimeout(st.coach?.to);st.hseq++;panel?.remove();panel=null;st=null;document.querySelectorAll('.ayah.reciting').forEach(e=>e.classList.remove('reciting'))}
 
 // ---------- word line ----------
@@ -489,5 +491,5 @@ function hzSummary(final){logNow();hideNudge();hideHelp();const box=$('#rcSum');
  const un=$('#sUnc');if(un)un.onclick=async()=>{const items=uncAll.map(x=>({...x,ph:x.ph||[]}));st.drill={items,idx:0,fixes:0,skips:0,review:false,unc:true};st.fixed={};box.hidden=true;$('#rcLine').hidden=true;panel.classList.remove('rc-done');st.hold=false;
   if(!st.listening)await startMic();if(st.listening)drillNext()};
  const go=$('#sGo');if(go)go.onclick=()=>{box.hidden=true;st.hold=false;st.cut=st.end;st.lineA=0;paint();startMic().then(()=>armStuck(1500))};
- const nb=$('#sNx');if(nb)nb.onclick=goNext;const n2=$('#sNx2');if(n2)n2.onclick=()=>{box.hidden=true;st.ctx.onNext?.([hnx.sn,hnx.a,hnx.to],[],null)};const pk=$('#sPick');if(pk)pk.onclick=()=>{location.hash='#/hifztest'};
- $('#sRe').onclick=()=>{const {n,ctx}=st;open(n,st.rangeA,{...ctx,hs:null})};$('#sX').onclick=close}
+ const nb=$('#sNx');if(nb)nb.onclick=goNext;const n2=$('#sNx2');if(n2)n2.onclick=()=>{box.hidden=true;st.ctx.onNext?.([hnx.sn,hnx.a,hnx.to],[],null)};const pk=$('#sPick');if(pk)pk.onclick=leave;
+ $('#sRe').onclick=()=>{const {n,ctx}=st;open(n,st.rangeA,{...ctx,hs:null})};$('#sX').onclick=leave}
