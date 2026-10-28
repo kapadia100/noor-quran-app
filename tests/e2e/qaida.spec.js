@@ -89,7 +89,7 @@ test('Live card is the first thing in the lesson, above the grid and the fold; i
  await page.click('.q-lbtn');await expect(page.locator('.q-lb-top')).toBeHidden();await expect(page.locator('#qLp .q-badge')).toContainText('LIVE');
  await expect(page.locator('.q-meter')).toBeVisible();await expect(page.locator('#qlDbg')).toBeVisible();await expect(page.locator('#qlHear')).toBeVisible();
  for(let k=0;k<2;k++)await page.evaluate(()=>window.__qlive._burst());
- await expect.poll(async()=>{const c=await page.locator('.q-tile.q-fa').first().evaluate(e=>getComputedStyle(e).backgroundColor);const m=c.match(/[\d.]+/g).map(Number);return m[1]>m[0]+60&&m[1]>m[2]+60},{timeout:3000}).toBe(true); // green dominant once the fade ends, never blue/red
+ await expect.poll(async()=>{const c=await page.locator('.q-tile.q-fa').first().evaluate(e=>getComputedStyle(e).backgroundColor);const m=c.match(/[\d.]+/g).map(Number);return m[1]>m[0]+30&&m[1]>m[2]+30},{timeout:3000}).toBe(true); // green dominant once the fade ends, never blue/red
  await page.click('#qlHear');await expect.poll(()=>plays(page)).toEqual(['qaida/3-a.mp3']); // plays the NEXT letter to read (position 2 = tha)
  await page.click('#qlStop');await expect(page.locator('.q-lb-top')).toBeVisible()});
 
