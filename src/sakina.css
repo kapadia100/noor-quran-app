@@ -1,0 +1,128 @@
+/* Sakina (Sage & Cream) — v3.7.0 design layer. Loaded last so it re-skins the legacy rules without changing any layout logic. */
+:root,[data-theme=light]{
+ --bg:#F6F0E2;--fg:#2A3324;--card:#FFFBF2;--sec:#EDE6D3;--mut:#626959;--bd:#E2DAC4;--bd2:#C9C0A5;
+ --pri:#586C4A;--onpri:#FFFBF2;--brand:#9CAA8A;--tile:#7C8F6C;--acc:#B8923A;--gold:#7E6428;--hl:#E4EAD6;
+ --good:#3A7335;--bad:#B3402F;--warn:#7E6428;--live:#C0503B;
+ --r:22px;--ar:32px;--sh:0 6px 18px #3C462814;--sh2:0 14px 30px -12px rgba(60,70,40,.4);
+ --f-head:'Fraunces','Noto Nastaliq Urdu',Georgia,serif;--f-ui:'DM Sans','Noto Nastaliq Urdu',system-ui,-apple-system,sans-serif;
+ --nh:calc(88px + var(--sb));
+}
+[data-theme=dark]{
+ --bg:#1B2118;--fg:#EEE8D6;--card:#242C20;--sec:#2D3628;--mut:#A9B29A;--bd:#333D2E;--bd2:#4A5742;
+ --pri:#A9BA94;--onpri:#1B2118;--tile:#57694A;--acc:#D8B56A;--gold:#D8B56A;--hl:#33402D;
+ --good:#8BC27A;--bad:#EE8C78;--warn:#D8B56A;--live:#D26A55;
+ --sh:0 8px 24px #0006;--sh2:0 14px 30px -12px rgba(0,0,0,.7);
+}
+html,body{background:var(--bg)!important;color:var(--fg)}
+main#app{background:none}
+body{font-family:var(--f-ui);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--brand) 22%,transparent),transparent 60%)}
+header,main#app,nav{z-index:2}
+/* ---------- typography ---------- */
+h1,h2,h3,.dhead,header h1,.q-hero b,.mrc-h b{font-family:var(--f-head);font-weight:600;letter-spacing:-.005em}
+.ar,[lang=ar],.ayah .ar,.arabic{font-family:'Amiri Quran','Amiri',serif}
+.ur,[lang=ur],[dir=rtl]:not(.ar):not([lang=ar]){font-family:'Noto Nastaliq Urdu',var(--f-ui)}
+[lang=ur] body,body[lang=ur]{line-height:1.9}
+.taf,.tafsir{font-family:'Amiri',serif}
+body.indopak .ar,.mushaf-ip .ar{font-family:'Scheherazade New','Amiri Quran',serif}
+/* ---------- header ---------- */
+header{background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+header h1{font-family:var(--f-head);font-size:23px;font-weight:600;color:var(--fg)}
+header button,header #back,header .hb{background:var(--card)!important;color:var(--fg)!important;border:0!important;border-radius:14px!important;box-shadow:0 0 0 1px var(--bd)!important}
+header::after{content:"";position:absolute;left:50%;bottom:0;width:132px;height:8px;transform:translateX(-50%);pointer-events:none;opacity:.85;
+ background:linear-gradient(90deg,transparent,var(--acc)) 0 50%/52px 1px no-repeat,linear-gradient(90deg,var(--acc),transparent) 100% 50%/52px 1px no-repeat}
+header::before{content:"";position:absolute;left:50%;bottom:0;width:7px;height:7px;transform:translateX(-50%) rotate(45deg);background:var(--acc);pointer-events:none;border-radius:1px;z-index:1}
+body.is-home header::before,body.is-home header::after{display:none}
+/* ---------- buttons, inputs, chips ---------- */
+.btn{background:var(--pri);color:var(--onpri);border:0;border-radius:16px;font:600 15px var(--f-ui)}
+.btn.sec,.btn.ghost,.btn.alt{background:var(--card);color:var(--fg);box-shadow:0 0 0 1px var(--bd)}
+.chip,.pill-btn,.tabs a{border-radius:999px}
+input,select,textarea,.inp{font-family:var(--f-ui);border-radius:16px}
+.inp,input[type=text],input[type=search],input[type=number],select,textarea{background:var(--card)!important;color:var(--fg)!important;border:1px solid var(--bd)!important}
+input::placeholder{color:var(--mut);opacity:1}
+a{color:var(--pri)}
+.card{border-radius:var(--r);box-shadow:var(--sh)}
+mark{background:var(--hl);color:inherit}
+
+/* ================= HOME ================= */
+body.is-home header{background:none!important}
+body.is-home header button{width:42px!important;height:42px!important}
+.hero{background:none!important;color:var(--fg)!important;border-radius:0!important;box-shadow:none}
+.round{background:var(--card)!important;color:var(--fg)!important;border-radius:14px!important;box-shadow:0 0 0 1px var(--bd)!important;width:42px;height:42px}
+.htitle b,.appname{font-family:var(--f-head);font-size:27px!important;font-weight:600;font-variation-settings:'SOFT' 100,'WONK' 1;letter-spacing:-.01em;line-height:1.1;white-space:nowrap}
+.htitle small{color:var(--mut);opacity:1!important;font-size:12.5px!important}.htitle small b{font:inherit!important;color:var(--pri)}.streak b{color:var(--pri)!important}
+.htop{padding-inline-end:140px!important}
+.sbar{background:var(--card)!important;border:1px solid var(--bd)!important;border-radius:20px!important;box-shadow:var(--sh);height:50px}
+.sbar input{color:var(--fg)!important}.sbar .ic{color:var(--mut)}
+.heart{background:var(--card)!important;border-radius:50%!important;color:var(--bad)!important}
+/* prayer hero */
+.pcard{border-radius:26px!important;padding:12px 14px!important;background:linear-gradient(155deg,#6F8660 0%,#566B49 100%)!important;color:#FFFBF2!important;box-shadow:0 18px 30px -18px rgba(60,80,45,.7)!important;overflow:hidden;position:relative}
+[data-theme=dark] .pcard{background:linear-gradient(155deg,#4A5C3E,#33422B)!important}
+.pcard .mosque-art{opacity:.07}
+.pc-badge{background:rgba(255,251,242,.14)!important;color:#E7C77A!important;letter-spacing:.06em;text-transform:uppercase;font-size:10.5px!important;font-weight:700}
+.pc-loc{color:#FFFBF2!important;opacity:.9}
+.pc-nx b{font:600 38px/1.05 var(--f-head)!important}
+.pc-at{font-size:14px!important;font-weight:500}
+.pcard .cd{font-size:14px!important;font-weight:600!important;letter-spacing:0!important;color:#FFFBF2!important}.pc-cdw small{opacity:.8;color:#FFFBF2}
+.pc-bar{background:rgba(255,251,242,.28)!important}.pc-bar i{background:#E7C77A!important}
+.pc-arch{position:absolute;inset-inline-end:14px;top:38px;width:92px;height:96px;border-radius:46px 46px 12px 12px;background:linear-gradient(#9CAA8A,#7E9070);border:2px solid #D8B56A;display:grid;place-items:center;align-content:center;gap:2px;color:#FFFBF2;overflow:hidden}
+.pc-arch::after{content:"";position:absolute;inset:5px;border-radius:40px 40px 8px 8px;border:1px solid rgba(255,251,242,.55);pointer-events:none}
+.pc-arch .ic{width:34px;height:34px;position:relative;--icf:#FFFBF2}.pc-arch .ar{font-size:17px!important;line-height:1.3!important;margin:0!important;color:#FFFBF2;position:relative}
+.pc-row{background:rgba(255,251,242,.12);border-radius:18px}
+.pc-i,.pc-i b,.pc-i .pc-t{color:#FFFBF2}.pc-i.cur{background:#FFFBF2!important;box-shadow:none!important;transform:none!important;border-radius:12px}.pc-i.cur,.pc-i.cur b,.pc-i.cur .pc-t,.pc-i.cur .pc-ic{color:#3E5033!important}
+.pc-i.nx{background:rgba(231,199,122,.2)!important;box-shadow:inset 0 0 0 1.5px rgba(231,199,122,.7)!important}
+/* Quran row */
+.hq-row{position:relative;overflow:hidden;border-radius:20px!important;background:var(--card)!important;color:var(--fg)!important;border:1px solid var(--acc)!important;box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4px color-mix(in srgb,var(--acc) 45%,transparent)!important}
+.hq-row .ti{border-radius:50%!important;background:var(--tile)!important;color:#FFFBF2!important}
+.hq-row b{font:600 18px var(--f-head);color:var(--fg)}.hq-row small{color:var(--mut)!important;opacity:1!important;font-size:12.5px}
+/* three arch cards */
+.hc{border-radius:70px 70px 20px 20px!important;align-items:center!important;text-align:center;background:var(--card)!important;color:var(--fg)!important;box-shadow:var(--sh)!important;border:1px solid color-mix(in srgb,var(--bd) 70%,transparent)!important}
+.hcards .hc:nth-child(2){background:color-mix(in srgb,var(--acc) 14%,var(--card))!important}.hcards .hc:nth-child(3){background:color-mix(in srgb,var(--brand) 26%,var(--card))!important}
+.hc .ti{border-radius:50%!important;background:var(--tile)!important;color:#FFFBF2!important}
+.hc b{font:600 16px/1.1 var(--f-head)!important;color:var(--fg)!important}.hc small{font:500 11px/1.25 var(--f-ui)!important;color:var(--mut)!important;opacity:1!important}
+.hc-live{background:var(--live)!important;color:#fff!important;border-radius:999px;letter-spacing:.08em}
+[data-theme=dark] .hc-live{color:#241008!important;background:#E0806B!important}
+/* daily chips */
+.dsec{background:none!important}
+.dhead{font:600 17px var(--f-head)!important;color:var(--fg)}
+.story{color:var(--fg)!important;font-size:11.5px!important}
+.stch{display:grid;place-items:center;width:100%;height:60px;margin:0 auto 6px;border-radius:44px 44px 12px 12px;background:var(--tile);color:#FFFBF2;position:relative;overflow:hidden;font-style:normal;box-shadow:var(--sh)}
+.stch .ic{width:26px;height:26px;--icf:#FFFBF2}.story:nth-child(even) .stch{background:#9A7A2E}[data-theme=dark] .story:nth-child(even) .stch{background:#8C6B22}
+/* duotone icons */
+.ic.duo .f{fill:var(--icf,var(--acc));fill-opacity:.26}
+/* tutor-card / datecard: cream cards instead of green gradients */
+.tutor-card{background:var(--card)!important;color:var(--fg)!important;border:1px solid var(--bd)!important;border-radius:22px!important;box-shadow:var(--sh)!important}
+.tutor-card .ti{background:var(--tile)!important;color:#FFFBF2!important;border-radius:50%!important}
+.tutor-card b{font:600 17px var(--f-head)}.tutor-card small{color:var(--mut)!important;opacity:1!important}.tutor-card .go{color:var(--pri)}
+.tutor-card.review{background:color-mix(in srgb,var(--acc) 14%,var(--card))!important}.tutor-card.review .ti{background:#9A7A2E!important}
+.q-hero-ar{background:color-mix(in srgb,var(--brand) 30%,var(--card))!important;border-radius:60px 60px 14px 14px!important;color:var(--fg)}
+.q-choice.q-last{border-color:var(--acc)!important}
+.datecard{background:linear-gradient(155deg,#6F8660,#566B49)!important;color:#FFFBF2!important;border-radius:22px!important}
+[data-theme=dark] .datecard{background:linear-gradient(155deg,#4A5C3E,#33422B)!important}
+/* ================= NAV: frosted pill ================= */
+nav{background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-radius:0!important;padding:0 14px calc(12px + var(--sb))!important;pointer-events:none!important}
+nav .pill{pointer-events:auto!important;height:68px!important;border-radius:34px!important;background:color-mix(in srgb,var(--card) 92%,transparent)!important;box-shadow:var(--sh2),0 0 0 1px var(--bd)!important;padding:0 8px!important;gap:2px;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;align-items:center;max-width:520px;margin:0 auto}
+nav button{color:var(--mut)!important;height:54px;min-height:54px;border-radius:27px!important;transform:none!important;box-shadow:none!important;background:none!important}
+nav button .ic{width:23px;height:23px}nav span{font-size:11px;font-weight:500}
+nav button.on{background:var(--tile)!important;color:#FFFBF2!important;flex:1.35;border-radius:27px 27px 18px 18px!important}
+[data-theme=dark] nav button.on{background:#4F6144!important;color:#EEE8D6!important}
+nav button.on .ic{--icf:#E7C77A}
+/* ---- home geometry (kept compact: prayer card stays under 170px) ---- */
+.pcard .mosque-art{inset-inline-end:auto;inset-inline-start:-14px;top:auto;bottom:-6px;width:140px;height:92px}
+.pc-top{min-height:24px}.pc-loc{max-width:42%}
+.pc-main{margin:2px 0 8px!important;display:block!important}
+.pc-nx{display:block!important}.pc-nx b{display:block!important}
+.pc-cdw{display:flex!important;flex-direction:row!important;align-items:baseline!important;gap:6px;margin-top:2px;text-align:start}
+.pcard .cd{display:inline!important;opacity:.92}
+.pc-bar{width:150px;margin:6px 0 8px!important}
+.pc-row{padding:4px}
+.hq-row{height:58px;padding:0 14px!important}
+.hq-row .ti{width:38px!important;height:38px!important;font-size:20px}.hq-row b{flex:1}
+.hcards{gap:10px!important}
+.hc{min-height:140px!important;padding:14px 8px 12px!important;gap:0!important}
+.hc .ti{width:42px!important;height:42px!important;margin:6px 0 8px!important;font-size:22px}
+.hc small{margin-top:4px}
+.hc-live{position:static!important;order:-1;font-size:8px!important;padding:2px 7px!important}
+.dsec{margin:6px -10px 0;padding:6px 12px 20px;border-radius:0}
+.stories{gap:10px!important}.story{width:72px!important}
+.stch{font-size:26px;transition:transform .15s}.story:active .stch{transform:scale(.94)}

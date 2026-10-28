@@ -1,4 +1,4 @@
-import './style.css';
+import './fonts.css';import './style.css';import './sakina.css';
 import{langName,edLang,orderLangs,langRank}from './hadith-lang.js';
 import*as HL from './hadith-listen.js';
 import*as PK from './pickers.js';
@@ -29,7 +29,7 @@ const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(A
 async function editions(type){try{return await j(`${API}/edition?type=${type}`)}catch{if(type==='translation'){const l=await j(import.meta.env.BASE_URL+'offline/translations.json');return l.filter(e=>['en.sahih','ur.jalandhry','ur.kanzuliman'].includes(e.identifier))}return []}}
 async function audioEds(){try{return await j(API+'/edition?format=audio&type=versebyverse')}catch{return [{identifier:S.reciter,language:'ar',englishName:S.reciterName||S.reciter}]}}
 const loading=()=>app.innerHTML=`<p class="muted c">${t('loading')}</p>`;
-function applyUI(){document.documentElement.dataset.theme=S.dark?'dark':'light';document.documentElement.lang=S.ui;document.documentElement.dir=S.ui==='ur'?'rtl':'ltr';
+function applyUI(){document.documentElement.dataset.theme=S.dark?'dark':'light';{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=S.dark?'#1B2118':'#F6F0E2'}document.documentElement.lang=S.ui;document.documentElement.dir=S.ui==='ur'?'rtl':'ltr';
  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));$('#lang').textContent=S.ui==='en'?'اردو':'EN';$('#tutor').setAttribute('aria-label',S.ui==='ur'?'تلاوت اور سیکھیں':'Recite & Learn');document.documentElement.style.setProperty('--ar',S.size+'px')}
 const thIc=()=>{$('#theme').innerHTML=icon(S.dark?'sun':'moon')};$('#theme').onclick=()=>{S.dark=!S.dark;save();applyUI();thIc()};thIc();
 $('#tutor').onclick=()=>{location.hash='#/recite'};$('#lang').onclick=()=>{S.ui=S.ui==='en'?'ur':'en';save();applyUI();route()};

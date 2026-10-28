@@ -1,4 +1,5 @@
 // Original outline icon set (24×24, stroke = currentColor). Drawn for Noor Quran.
+import {D} from './icons-duo.js';
 const P={
  quran:'<path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z"/><path d="M12 6v13.5"/><path d="M7 9.5h2.5M14.5 9.5H17M7 12.5h2.5M14.5 12.5H17"/>',
  mushaf:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 3v18"/><path d="M11 8h5M11 11h5M11 14h3"/><circle cx="16" cy="17.5" r="1"/>',
@@ -55,7 +56,9 @@ const P={
  check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16.3 9.5"/>',
  party:'<path d="M4 20l4.5-12 7.5 7.5z"/><path d="M14 4.5l.5 2M18.5 6l-1.5 1.5M19.5 10.5l-2 .5M12 8c1-1.5 1-3 .3-4.3"/>',
 };
-export const icon=(k,cls='')=>`<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]||P.more}</svg>`;
+const AL={tutor:'mic',letters:'qaida',bookmarks:'bookmark',speaker:'sound'};
+const duo=k=>{const i=D[AL[k]||k];return i?`<svg class="ic duo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${i.f?`<path class="f" d="${i.f}" stroke="none"/>`:''}${i.o?`<path d="${i.o}"/>`:''}${i.d?`<path d="${i.d}"/>`:''}</svg>`:''};
+export const icon=(k,cls='')=>duo(k)||`<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]||P.more}</svg>`;
 /** Ornamental corner (original arabesque) used on feature cards. */
 export const corner=`<svg class="orn" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1"><path d="M48 0v30M18 0h30"/><path d="M48 12a12 12 0 0 1-12-12M48 22a22 22 0 0 1-22-22"/><path d="M38 10l4-4M38 10l-3.5 1M38 10l1-3.5" /><path d="M41 3.5l3.5 3.5-3.5 3.5-3.5-3.5z"/><circle cx="48" cy="0" r="5"/></svg>`;
 /** Original mosque line-art for the prayer card. */
