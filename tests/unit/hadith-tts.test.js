@@ -10,7 +10,6 @@ describe('pickVoice',()=>{
  it('prefers offline, higher-quality voices and ignores novelty voices',()=>{expect(H.pickVoice(vs,'eng').name).toBe('Samantha Enhanced');expect(H.pickVoice(vs,'urd').name).toBe('Imran')});
  it('returns null when no voice exists for the language',()=>{expect(H.pickVoice(vs,'tam')).toBeNull();expect(H.pickVoice([],'eng')).toBeNull();expect(H.pickVoice(vs,'nope')).toBeNull()});
  it('matches three-letter and underscore tags',()=>{expect(H.pickVoice([V('x','eng-USA')],'eng')).toBeTruthy();expect(H.pickVoice([V('x','in_ID')],'ind')).toBeTruthy()});
- it('Arabic only with a clearly good voice',()=>{expect(H.arabicVoice(vs).name).toBe('Majed');expect(H.arabicVoice([V('Plain Arabic','ar-EG')])).toBeNull();expect(H.arabicVoice([])).toBeNull()});
 });
 function mockSynth(){const s={spoken:[],cancels:0,voices:[],handlers:{},autoStart:true,cur:null,
  getVoices(){return s.voices},addEventListener(t,f){(s.handlers[t]??=[]).push(f)},removeEventListener(t,f){s.handlers[t]=(s.handlers[t]||[]).filter(x=>x!==f)},

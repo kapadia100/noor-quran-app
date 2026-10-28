@@ -20,9 +20,6 @@ export function pickVoice(voices,lang){
  const sc=v=>(v.localService?4:0)+(GOOD.test(v.name||'')?3:0)+(v.default?1:0)-(/compact/i.test(v.name||'')?1:0);
  const best=[...c].sort((a,b)=>sc(b)-sc(a))[0];
  return best}
-/** Arabic is read aloud only by a clearly good voice (never a bare default one). */
-const ARQ=/enhanced|premium|siri|neural|natural|online|google|majed|maged|tarik|laila|hoda|naayf|hamed|zariyah|salma|shakir|fatima|zeina|mariam/i;
-export const arabicVoice=voices=>{const c=(voices||[]).filter(v=>codeOf(v.lang)==='ara'&&ARQ.test(v.name||''));return c.length?pickVoice(c,'ara'):null};
 /** Splits a long text into short pieces at sentence ends (long utterances are cut off by some phones). */
 export function splitText(text,max=180){
  const t=String(text||'').replace(/\s+/g,' ').trim();if(!t)return[];

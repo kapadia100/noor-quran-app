@@ -1,8 +1,8 @@
 // Listen buttons on hadith cards: Play / Pause / Stop with the phone's own voices, speed, and "play next automatically".
 import*as H from'./hadith-tts.js';
 import{codeOf}from'./hadith-lang.js';
-const TX={en:{play:'Play',pause:'Pause',resume:'Resume',stop:'Stop',arDev:'Play Arabic (device voice)',speed:'Speed',cont:'Play next automatically',none:'No voice for this language on your device',silent:'Nothing played: your device did not speak. Check the volume and the silent switch.'},
- ur:{play:'سنیں',pause:'وقفہ',resume:'جاری رکھیں',stop:'بند',arDev:'عربی سنیں (ڈیوائس کی آواز)',speed:'رفتار',cont:'اگلی حدیث خود چلائیں',none:'آپ کے آلے پر اس زبان کی آواز موجود نہیں',silent:'آواز نہیں چلی: آپ کے آلے نے آواز نہیں دی۔ والیوم اور سائلنٹ سوئچ دیکھیں۔'}};
+const TX={en:{play:'Play',pause:'Pause',resume:'Resume',stop:'Stop',arOnly:'Listening is for translations. Choose another language to play.',speed:'Speed',cont:'Play next automatically',none:'No voice for this language on your device',silent:'Nothing played: your device did not speak. Check the volume and the silent switch.'},
+ ur:{play:'سنیں',pause:'وقفہ',resume:'جاری رکھیں',stop:'بند',arOnly:'سننے کی سہولت ترجمے کے لیے ہے۔ سننے کے لیے کوئی اور زبان چنیں۔',speed:'رفتار',cont:'اگلی حدیث خود چلائیں',none:'آپ کے آلے پر اس زبان کی آواز موجود نہیں',silent:'آواز نہیں چلی: آپ کے آلے نے آواز نہیں دی۔ والیوم اور سائلنٹ سوئچ دیکھیں۔'}};
 const LSK='qsHadithListen';
 const pref=()=>{try{return{rate:1,cont:false,...JSON.parse(localStorage.getItem(LSK)||'{}')}}catch{return{rate:1,cont:false}}};
 const savePref=p=>{try{localStorage.setItem(LSK,JSON.stringify(p))}catch{/* ignore */}};
@@ -17,34 +17,33 @@ export async function mount(root,{lang,ui='en',nextHash=''}={}){
  const t=TX[ui]||TX.en,bar=root.querySelector('#hlBar'),note=root.querySelector('#hlNote'),cards=[...root.querySelectorAll('article.hd')];
  if(!bar||!cards.length)return;
  const voices=await H.voicesReady();if(!root.isConnected)return;
- const isAr=codeOf(lang)==='ara',arV=H.supported()?H.arabicVoice(voices):null,trV=H.supported()&&!isAr?H.pickVoice(voices,lang):null;
- const can=isAr?!!arV:!!trV||!!arV;
+ // Play exists only for the translation language; the Arabic hadith text is never read aloud.
+ const isAr=codeOf(lang)==='ara',trV=H.supported()&&!isAr?H.pickVoice(voices,lang):null,can=!!trV;
  bar.hidden=false;bar.querySelector('#hlRow').hidden=!can;
- note.textContent=(isAr?!arV:!trV)?t.none:'';
+ note.textContent=isAr?t.arOnly:!trV?t.none:'';
  if(!can)return;
  cards.forEach((c,i)=>{c.dataset.i=i;const at=c.querySelector('.tools .grow');
   const mk=(kind,label)=>`<button type="button" class="hl-b" data-hl="${kind}" data-i="${i}" aria-label="${label}">${I.play}<span>${label}</span></button>`;
-  let h='';if(isAr)h+=mk('tr',t.arDev);else{if(trV)h+=mk('tr',t.play);if(arV&&c.querySelector('.ar'))h+=mk('ar',t.arDev)}
-  if(!h)return;h+=`<button type="button" class="hl-b hl-x" data-hl-stop data-i="${i}" aria-label="${t.stop}" hidden>${I.stop}</button>`;
+  let h=mk('tr',t.play);h+=`<button type="button" class="hl-b hl-x" data-hl-stop data-i="${i}" aria-label="${t.stop}" hidden>${I.stop}</button>`;
   at?.insertAdjacentHTML('beforebegin',`<span class="hl-btns">${h}</span>`)});
  const rate=()=>+root.querySelector('#hlRate').value||1,cont=()=>root.querySelector('#hlCont').checked;
  root.querySelector('#hlRate').onchange=()=>{savePref({...pref(),rate:rate()});H.setRate(rate())};
  root.querySelector('#hlCont').onchange=()=>savePref({...pref(),cont:cont()});
- const idOf=(i,k)=>`${i}:${k}`,voiceFor=k=>k==='ar'||isAr?arV:trV;
- const start=(i,k)=>{const c=cards[i];if(!c)return false;const el=k==='ar'?c.querySelector('.ar'):c.querySelector('.tr');if(!el||!c.querySelector(`[data-hl="${k}"]`))return false;
+ const idOf=i=>`${i}:tr`;
+ const start=i=>{const c=cards[i],el=c&&c.querySelector('.tr');if(!el||!c.querySelector('[data-hl="tr"]'))return false;
   note.textContent='';
-  return H.play({id:idOf(i,k),text:el.textContent,lang:k==='ar'?'ara':lang,voice:voiceFor(k),rate:rate(),onEnd:()=>{
+  return H.play({id:idOf(i),text:el.textContent,lang,voice:trV,rate:rate(),onEnd:()=>{
    if(!cont())return;
-   for(let n=i+1;n<cards.length;n++)if(start(n,k)){cards[n].scrollIntoView?.({block:'center',behavior:'smooth'});return}
-   if(nextHash&&root.isConnected){AUTO={kind:k,fresh:true};location.hash=nextHash}}})};
- const paint=s=>{root.querySelectorAll('.hl-b[data-hl]').forEach(b=>{const on=s.id===idOf(b.dataset.i,b.dataset.hl),lab=b.dataset.hl==='ar'||isAr?t.arDev:t.play;
+   for(let n=i+1;n<cards.length;n++)if(start(n)){cards[n].scrollIntoView?.({block:'center',behavior:'smooth'});return}
+   if(nextHash&&root.isConnected){AUTO={fresh:true};location.hash=nextHash}}})};
+ const paint=s=>{root.querySelectorAll('.hl-b[data-hl]').forEach(b=>{const on=s.id===idOf(b.dataset.i),lab=t.play;
    const txt=!on?lab:s.state==='paused'?t.resume:t.pause;b.querySelector('span').textContent=txt;b.setAttribute('aria-label',txt);b.dataset.st=on?s.state:'idle';
    b.querySelector('svg').outerHTML=on&&s.state!=='paused'?I.pause:I.play});
   root.querySelectorAll('.hl-x').forEach(b=>{b.hidden=!(s.id&&s.id.split(':')[0]===b.dataset.i)});
   cards.forEach((c,i)=>c.classList.toggle('hd-on',!!s.id&&s.id.split(':')[0]===String(i)))};
  off.push(H.onChange(paint),H.onError(()=>{note.textContent=t.silent}));
  root.addEventListener('click',e=>{const x=e.target.closest('[data-hl-stop]');if(x){H.stop();return}
-  const b=e.target.closest('[data-hl]');if(!b)return;const i=+b.dataset.i,k=b.dataset.hl,id=idOf(i,k),s=H.info();
-  if(s.id===id&&(s.state==='playing'||s.state==='starting'))H.pause();else if(s.id===id&&s.state==='paused')H.resume();else start(i,k)});
- if(AUTO){const k=AUTO.kind;AUTO=null;setTimeout(()=>{if(root.isConnected&&!H.info().id)(start(0,k)||start(0,k==='ar'?'tr':'ar'))},350)}
+  const b=e.target.closest('[data-hl]');if(!b)return;const i=+b.dataset.i,id=idOf(i),s=H.info();
+  if(s.id===id&&(s.state==='playing'||s.state==='starting'))H.pause();else if(s.id===id&&s.state==='paused')H.resume();else start(i)});
+ if(AUTO){AUTO=null;setTimeout(()=>{if(root.isConnected&&!H.info().id)start(0)},350)}
 }

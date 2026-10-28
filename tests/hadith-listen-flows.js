@@ -123,22 +123,23 @@ export function hadithListenFlows(test,expect){
  test('speed control is passed to the voice',async({page})=>{await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await page.selectOption('#hlRate','0.8');await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].rate).toBe(0.8);
   await page.reload();await expect(page.locator('#hlRate')).toHaveValue('0.8')});
  test('a language with no voice on the device hides Play and says so plainly',async({page})=>{
-  await mockSpeech(page);await setLang(page,'tam');await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('#hlNote')).toHaveText('No voice for this language on your device',{timeout:15000});await expect(page.locator('[data-hl="tr"]')).toHaveCount(0);await expect(page.locator('[data-hl="ar"]')).toHaveCount(1)});
- test('no voice for the translation and none for Arabic: the strip shows only the note',async({page})=>{
+  await mockSpeech(page);await setLang(page,'tam');await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('#hlNote')).toHaveText('No voice for this language on your device',{timeout:15000});await expect(page.locator('[data-hl]')).toHaveCount(0)});
+ test('no voice at all: the strip shows only the note',async({page})=>{
   await mockSpeech(page,{voices:[{name:'Samantha',lang:'en-US',localService:true,default:true}]});await setLang(page,'tam');await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('#hlNote')).toHaveText('No voice for this language on your device',{timeout:15000});await expect(page.locator('[data-hl]')).toHaveCount(0);await expect(page.locator('#hlRate')).toBeHidden()});
  test('voices that load late (voiceschanged) still give Play',async({page})=>{await mockSpeech(page,{lateMs:700});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await expect(page.locator('#hlNote')).toBeEmpty()});
  test('no speech engine at all: no Play, clear note, nothing breaks',async({page})=>{await mockSpeech(page,{none:true});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('#hlNote')).toHaveText('No voice for this language on your device',{timeout:15000});await expect(page.locator('[data-hl]')).toHaveCount(0);await expect(page.locator('.hd .tr').first()).toBeVisible()});
  test('a silent device never shows "playing" and tells the user',async({page})=>{await mockSpeech(page,{silent:true});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');const b=btn(page,0);await expect(b).toBeVisible({timeout:15000});await b.click();
   await expect(page.locator('#hlNote')).toContainText('Nothing played',{timeout:8000});await expect(b).toHaveText('Play');await expect(page.locator('.hd-on')).toHaveCount(0)});
 
- test('Arabic: only with a clearly good voice, labelled as a device voice',async({page})=>{
-  await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');const a=btn(page,0,'ar');await expect(a).toBeVisible({timeout:15000});await expect(a).toHaveText('Play Arabic (device voice)');
-  const ar=await page.locator('.hd .ar').first().innerText();await a.click();await expect(a).toHaveText('Pause');await expect.poll(()=>spoken(page)).toHaveLength(1);const s=(await spoken(page))[0];expect(s.text).toBe(ar.replace(/\s+/g,' ').trim());expect(s.voice).toBe('Majed');
-  await expect(btn(page,0,'tr')).toHaveText('Play')});
- test('Arabic hadith language is read with the Arabic device voice',async({page})=>{await mockSpeech(page);await setLang(page,'ara');await page.goto('./#/hadith/bukhari/n/1');const b=btn(page,0,'tr');await expect(b).toHaveText('Play Arabic (device voice)',{timeout:15000});await b.click();await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].voice).toBe('Majed')});
- test('a plain Arabic voice is not good enough: no Play Arabic',async({page})=>{await mockSpeech(page,{voices:[{name:'Samantha',lang:'en-US',localService:true,default:true},{name:'Generic',lang:'ar-EG',localService:true,default:false}]});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await expect(page.locator('[data-hl="ar"]')).toHaveCount(0);
-  await setLang(page,'ara');await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('#hlNote')).toHaveText('No voice for this language on your device',{timeout:15000});await expect(page.locator('[data-hl]')).toHaveCount(0)});
- test('the Quran text never gets a Play (device voice) button',async({page})=>{await mockSpeech(page);await page.goto('./#/surah/1');await expect(page.locator('.ayah').first()).toBeVisible({timeout:30000});await expect(page.locator('[data-hl]')).toHaveCount(0)});
+ test('the Arabic hadith text is never read aloud: no Play Arabic, even when the device has a good Arabic voice',async({page})=>{
+  await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});
+  await expect(page.locator('[data-hl="ar"]')).toHaveCount(0);await expect(page.locator('article.hd .hl-b[data-hl]')).toHaveCount(1);await expect(page.locator('#app')).not.toContainText(/Play Arabic|device voice|عربی سنیں/);
+  await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);const s=(await spoken(page))[0];expect(s.voice).toBe('Samantha');expect(s.text).toBe((await page.locator('.hd .tr').first().innerText()).replace(/\s+/g,' ').trim());expect(s.text).not.toMatch(/[\u0600-\u06FF]/)});
+ test('Arabic as the hadith language: nothing to play, no Play buttons, a short note, nothing spoken',async({page})=>{await mockSpeech(page);await setLang(page,'ara');await page.goto('./#/hadith/bukhari/n/1');
+  await expect(page.locator('#hlNote')).toHaveText('Listening is for translations. Choose another language to play.',{timeout:15000});await expect(page.locator('[data-hl]')).toHaveCount(0);await expect(page.locator('#hlRate')).toBeHidden();await expect(page.locator('.hd').first()).toBeVisible();await page.waitForTimeout(400);expect((await spoken(page)).length).toBe(0);
+  await page.goto('./#/hadith/bukhari/1');await expect(page.locator('article.hd').first()).toBeVisible({timeout:15000});await expect(page.locator('[data-hl]')).toHaveCount(0);
+  await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await expect(page.locator('#hlNote')).toBeEmpty()});
+ test('the Quran text never gets a Play button',async({page})=>{await mockSpeech(page);await page.goto('./#/surah/1');await expect(page.locator('.ayah').first()).toBeVisible({timeout:30000});await expect(page.locator('[data-hl]')).toHaveCount(0)});
 
  test('works on a section page and on search results',async({page})=>{
   await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/1');await expect(page.locator('article.hd')).toHaveCount(3,{timeout:15000});await expect(page.locator('[data-hl="tr"]')).toHaveCount(3);
@@ -164,6 +165,6 @@ export function hadithListenFlows(test,expect){
   await mockSpeech(page);await page.addInitScript(()=>{window.__dur=6000});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await btn(page,0).click();await expect(btn(page,0)).toHaveText('Pause');
   await page.evaluate(()=>dispatchEvent(new CustomEvent('qs:audio',{detail:'qaida'})));await expect(btn(page,0)).toHaveText('Play')});
  test('hadith cards keep share and layout: no horizontal overflow with the Play buttons',async({page})=>{
-  await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0,'ar')).toBeVisible({timeout:15000});await expect(page.locator('.hd [data-shr]').first()).toBeVisible();
+  await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await expect(page.locator('.hd [data-shr]').first()).toBeVisible();
   const o=await page.evaluate(()=>{const a=document.querySelector('#app');return a.scrollWidth-a.clientWidth});expect(o).toBeLessThanOrEqual(1)});
 }
