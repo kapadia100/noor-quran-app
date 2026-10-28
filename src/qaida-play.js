@@ -77,6 +77,7 @@ export function mountPlayer(env){
   $('#qPlPause').innerHTML=s==='paused'?`▶ ${tt('Resume','جاری رکھیں')}`:`⏸ ${tt('Pause','وقفہ')}`;bar.classList.toggle('q-playing',s!=='idle')};
  const clearMarks=()=>root.querySelectorAll('.q-play').forEach(x=>x.classList.remove('q-play'));
  const say=(t,silent)=>{msg.innerHTML='';const p=document.createElement('span');p.textContent=t;msg.append(p);if(skipNote){const k=document.createElement('span');k.id='qPlSkip';k.className='q-silents';k.textContent=skipNote;msg.append(document.createElement('br'),k)}
+  if(res?.off){const o=document.createElement('span');o.id='qPlOffline';o.className='q-silents';o.textContent=tt(' Some sounds are not saved for offline use yet. Connect once and play the lesson to save them.',' کچھ آوازیں ابھی آف لائن کے لیے محفوظ نہیں۔ ایک بار انٹرنیٹ سے سبق چلا کر محفوظ کریں۔');msg.append(o)}
   if(silent?.length){const d=document.createElement('span');d.className='q-silents';d.id='qPlSilent';d.append(` ${tt('No recording (silent, skipped):','ریکارڈنگ نہیں (خاموش، چھوڑ دیے):')} `);silent.forEach(s=>{const b=document.createElement('b');b.className='ar';b.dir='rtl';b.textContent=s;d.append(b,' ')});msg.append(document.createElement('br'),d)}};
  const media=(name)=>{if(!BR||!('mediaSession' in navigator))return;try{mset=true;navigator.mediaSession.metadata=new MediaMetadata({title:name,artist:tt(cr.en,cr.ur),album:'Quran Safar'});navigator.mediaSession.playbackState=state==='paused'?'paused':'playing';
   const h=(a,f)=>{try{navigator.mediaSession.setActionHandler(a,f)}catch{/* unsupported */}};h('play',()=>{if(state==='paused')P.pause()});h('pause',()=>{if(state==='playing')P.pause()});h('stop',()=>P.stop());h('previoustrack',()=>seek(-1));h('nexttrack',()=>seek(1))}catch{/* ignore */}};
@@ -90,7 +91,7 @@ export function mountPlayer(env){
  async function go(start=0,auto=null){
   if(env.live()){say(tt('Stop live reading first, so the speaker does not get into the microphone.','پہلے لائیو پڑھنا بند کریں، تاکہ اسپیکر کی آواز مائیک میں نہ جائے۔'));return}
   const items=list();if(!items.length)return;
-  let my=begin();const mine=++run;ui('playing');res={played:0,silent:[]};idx=start;skip=0;
+  let my=begin();const mine=++run;ui('playing');res={played:0,silent:[],off:0};idx=start;skip=0;
   try{localStorage.setItem(LAST(cr.id),les.id)}catch{/* optional */}
   for(;;){
    while(idx<items.length){
@@ -100,13 +101,13 @@ export function mountPlayer(env){
     const nx=items[idx+1];if(nx)prefetch(nx.dataset.u.split('|'));
     const ok=await itemRun(x,my);
     if(mine!==run)return; // another play took over
-    if(ok!==null){if(ok){res.played++;x.classList.remove('q-silent')}else{x.classList.add('q-silent');res.silent.push(label(x));x.dataset.silent='1'}
+    if(ok!==null){if(ok){res.played++;x.classList.remove('q-silent')}else{x.classList.add('q-silent');res.silent.push(label(x));x.dataset.silent='1';if(lastFail()?.why==='offline')res.off++}
      idx++;if(idx<items.length)await sleep(G(380/P.rate));if(mine!==run)return}
     if(my!==gen){ // interrupted: a seek button (previous/next track), or something else took the player
      if(skip){const d=skip;skip=0;idx=Math.max(0,Math.min(items.length-1,idx+(ok===null?d:d-1)));my=begin();continue}
      if(state==='paused')return;
      clearMarks();ui('idle');say(tt('Stopped.','روک دیا۔'),res.silent);mediaOff();return}}
-   if(P.repeat){idx=0;res.played=0;res.silent=[];continue}
+   if(P.repeat){idx=0;res.played=0;res.silent=[];res.off=0;continue}
    break}
   clearMarks();ui('idle');mediaOff();
   const n=items.length,s=res.silent.length;
