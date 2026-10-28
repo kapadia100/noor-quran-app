@@ -70,19 +70,19 @@ export function wrapText(text,maxW,measure){const words=String(text).split(/\s+/
 // ---------- hadith numbering ----------
 /** Collections, sunnah.com slugs and accepted names (English + Urdu) for reference lookup. */
 export const HCOL={bukhari:['Sahih al-Bukhari','صحیح بخاری',['bukhari','bukhaari','sahih bukhari','sahih al bukhari','sahih al-bukhari','بخاری','صحیح بخاری','البخاري']],
- muslim:['Sahih Muslim','صحیح مسلم',['muslim','sahih muslim','مسلم','صحیح مسلم']],abudawud:['Sunan Abi Dawud','سنن ابو داؤد',['abudawud','abu dawud','abu dawood','abu daud','abi dawud','ابو داؤد','ابوداؤد','ابو داود','سنن ابی داؤد']],
- tirmidhi:['Jami` at-Tirmidhi','جامع ترمذی',['tirmidhi','tirmizi','jami tirmidhi','ترمذی','جامع ترمذی','الترمذي']],nasai:["Sunan an-Nasa'i",'سنن نسائی',['nasai','nasa\'i','nisai','an-nasai','نسائی','سنن نسائی','النسائي']],
- ibnmajah:['Sunan Ibn Majah','سنن ابن ماجہ',['ibnmajah','ibn majah','ibn maja','ابن ماجہ','ابن ماجه']],malik:['Muwatta Malik','موطا امام مالک',['malik','muwatta','muwatta malik','موطا','مؤطا','موطا مالک']],
- nawawi:['40 Hadith an-Nawawi','اربعین نووی',['nawawi','nawawi40','40 nawawi','اربعین نووی','نووی']],qudsi:['40 Hadith Qudsi','احادیث قدسیہ',['qudsi','hadith qudsi','قدسی','حدیث قدسی']],
- dehlawi:['40 Hadith Shah Waliullah','اربعین شاہ ولی اللہ',['dehlawi','shah waliullah','shahwaliullah','دہلوی','شاہ ولی اللہ']]};
+ muslim:['Sahih Muslim','صحیح مسلم',['muslim','sahih muslim','مسلم','صحیح مسلم']],
+ tirmidhi:['Jami` at-Tirmidhi','جامع ترمذی',['tirmidhi','tirmizi','jami tirmidhi','ترمذی','جامع ترمذی','الترمذي']],
+ abudawud:['Sunan Abi Dawud','سنن ابو داؤد',['abudawud','abu dawud','abu dawood','abu daud','abi dawud','ابو داؤد','ابوداؤد','ابو داود','سنن ابی داؤد']],
+ nasai:["Sunan an-Nasa'i",'سنن نسائی',['nasai','nasa\'i','nisai','an-nasai','نسائی','سنن نسائی','النسائي']],
+ ibnmajah:['Sunan Ibn Majah','سنن ابن ماجہ',['ibnmajah','ibn majah','ibn maja','ابن ماجہ','ابن ماجه']]};
+/** True for the six collections the app keeps; old links / saved state for anything else fall back to the Hadith home. */
+export const hasBook=b=>Object.prototype.hasOwnProperty.call(HCOL,b);
 const norm=s=>String(s).toLowerCase().replace(/[`'’ـ]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ').trim();
 const toLatinDigits=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
 /** Parse "Bukhari 1", "Sahih Muslim 2564", "muslim:2564a", "ترمذی ۲۵۱۶" -> {book,n} or null. */
 export function parseHadithRef(q){const s=norm(toLatinDigits(q));const bh=s.match(/^(.*?)[\s:#]*(\d+)\s*[/:,]\s*(\d+)$/);const m=bh?[bh[0],bh[1],bh[2]+'/'+bh[3],'']:s.match(/^(.*?)[\s:#]*(\d+)\s*([a-z])?$/);if(!m||!m[1])return null;const name=m[1].replace(/^(sahih|sunan|jami|imam)\s+/,'').trim();
  for(const [k,[, ,alts]] of Object.entries(HCOL))if(norm(k)===name||alts.some(a=>{const x=norm(a);return x===m[1].trim()||x===name||x.replace(/^(sahih|sunan|jami|صحیح|سنن|جامع)\s+/,'')===name}))return {book:k,n:m[2]+(m[3]||'')};return null}
 /** International (sunnah.com) number for a hadith object from hadith-api. Muslim uses Abd al-Baqi numbering (arabicnumber 2564.02 -> "2564b"). */
-/** Malik: map ours->[uscBook,uscHadith,arabicNo] (built from sunnah.com, see HADITH_NUMBERING_REPORT.md). */
-export function malikRef(map,h){const r=map&&map[String(h.hadithnumber)];return r?`Book ${r[0]}, Hadith ${r[1]}`:''}
 export function hadithIntl(book,h){if(book==='muslim'){const a=h.arabicnumber;if(a===undefined||a===null||a==='')return '';const [n,s]=String(a).split('.');const i=s?parseInt(s,10):0;return n+(i>1?String.fromCharCode(96+i):'')}
  // hadith-api splits some long narrations into x.2, x.3 parts; sunnah.com cites them all as x
  return String(Math.floor(h.hadithnumber))}

@@ -60,15 +60,16 @@ test('hadith: search by international number (EN/UR), picker+number, keyword (EN
  await page.fill('#hsq','Sahih Muslim 2564');await page.press('#hsq','Enter');await expect(page.locator('.hd .badge').first()).toHaveText('Sahih Muslim 2564',{timeout:30000});await expect(page.locator('.hd .tr').first()).toContainText(/brother/i);
  await page.fill('#hsq','ترمذی 2516');await page.press('#hsq','Enter');await expect(page.locator('.hd .badge').first()).toContainText('Tirmidhi 2516',{timeout:30000});await expect(page.locator('.hd .tr').first()).toContainText(/Allah/);
  await page.selectOption('#hsb','abudawud');await page.fill('#hsq','');await page.fill('#hsn','1');await page.click('#hsf button');await expect(page.locator('.hd .badge').first()).toHaveText('Sunan Abi Dawud 1',{timeout:30000});
- await page.goto('./#/hadith/malik/n/3%2F22');await expect(page.locator('.hd .badge').first()).toContainText('Book 3, Hadith 22',{timeout:30000});
- await page.goto('./#/hsearch/nawawi/migration');await expect(page.locator('#hsm')).toContainText('results',{timeout:60000});await expect(page.locator('#hsr mark').first()).toBeVisible();
- await page.goto('./#/hsearch/nawawi/'+encodeURIComponent('بالنيات'));await expect(page.locator('#hsr .hd').first()).toBeVisible({timeout:60000});await expect(page.locator('#hsr mark').first()).toBeVisible()});
+ for(const old of ['hadith/malik/n/3%2F22','hadith/nawawi','hadith/qudsi/5','hsearch/dehlawi/x','haudio/malik']){await page.goto('./#/'+old);await expect(page.locator('#app')).not.toBeEmpty();await page.waitForTimeout(400)}
+ await page.goto('./#/hadith');await expect(page.locator('ul.list li')).toHaveCount(6,{timeout:30000});
+ await page.goto('./#/hsearch/bukhari/migration');await expect(page.locator('#hsm')).toContainText('results',{timeout:60000});await expect(page.locator('#hsr mark').first()).toBeVisible();
+ await page.goto('./#/hsearch/bukhari/'+encodeURIComponent('بالنيات'));await expect(page.locator('#hsr .hd').first()).toBeVisible({timeout:60000});await expect(page.locator('#hsr mark').first()).toBeVisible()});
 test('hadith cards have no external sunnah.com link; credits live in FAQ/About',async({page})=>{await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('.hd .badge').first()).toHaveText('Sahih al-Bukhari 1',{timeout:30000});
  await expect(page.locator('.hd')).not.toContainText('sunnah.com');await expect(page.locator('.hd a[href*="sunnah.com"]')).toHaveCount(0);await expect(page.locator('.hd small').first()).toContainText(/Book \d+, Hadith \d+/);
  await page.locator('.hd [data-shr]').first().click();await expect(page.locator('#shTxt')).not.toContainText('sunnah.com');
  await page.goto('./#/help');await expect(page.locator('#credits')).toContainText('sunnah.com')});
 test('no source names/domains on content screens (credits only in About)',async({page})=>{test.setTimeout(240000);const bad=/sunnah\.com|alquran\.cloud|tanzil|quran\.com|hisnmuslim|everyayah|islamic\.network|overpass|nominatim|hadith-api|fawazahmed|dua-dhikr|aladhan|open dataset|Data:/i;
- const R=['','quran','surah/1','surah/2/255','juz/30','mushaf/2','hadith','hadith/bukhari/1','hadith/bukhari/n/1','hsearch/nawawi/migration','duas','duas/hisn/1','names','tasbeeh','prayer','qibla','calendar','ramadan','zakat','khatam','hifz','tracker','notes','bookmarks','search','settings','more','ibadat','mosques','dict','dict/36','dict/quiz'];
+ const R=['','quran','surah/1','surah/2/255','juz/30','mushaf/2','hadith','hadith/bukhari/1','hadith/bukhari/n/1','hsearch/bukhari/migration','duas','duas/hisn/1','names','tasbeeh','prayer','qibla','calendar','ramadan','zakat','khatam','hifz','tracker','notes','bookmarks','search','settings','more','ibadat','mosques','dict','dict/36','dict/quiz'];
  for(const r of R){await page.goto('./#/'+r);await page.waitForTimeout(/hadith|hsearch|surah|mosques/.test(r)?2500:600);const txt=await page.locator('#app').innerText();const links=await page.locator('#app a[href]').evaluateAll(a=>a.map(x=>x.href).filter(h=>!h.includes(location.host)&&!/google\.com\/maps\/dir|maps\.apple\.com|openstreetmap\.org\/copyright/.test(h)));
   expect.soft(txt.match(bad)?.[0]??null,`${r} text`).toBeNull();expect.soft(links,`${r} external links`).toEqual([])}
  await page.goto('./#/surah/1');await page.locator('[data-taf="1:1"]').click();await page.waitForTimeout(2000);expect((await page.locator('#tfx').innerText()).match(bad)).toBeNull();
@@ -78,7 +79,7 @@ test('analytics: GoatCounter page per route + feature/share/open events (stubbed
  await page.route('https://gc.zgo.at/count.js',r=>r.fulfill({contentType:'text/javascript',body:'window.goatcounter.count=function(o){(window.__gcStub=window.__gcStub||[]).push(o)}'}));
  await page.route('**/quransafar.goatcounter.com/**',r=>r.fulfill({status:204}));
  await page.addInitScript(()=>localStorage.setItem('gcDebug','1'));await page.goto('./#/');await page.waitForTimeout(800);
- for(const r of ['tasbeeh','prayer','qibla','hsearch/nawawi/migration']){await page.goto('./#/'+r);await page.waitForTimeout(500)}
+ for(const r of ['tasbeeh','prayer','qibla','hsearch/bukhari/migration']){await page.goto('./#/'+r);await page.waitForTimeout(500)}
  await page.goto('./#/names');await page.locator('.name').first().click();await page.locator('#sheet [data-shr]').click();await page.click('#shCopy');await page.waitForTimeout(300);
  const L=await page.evaluate(()=>window.__gcStub||[]);const paths=L.map(o=>o.path);
  for(const p of ['app-open-browser','/home','/tasbeeh','feature-tasbeeh','/prayer','feature-prayer','feature-qibla','feature-hadith-search','share-copy'])expect(paths,p).toContain(p);

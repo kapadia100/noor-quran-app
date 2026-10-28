@@ -1,20 +1,20 @@
 // Hadith Audio: listen to the TRANSLATION of a hadith (English or Urdu only), picked by book / chapter / hadith number.
-// Uses the phone's own voices (hadith-tts.js). The Arabic text is never read aloud and is not even shown here.
+// Uses the phone's own voices (hadith-tts.js). This page reads the translation only (Arabic is played from the hadith reading screens, when the user picks Arabic).
 import*as H from'./hadith-tts.js';
 const TX={en:{title:'Hadith Audio',lang:'Translation language',book:'Book',chapter:'Chapter',num:'Hadith number',go:'Go',play:'Play',pause:'Pause',resume:'Resume',stop:'Stop',next:'Next',prev:'Previous',cont:'Play through the whole chapter',speed:'Speed',
-  intro:'Pick a language, a book and a chapter, or jump to a hadith number, then press Play. Only the translation is read, never the Arabic.',
+  intro:'Pick a language, a book and a chapter, or jump to a hadith number, then press Play. This page reads the translation. To hear the Arabic, open a hadith and pick Arabic.',
   noVoice:l=>`No ${l} voice is installed on this device, so it cannot be played. Add one in your phone's speech or language settings, then open this page again.`,
   silent:'Nothing played: your device did not speak. Check the volume and the silent switch.',
   noTr:l=>`No ${l} translation for this hadith`,skipped:(n,l)=>`${n} hadith${n===1?'':'s'} in this chapter ${n===1?'has':'have'} no ${l} translation and ${n===1?'is':'are'} skipped.`,
   unavailable:l=>`${l} not available`,notFound:n=>`Hadith ${n} was not found.`,missingJump:(n,l)=>`Hadith ${n} has no ${l} translation.`,
-  done:'End of the chapter.',loading:'Loading…',err:'Could not load. Check your connection.',nowOf:(a,b)=>`${a} of ${b}`,empty:'This chapter has no hadith with a translation in this language.',hadith:'Hadith',noneTr:'No translation to play'},
+  autoLbl:'Auto-translated from English',autoNow:'Playing an auto-translated Urdu text (machine translation from English).',done:'End of the chapter.',loading:'Loading…',err:'Could not load. Check your connection.',nowOf:(a,b)=>`${a} of ${b}`,empty:'This chapter has no hadith with a translation in this language.',hadith:'Hadith',noneTr:'No translation to play'},
  ur:{title:'حدیث آڈیو',lang:'ترجمے کی زبان',book:'کتاب',chapter:'باب',num:'حدیث نمبر',go:'جائیں',play:'سنیں',pause:'وقفہ',resume:'جاری رکھیں',stop:'بند',next:'اگلی',prev:'پچھلی',cont:'پورا باب مسلسل سنیں',speed:'رفتار',
-  intro:'زبان، کتاب اور باب چنیں، یا حدیث نمبر پر جائیں، پھر سنیں دبائیں۔ صرف ترجمہ پڑھا جائے گا، عربی کبھی نہیں۔',
+  intro:'زبان، کتاب اور باب چنیں، یا حدیث نمبر پر جائیں، پھر سنیں دبائیں۔ یہاں ترجمہ پڑھا جاتا ہے۔ عربی سننے کے لیے کوئی حدیث کھول کر عربی چنیں۔',
   noVoice:l=>`اس آلے پر ${l} کی آواز موجود نہیں، اس لیے چلانا ممکن نہیں۔ اپنے فون کی اسپیچ یا زبان کی ترتیبات میں آواز شامل کریں، پھر یہ صفحہ دوبارہ کھولیں۔`,
   silent:'آواز نہیں چلی: آپ کے آلے نے آواز نہیں دی۔ والیوم اور سائلنٹ سوئچ دیکھیں۔',
   noTr:l=>`اس حدیث کا ${l} ترجمہ موجود نہیں`,skipped:(n,l)=>`اس باب کی ${n} احادیث کا ${l} ترجمہ موجود نہیں، انہیں چھوڑ دیا جائے گا۔`,
   unavailable:l=>`${l} دستیاب نہیں`,notFound:n=>`حدیث ${n} نہیں ملی۔`,missingJump:(n,l)=>`حدیث ${n} کا ${l} ترجمہ موجود نہیں۔`,
-  done:'باب ختم ہوا۔',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',nowOf:(a,b)=>`${a} از ${b}`,empty:'اس باب میں اس زبان کا ترجمہ رکھنے والی کوئی حدیث نہیں۔',hadith:'حدیث',noneTr:'چلانے کے لیے ترجمہ موجود نہیں'}};
+  autoLbl:'انگریزی سے خودکار ترجمہ',autoNow:'خودکار ترجمہ چل رہا ہے (انگریزی سے مشینی ترجمہ)۔',done:'باب ختم ہوا۔',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',nowOf:(a,b)=>`${a} از ${b}`,empty:'اس باب میں اس زبان کا ترجمہ رکھنے والی کوئی حدیث نہیں۔',hadith:'حدیث',noneTr:'چلانے کے لیے ترجمہ موجود نہیں'}};
 const LANGS=['eng','urd'];
 const LSK='qsHadithAudio';
 const pref=()=>{try{const p={lang:'eng',rate:1,cont:true,...JSON.parse(localStorage.getItem(LSK)||'{}')};if(!LANGS.includes(p.lang))p.lang='eng';return p}catch{return{lang:'eng',rate:1,cont:true}}};
@@ -26,7 +26,7 @@ let off=[];
 export function leave(){H.stop();off.forEach(f=>f());off=[]}
 /**
  * Renders the Audio page into `root`.
- * deps: {j, HAD, BASE, esc, ui, L2, names(code,ui,short), loadMalik, getMalik(), setTitle, hsRef(book,h)}
+ * deps: {j, HAD, BASE, esc, ui, L2, names(code,ui,short)}
  */
 export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){
  const {j,HAD,BASE,esc,ui,L2,names}=deps,t=TX[ui]||TX.en,P=pref();
@@ -59,12 +59,12 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){
  const msg=s=>{S.msg=s;q('#haMsg').textContent=s;q('#haMsg').hidden=!s};
  const fillBooks=()=>{q('#haBook').innerHTML=books.map(k=>{const ok=has(k,S.lang);return`<option value="${k}" ${k===S.book?'selected':''} ${ok?'':'disabled'}>${esc(bname(k))}${ok?'':' — '+esc(t.unavailable(lname(S.lang)))}</option>`}).join('')};
  const fillSecs=()=>{q('#haSec').innerHTML=secs(S.book).map(([k,v])=>`<option value="${k}" ${k===S.sec?'selected':''}>${k}. ${esc(v)}</option>`).join('')};
- const refOf=h=>{const mr=S.book==='malik'?L2.malikRef(deps.getMalik(),h):'';const no=L2.hadithIntl(S.book,h)||String(h.hadithnumber);return mr?`${L2.HCOL.malik[ui==='ur'?1:0]}, ${mr}`:`${L2.HCOL[S.book]?.[ui==='ur'?1:0]||S.book} ${no}`};
+ const refOf=h=>{const no=L2.hadithIntl(S.book,h)||String(h.hadithnumber);return `${L2.HCOL[S.book]?.[ui==='ur'?1:0]||S.book} ${no}`};
  const ready=i=>S.items[i]&&S.items[i].text;
  const nextOk=(i,d)=>{for(let n=i+d;n>=0&&n<S.items.length;n+=d)if(ready(n))return n;return -1};
  const paintList=()=>{
   const miss=S.items.filter(x=>!x.text).length;
-  list.innerHTML=(miss?`<p class="card muted ha-skip" id="haSkip">${esc(t.skipped(miss,lname(S.lang)))}</p>`:'')+(S.items.length&&miss===S.items.length?`<p class="card">${t.empty}</p>`:'')+S.items.map((x,i)=>`<article class="card ha-it ${x.text?'':'ha-miss'}" data-i="${i}" ${x.text?'tabindex="0" role="button"':''} aria-label="${esc(x.ref)}"><div class="tools"><span class="badge">${esc(x.ref)}</span>${x.text?'':`<small class="muted ha-nt">${esc(t.noTr(lname(S.lang)))}</small>`}</div>${x.text?`<p class="tr" lang="${S.lang==='urd'?'ur':'en'}" dir="${S.lang==='urd'?'rtl':'ltr'}">${esc(x.text)}</p>`:''}</article>`).join('');
+  list.innerHTML=(miss?`<p class="card muted ha-skip" id="haSkip">${esc(t.skipped(miss,lname(S.lang)))}</p>`:'')+(S.items.length&&miss===S.items.length?`<p class="card">${t.empty}</p>`:'')+S.items.map((x,i)=>`<article class="card ha-it ${x.text?'':'ha-miss'}" data-i="${i}" ${x.text?'tabindex="0" role="button"':''} aria-label="${esc(x.ref)}"><div class="tools"><span class="badge">${esc(x.ref)}</span>${x.text?'':`<small class="muted ha-nt">${esc(t.noTr(lname(S.lang)))}</small>`}</div>${x.text?`<p class="tr" lang="${S.lang==='urd'?'ur':'en'}" dir="${S.lang==='urd'?'rtl':'ltr'}">${esc(x.text)}</p>${x.auto?`<small class="hd-auto">${t.autoLbl}</small>`:''}`:''}</article>`).join('');
   paintNow()};
  const st=()=>{const s=H.info();return s.id&&s.id.startsWith('ha:')?s:{id:null,state:'idle'}};
  const paintNow=()=>{
@@ -77,7 +77,7 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){
   list.querySelectorAll('.ha-it').forEach(el=>el.setAttribute('aria-current',+el.dataset.i===S.idx&&s.state!=='idle'?'true':'false'))};
  const idOf=i=>`ha:${S.book}:${S.sec}:${i}`;
  const speak=i=>{const x=S.items[i];if(!x||!x.text||!voice)return false;S.idx=i;msg('');
-  const ok=H.play({id:idOf(i),text:x.text,lang:S.lang,voice,rate:S.rate,onEnd:()=>{
+  msg(x.auto?t.autoNow:'');const ok=H.play({id:idOf(i),text:x.text,lang:S.lang,voice,rate:S.rate,onEnd:()=>{
    if(!root.isConnected)return;if(!S.cont){paintNow();return}
    const n=nextOk(i,1);if(n>=0){speak(n);scroll(n)}else{msg(t.done);paintNow()}}});
   paintNow();return ok};
@@ -85,17 +85,16 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){
  const loadSec=async(sec,focusNum)=>{
   H.stop();S.sec=String(sec);S.busy=true;S.items=[];S.idx=-1;msg('');list.innerHTML=`<p class="muted c">${t.loading}</p>`;fillSecs();paintNow();
   const ed=`${S.lang}-${S.book}`;
-  const [d,a]=await Promise.all([j(`${HAD}/editions/${ed}/sections/${sec}.min.json`).catch(()=>null),j(`${HAD}/editions/ara-${S.book}/sections/${sec}.min.json`).catch(()=>null)]);
+  const [d,a,A]=await Promise.all([j(`${HAD}/editions/${ed}/sections/${sec}.min.json`).catch(()=>null),j(`${HAD}/editions/ara-${S.book}/sections/${sec}.min.json`).catch(()=>null),S.lang==='urd'?j(BASE+`offline/x/hur/${S.book}.json`).catch(()=>({})):null]);
   if(!root.isConnected)return;S.busy=false;
   if(!d&&!a){list.innerHTML=`<p class="card">${t.err}</p>`;return}
   // The Arabic list only supplies the full set of hadith numbers, so a hadith missing from the translation is shown as missing, never dropped. Its text is not used or shown.
   const tm=new Map((d?.hadiths||[]).map(h=>[String(h.hadithnumber),h])),order=a?.hadiths?.length?a.hadiths:(d?.hadiths||[]);
-  S.items=order.map(h=>{const th=tm.get(String(h.hadithnumber));const base=th||h;return{n:h.hadithnumber,ref:refOf({...base,hadithnumber:h.hadithnumber,arabicnumber:h.arabicnumber??base.arabicnumber}),text:th&&(th.text||'').trim()?th.text.trim():''}});
+  S.items=order.map(h=>{const th=tm.get(String(h.hadithnumber));const base=th||h;const r={n:h.hadithnumber,ref:refOf({...base,hadithnumber:h.hadithnumber,arabicnumber:h.arabicnumber??base.arabicnumber}),text:th&&(th.text||'').trim()?th.text.trim():'',auto:false};if(!r.text&&A&&A[String(h.hadithnumber)]){r.text=A[String(h.hadithnumber)];r.auto=true}return r});
   S.idx=S.items.findIndex(x=>x.text);
   if(focusNum!==undefined&&focusNum!==null){const k=S.items.findIndex(x=>String(x.n)===String(focusNum));if(k>=0)S.idx=k}
   paintList();if(focusNum!==undefined&&focusNum!==null)scroll(S.idx)};
  const hnOf=async raw=>{const s=String(raw).trim().toLowerCase();if(!s)return null;
-  if(S.book==='malik'){await deps.loadMalik('malik');const M=deps.getMalik()||{};const [x,y]=s.split('/');const e=Object.entries(M).find(([,r])=>y?(r[0]==+x&&r[1]==+y):r[2]==+x);return e?e[0]:null}
   if(S.book==='muslim'){const map=await j(BASE+'offline/x/muslim-map.json').catch(()=>({}));return map[s]??null}
   return /^\d+(\.\d+)?$/.test(s)?s:null};
  const secOf=async hn=>{const sd=info[S.book]?.metadata.section_details||{};const n=Math.floor(+hn);

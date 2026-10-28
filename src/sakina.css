@@ -198,3 +198,19 @@ main small{opacity:1}
 .ha-nt{color:var(--mut)}
 #haMsg:empty,#haMsg[hidden]{display:none}
 .ha-entry{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0;min-height:44px}
+/* v3.7.2: per-hadith Arabic / Urdu / English row, speaker at the top corner of the text, chapter pager, auto-translated label */
+.hd-sel{margin:4px 0 8px;display:flex;gap:6px}.hd-sel .btn{flex:1;min-height:44px;white-space:nowrap;padding-inline:8px}
+.hd-body{display:flex;gap:10px;align-items:flex-start;direction:ltr}
+.hd-ctl{display:flex;flex-direction:column;gap:6px;flex:none}
+.hd-tx{flex:1;min-width:0}.hd-tx .tr,.hd-tx .ar{margin-top:0}.hd-tx .ar{text-align:right}
+.hd-ctl .hl-b{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--bd);border-radius:999px;padding:0;width:40px;height:40px;min-height:40px;color:var(--pri);background:var(--card)}
+.hd-ctl .hl-b:disabled{opacity:.4}
+.hd-ctl .hl-b[data-st=playing],.hd-ctl .hl-b[data-st=starting],.hd-ctl .hl-b[data-st=paused]{background:var(--pri);color:var(--onpri);border-color:var(--pri)}
+.hl-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hd-auto{display:inline-block;font-size:12px;color:var(--mut);border:1px solid var(--bd);border-radius:999px;padding:1px 10px;margin:2px 0 4px}
+.hd-miss{margin:8px 0}.hd-nv{display:block;margin:2px 0 6px}
+.hd-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hd-open{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:999px;border:1px solid var(--bd);color:var(--pri)}
+.hd-big .tr{font-size:1.12em;line-height:1.7}.hd-big .ar{font-size:1.5em;line-height:2.1}
+.hd-pager{display:flex;align-items:center;justify-content:center;gap:18px;margin:10px auto 70px;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nh,64px) + 8px);width:max-content;max-width:calc(100% - 24px);padding:6px 14px;background:color-mix(in srgb,var(--bg) 94%,var(--card));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--bd);border-radius:999px;box-shadow:var(--sh);z-index:4}.hd-pager .btn{min-width:56px;min-height:48px;font-size:26px;display:inline-flex;align-items:center;justify-content:center}.hd-pager [aria-disabled=true]{opacity:.35}
+.hd-ct{min-width:64px;text-align:center}
