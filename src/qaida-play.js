@@ -4,6 +4,7 @@
 const base=()=>import.meta.env.BASE_URL||'/';
 const BR=typeof window!=='undefined'&&typeof document!=='undefined';
 const WD=()=>BR&&navigator.webdriver&&!window.__qRealAudio;
+const G=ms=>WD()?ms*(window.__qGap??1):ms; // tests shrink the pauses between clips
 export const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let el=null,gen=0,paused=false,inClip=false,rate=1,fail=null,pend=null;const blobs=new Map();
 const AUD_CACHE='qsq-audio'; // Quran Safar Qaida clips (letters, vowels, words) kept for offline use; survives app updates
@@ -68,14 +69,14 @@ export function mountPlayer(env){
  const $=s=>bar.querySelector(s),msg=$('#qPlMsg');
  const list=()=>[...root.querySelectorAll('#qBody [data-u]')];
  const label=x=>(x.querySelector('.ar')?.textContent||x.textContent||'').trim().slice(0,24);
- let run=0,state='idle',res=null;
+ let run=0,state='idle',res=null,skipNote='';
  const savePref=()=>jset(localStorage,PREF,{rate:P.rate,repeat:P.repeat,cont:P.cont});
  const paintOpts=()=>{bar.querySelectorAll('[data-rate]').forEach(b=>{const on=+b.dataset.rate===P.rate;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
   for(const [id,k] of [['#qPlRep','repeat'],['#qPlCont','cont']]){const b=$(id);b.classList.toggle('on',P[k]);b.setAttribute('aria-pressed',P[k])}};
  const ui=s=>{state=s;$('#qPlPlay').hidden=s!=='idle';$('#qPlPause').hidden=s==='idle';$('#qPlStop').hidden=s==='idle';
   $('#qPlPause').innerHTML=s==='paused'?`▶ ${tt('Resume','جاری رکھیں')}`:`⏸ ${tt('Pause','وقفہ')}`;bar.classList.toggle('q-playing',s!=='idle')};
  const clearMarks=()=>root.querySelectorAll('.q-play').forEach(x=>x.classList.remove('q-play'));
- const say=(t,silent)=>{msg.innerHTML='';const p=document.createElement('span');p.textContent=t;msg.append(p);
+ const say=(t,silent)=>{msg.innerHTML='';const p=document.createElement('span');p.textContent=t;msg.append(p);if(skipNote){const k=document.createElement('span');k.id='qPlSkip';k.className='q-silents';k.textContent=skipNote;msg.append(document.createElement('br'),k)}
   if(silent?.length){const d=document.createElement('span');d.className='q-silents';d.id='qPlSilent';d.append(` ${tt('No recording (silent, skipped):','ریکارڈنگ نہیں (خاموش، چھوڑ دیے):')} `);silent.forEach(s=>{const b=document.createElement('b');b.className='ar';b.dir='rtl';b.textContent=s;d.append(b,' ')});msg.append(document.createElement('br'),d)}};
  const media=(name)=>{if(!BR||!('mediaSession' in navigator))return;try{mset=true;navigator.mediaSession.metadata=new MediaMetadata({title:name,artist:tt(cr.en,cr.ur),album:'Quran Safar'});navigator.mediaSession.playbackState=state==='paused'?'paused':'playing';
   const h=(a,f)=>{try{navigator.mediaSession.setActionHandler(a,f)}catch{/* unsupported */}};h('play',()=>{if(state==='paused')P.pause()});h('pause',()=>{if(state==='playing')P.pause()});h('stop',()=>P.stop());h('previoustrack',()=>seek(-1));h('nexttrack',()=>seek(1))}catch{/* ignore */}};
@@ -85,7 +86,7 @@ export function mountPlayer(env){
  let idx=0,skip=0;
  const seek=d=>{if(state==='idle')return;skip=d;stop()}; // jump handled by the run loop (it sees the interruption and restarts at idx+d)
  async function itemRun(x,my){const us=x.dataset.u.split('|').filter(Boolean);if(!us.length)return false;
-  for(const u of us){const ok=await one(u,my);if(my!==gen)return null;if(!ok)return false;await sleep(180/P.rate)}return true}
+  for(const u of us){const ok=await one(u,my);if(my!==gen)return null;if(!ok)return false;await sleep(G(180/P.rate))}return true}
  async function go(start=0,auto=null){
   if(env.live()){say(tt('Stop live reading first, so the speaker does not get into the microphone.','پہلے لائیو پڑھنا بند کریں، تاکہ اسپیکر کی آواز مائیک میں نہ جائے۔'));return}
   const items=list();if(!items.length)return;
@@ -104,7 +105,7 @@ export function mountPlayer(env){
      if(state==='paused')return;
      clearMarks();ui('idle');say(tt('Stopped.','روک دیا۔'),res.silent);mediaOff();return}
     if(ok){res.played++;x.classList.remove('q-silent')}else{x.classList.add('q-silent');res.silent.push(label(x));x.dataset.silent='1'}
-    idx++;if(idx<items.length)await sleep(380/P.rate);if(mine!==run||my!==gen)return}
+    idx++;if(idx<items.length)await sleep(G(380/P.rate));if(mine!==run||my!==gen)return}
    if(P.repeat){idx=0;res.played=0;res.silent=[];continue}
    break}
   clearMarks();ui('idle');mediaOff();
@@ -124,6 +125,6 @@ export function mountPlayer(env){
  P.playing=()=>state!=='idle';
  cur=P;
  const auto=takeAuto();
- if(auto){P.cont=true;paintOpts();if(auto.skipped?.length){const names=auto.skipped.map(id=>cr.LESSONS.find(x=>x.id===id)).filter(Boolean).map(l=>`${l.n}`).join(', ');say(tt(`Skipped (no recording): lesson ${names}.`,`چھوڑ دیا (ریکارڈنگ نہیں): سبق ${names}۔`))}
+ if(auto){P.cont=true;paintOpts();if(auto.skipped?.length){const names=auto.skipped.map(id=>cr.LESSONS.find(x=>x.id===id)).filter(Boolean).map(l=>`${l.n}`).join(', ');skipNote=tt(`Skipped, no recording: lesson ${names}.`,`چھوڑ دیا، ریکارڈنگ نہیں: سبق ${names}۔`);say('')}
   setTimeout(()=>{if(cur===P&&state==='idle')go(0,auto)},350)}
  return P}
