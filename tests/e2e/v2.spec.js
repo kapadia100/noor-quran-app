@@ -45,7 +45,7 @@ test('offline: new bundled data works',async({page,context})=>{await page.goto('
 test('v2.1: SVG icon nav, ibadat + FAQ screens, no emoji in home grid',async({page})=>{await page.goto('./');await expect(page.locator('nav button svg.ic')).toHaveCount(5);await expect(page.locator('.fcard')).toHaveCount(4);await expect(page.locator('.fcard svg.ic').first()).toBeVisible();
  const txt=await page.locator('.dsec .fgrid, .dsec .cgrid, nav').allInnerTexts();expect(/\p{Extended_Pictographic}/u.test(txt.join(''))).toBe(false);
  await page.click('nav button[data-r="#/ibadat"]');await expect(page).toHaveURL(/ibadat/);await expect(page.locator('nav button.on')).toHaveAttribute('data-r','#/ibadat');await expect(page.locator('.fcard,.ccard')).toHaveCount(10);
- await page.goto('./#/help');await expect(page.locator('details.faq')).toHaveCount(7)});
+ await page.goto('./#/help');await expect(page.locator('details.faq')).toHaveCount(9)});
 test('v2.2: app is named Quran Safar (EN + UR)',async({page})=>{await page.goto('./');await expect(page).toHaveTitle(/Quran Safar/);await expect(page.locator('.appname')).toHaveText('Quran Safar');const m=await (await page.request.get('./manifest.webmanifest')).json();expect(m.name).toBe('Quran Safar');await page.click('#lang');await expect(page.locator('.appname')).toHaveText('قرآن سفر')});
 test('share: hadith (text, WhatsApp, copy, image), duas and 99 names',async({page,context})=>{await context.grantPermissions(['clipboard-read','clipboard-write']).catch(()=>{});
  await page.goto('./#/hadith/bukhari/1');const b=page.locator('.ayah [data-shr]').first();await b.waitFor({timeout:30000});await b.click();

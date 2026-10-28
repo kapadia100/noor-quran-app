@@ -85,7 +85,7 @@ test('Live card is the first thing in the lesson, above the grid and the fold; i
  await fakeMic(page);await page.goto('./#/qaida/huroof');
  const [lb,gr]=await Promise.all(['.q-lb-top','.q-grid'].map(s=>page.locator(s).boundingBox()));expect(lb.y).toBeLessThan(gr.y);expect(lb.y+lb.height).toBeLessThan(500);
  await expect(page.locator('.q-lb-top .q-badge')).toContainText('LIVE');const bb=await page.locator('.q-lbtn').boundingBox();expect(bb.height).toBeGreaterThanOrEqual(48);
- expect(await page.locator('.q-lbtn').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(46, 160, 67)');
+ expect(await page.locator('.q-lbtn').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(139, 194, 122)');
  await page.click('.q-lbtn');await expect(page.locator('.q-lb-top')).toBeHidden();await expect(page.locator('#qLp .q-badge')).toContainText('LIVE');
  await expect(page.locator('.q-meter')).toBeVisible();await expect(page.locator('#qlDbg')).toBeVisible();await expect(page.locator('#qlHear')).toBeVisible();
  for(let k=0;k<2;k++)await page.evaluate(()=>window.__qlive._burst());

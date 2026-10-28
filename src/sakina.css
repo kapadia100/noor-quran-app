@@ -13,11 +13,10 @@
  --good:#8BC27A;--bad:#EE8C78;--warn:#D8B56A;--live:#D26A55;
  --sh:0 8px 24px #0006;--sh2:0 14px 30px -12px rgba(0,0,0,.7);
 }
-html,body{background:var(--bg)!important;color:var(--fg)}
+html{background:var(--bg)!important}body{background:none!important;color:var(--fg)}
 main#app{background:none}
 body{font-family:var(--f-ui);font-size:16px;line-height:1.55}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--brand) 22%,transparent),transparent 60%)}
-header,main#app,nav{z-index:2}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--brand) 22%,transparent),transparent 60%)}
 /* ---------- typography ---------- */
 h1,h2,h3,.dhead,header h1,.q-hero b,.mrc-h b{font-family:var(--f-head);font-weight:600;letter-spacing:-.005em}
 .ar,[lang=ar],.ayah .ar,.arabic{font-family:'Amiri Quran','Amiri',serif}
@@ -147,3 +146,19 @@ input[type=range]{accent-color:var(--pri)}input[type=checkbox],input[type=radio]
 [data-theme=dark] .btn.live,[data-theme=dark] .go-live,[data-theme=dark] .rl-start{background:#A9BA94!important;color:#1B2118!important}
 ::selection{background:color-mix(in srgb,var(--brand) 45%,transparent)}
 :focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+
+/* ---- compact prayer card (stays under 170px) ---- */
+.pcard{padding:10px 14px 10px!important}
+.pc-top{min-height:22px}
+.pc-nx b{font-size:34px!important;line-height:1.05!important}
+.pc-bar{margin:4px 0 7px!important;height:3px}
+.pc-arch{top:26px;width:72px;height:76px;border-radius:36px 36px 10px 10px;gap:0}
+.pc-arch::after{inset:4px;border-radius:31px 31px 6px 6px}
+.pc-arch .ic{width:26px;height:26px}.pc-arch .ar{font-size:14px!important;line-height:1.2!important}
+.pc-row .pc-i{padding-block:3px}
+[data-theme=dark] .q-lbtn{color:#1B2118!important}
+.pc-nx{display:flex!important;align-items:baseline;gap:8px}.pc-nx .pc-at{margin:0}
+.pc-main{margin:0 0 2px!important}
+.pc-bar{margin:4px 0 6px!important}
+.pc-row{padding:3px}.pc-row .pc-i{padding-block:2px;min-height:0}
+.pc-i .pc-ic{width:18px;height:18px}.pc-i .pc-ic svg{width:18px;height:18px}
