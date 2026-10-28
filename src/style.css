@@ -571,3 +571,15 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .q-signs{margin:10px 0}.q-sg{display:flex;align-items:center;gap:12px;padding:4px 0}.q-sg .ar{font-size:28px;min-width:44px;text-align:center;margin:0}
 .q-tjnote{margin-top:4px}
 .q-dr .q-cell{padding-bottom:12px}.q-dr .q-cell .ar{margin-bottom:8px}
+/* v3.6.5 Qaida: Play lesson / Play all */
+.q-pl{margin:8px 0;padding:12px}.q-plh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.q-plb{margin:6px 0}.q-plb .btn{min-height:44px}
+.q-plo{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.q-plo .rc-chp[aria-pressed=true]{background:#7c5cff;border-color:#7c5cff;color:#fff}
+.q-plm{font-size:13px;margin:6px 0 0;min-height:1.2em}.q-plm .q-silents{display:inline-block;color:#e8a33d}.q-plm .q-silents b{margin:0 3px;font-size:18px}
+.q-tapmsg{font-size:13px;margin:2px 4px;color:#e8a33d}.q-tapmsg:empty{display:none}
+.q-pl.q-playing{border-color:#7c5cff;box-shadow:0 0 0 1px #7c5cff}
+.q-pl-off{opacity:.85}.q-pall{margin:8px 0}.q-pall .bar{flex-wrap:wrap;margin:8px 0}
+.q-play{outline:3px solid #7c5cff;outline-offset:2px;background:rgba(124,92,255,.22)!important;border-radius:12px;transition:background .15s}
+.q-silent{outline:2px dashed #e8a33d;outline-offset:2px;opacity:.65}
+@media (prefers-reduced-motion:reduce){.q-play{transition:none}}

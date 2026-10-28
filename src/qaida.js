@@ -5,6 +5,7 @@ import * as D from './qaida-data.js';
 import * as M from './madani-data.js';
 import {esc} from './lib.js';
 import {createLive,modelCached,releaseModel} from './qaida-live.js';
+import {unlock,play,playSeq,stop,playU,lastFail,mountPlayer,lessonHasAudio,nextPlayable,startAuto,lastLesson} from './qaida-play.js';
 /** The two courses share this engine. n = Noorani (the original Qaida), m = Madani. Each has its own lessons and its own saved progress. */
 export const COURSES={
  n:{id:'n',key:'qsQaida',LESSONS:D.LESSONS,RULES:D.RULES,TUTOR:D.TUTOR,WORDS:D.WORDS,en:'Noorani Qaida',ur:'نورانی قاعدہ',href:'#/qaida/n',hero:'ا ب ت',
@@ -19,21 +20,7 @@ const load=cr=>{try{const o=JSON.parse(localStorage.getItem(cr.key));return o&&o
 const save=(cr,o)=>{try{localStorage.setItem(cr.key,JSON.stringify(o))}catch{/* storage full: progress is optional */}};
 const lastPick=()=>{try{const v=localStorage.getItem(PICK_KEY);return v==='n'||v==='m'?v:null}catch{return null}};
 const setPick=id=>{try{localStorage.setItem(PICK_KEY,id)}catch{/* optional */}};
-const playU=u=>u.includes('|')?playSeq(u.split('|')):play(u);
-const base=()=>import.meta.env.BASE_URL||'/';
-const WD=()=>typeof navigator!=='undefined'&&navigator.webdriver;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-
-// ---- audio: one player; local clips go through fetch() so they are cached for offline use ----
-let au=null,gen=0;const blobs=new Map();
-async function srcOf(u){if(/^https?:/.test(u))return u;if(blobs.has(u))return blobs.get(u);const r=await fetch(base()+u);if(!r.ok)throw new Error('audio');const b=URL.createObjectURL(await r.blob());blobs.set(u,b);return b}
-export function stop(){gen++;try{au?.pause()}catch{/* ignore */}au=null}
-async function one(u,my){try{au?.pause()}catch{/* ignore */}
- if(WD()){(window.__qplays??=[]).push(u);await sleep(5);return my===gen}
- try{const s=await srcOf(u);if(my!==gen)return false;const a=au=new Audio(s);await new Promise((res,rej)=>{a.onended=res;a.onerror=rej;a.play().catch(rej)});return my===gen}catch{return false}}
-/** Plays one url; resolves true when it ended, false when interrupted or failed. */
-export const play=u=>one(u,++gen);
-export async function playSeq(urls,gap=350){const my=++gen;for(let i=0;i<urls.length;i++){if(!await one(urls[i],my))return false;if(i<urls.length-1)await sleep(gap);if(my!==gen)return false}return true}
+export {play,playSeq,stop};
 
 // ---- items of each lesson (what is counted for progress and used by practice) ----
 const L=D.LETTERS;
@@ -58,7 +45,7 @@ function stackFor(lv,cr,les){
  const st=history.state,url=location.hash;
  if(st&&st.qb===1&&st.d===lv){curD=lv;return}
  const chain=['#/qaida',cr?'#/qaida/'+cr.id:'',les&&cr?`#/qaida/${cr.id}/${les.id}`:''];
- if(lv===0||curD===lv-1){try{history.replaceState({...(st||{}),qb:1,d:lv},'',url)}catch{/* history unavailable */}curD=lv;return}
+ if(lv===0||curD===lv-1||curD===lv){try{history.replaceState({...(st||{}),qb:1,d:lv},'',url)}catch{/* history unavailable */}curD=lv;return}
  try{history.replaceState({qb:1,d:0},'',chain[0]);for(let k=1;k<=lv;k++)history.pushState({qb:1,d:k},'',chain[k])}catch{/* history unavailable */}
  curD=lv}
 // "All lessons" and "Switch Qaida" go back in history (when the parent page is beneath) instead of stacking a second copy of it.
@@ -90,14 +77,24 @@ function chooser(C,tt,I){
  C.app().querySelectorAll('.q-choice').forEach(a=>a.addEventListener('click',()=>setPick(a.dataset.course))); // remembered at the tap, before the lesson list has loaded
 }
 
+/** "Play all" on the lesson list: listen from lesson 1, or carry on from the lesson that was played last. Lessons with no recording are skipped, and named. */
+function playAll(cr,tt){
+ const lastId=lastLesson(cr.id),lastLes=cr.LESSONS.find(x=>x.id===lastId),after=lastLes?nextPlayable(cr,countOf,lastLes.id):null;
+ const mute=cr.LESSONS.filter(x=>!lessonHasAudio(x,countOf(x))).map(x=>x.n);
+ return `<div class="card q-pall" id="qPall"><b>🔊 ${tt('Listen to the whole Qaida','پورا قاعدہ سنیں')}</b>
+  <div class="bar"><button class="btn" id="qPlayAll"><span aria-hidden="true">▶</span> ${tt('Play all from lesson 1','سبق 1 سے سب چلائیں')}</button>${after?.les?`<button class="btn ghost" id="qPlayNext" data-l="${after.les.id}">${tt(`Continue from lesson ${after.les.n}`,`سبق ${after.les.n} سے جاری رکھیں`)}</button>`:''}</div>
+  <p class="muted q-plm" id="qPallNote">${mute.length?tt(`No recording, skipped: lesson ${mute.join(', ')}.`,`ریکارڈنگ نہیں، چھوڑے جائیں گے: سبق ${mute.join('، ')}۔`):tt('Every lesson has a recording.','ہر سبق کی ریکارڈنگ موجود ہے۔')} ${tt('Each lesson continues into the next by itself.','ہر سبق خود اگلے میں چلتا رہتا ہے۔')}</p></div>`}
 function list(C,tt,I,cr){
  const P=load(cr);let all=0,got=0;
  const rows=cr.LESSONS.map(les=>{const n=countOf(les),g=doneN(P,les);all+=n;got+=g;const done=n&&g>=n;
   return `<a class="q-row${done?' done':''}" href="#/qaida/${cr.id}/${les.id}" data-l="${les.id}"><span class="q-n">${done?'✓':les.n}</span><span class="mt"><b>${tt(les.en,les.ur)}</b><small>${tt(...les.sub)}</small></span><span class="q-p">${n?`${g}/${n}`:''}</span><span class="go">›</span></a>`}).join('');
  C.app().innerHTML=`<section class="dsec q-wrap" data-course="${cr.id}"><div class="q-hero"><span class="ar q-hero-ar" dir="rtl" lang="ar">${cr.hero}</span><div><b>${tt(cr.en,cr.ur)}</b><small>${tt(...cr.intro)}</small></div>${switchChip(tt)}</div>
  <div class="q-bar"><i style="width:${all?Math.round(100*got/all):0}%"></i></div><p class="muted q-sub">${tt(`${got} of ${all} items learned`,`${all} میں سے ${got} یاد`)}</p>
+ ${playAll(cr,tt)}
  ${rows}
- <div class="card q-note"><b>${tt('How checking works','جانچ کیسے ہوتی ہے')}</b><p>${tt('Tap any letter, vowel or word to hear it. Tap Start reading live and read in order: every item you read turns green. For letters and syllables the app follows your voice (it knows you spoke, not what you said), so those are not graded. For real words, the app also checks the word on your phone: ✓ means confirmed, grey means not confirmed (not a mistake). Each lesson also links to a real surah where the tutor checks your reading word by word.','کسی بھی حرف، حرکت یا لفظ کو دبا کر سنیں۔ لائیو پڑھنا شروع کریں دبائیں اور ترتیب سے پڑھیں: جو چیز پڑھیں وہ سبز ہوتی جاتی ہے۔ حروف اور مقطع کے لیے ایپ آپ کی آواز کے ساتھ چلتی ہے (اسے معلوم ہوتا ہے کہ آپ نے بولا، یہ نہیں کہ کیا بولا)، اس لیے ان کی جانچ نہیں ہوتی۔ اصل الفاظ کو ایپ فون پر جانچتی بھی ہے: ✓ کا مطلب تصدیق، سرمئی کا مطلب تصدیق نہیں (غلطی نہیں)۔ ہر سبق ایک اصل سورت سے بھی جڑا ہے جہاں ٹیوٹر لفظ بہ لفظ آپ کی تلاوت جانچتا ہے۔')}</p></div></section>`}
+ <div class="card q-note"><b>${tt('How checking works','جانچ کیسے ہوتی ہے')}</b><p>${tt('Tap any letter, vowel or word to hear it. Tap Start reading live and read in order: every item you read turns green. For letters and syllables the app follows your voice (it knows you spoke, not what you said), so those are not graded. For real words, the app also checks the word on your phone: ✓ means confirmed, grey means not confirmed (not a mistake). Each lesson also links to a real surah where the tutor checks your reading word by word.','کسی بھی حرف، حرکت یا لفظ کو دبا کر سنیں۔ لائیو پڑھنا شروع کریں دبائیں اور ترتیب سے پڑھیں: جو چیز پڑھیں وہ سبز ہوتی جاتی ہے۔ حروف اور مقطع کے لیے ایپ آپ کی آواز کے ساتھ چلتی ہے (اسے معلوم ہوتا ہے کہ آپ نے بولا، یہ نہیں کہ کیا بولا)، اس لیے ان کی جانچ نہیں ہوتی۔ اصل الفاظ کو ایپ فون پر جانچتی بھی ہے: ✓ کا مطلب تصدیق، سرمئی کا مطلب تصدیق نہیں (غلطی نہیں)۔ ہر سبق ایک اصل سورت سے بھی جڑا ہے جہاں ٹیوٹر لفظ بہ لفظ آپ کی تلاوت جانچتا ہے۔')}</p></div></section>`;
+ C.app().querySelector('#qPlayAll').onclick=()=>{const f=nextPlayable(cr,countOf,null);if(f.les){unlock();startAuto(cr,f.les,f.skipped)}};
+ const nx=C.app().querySelector('#qPlayNext');if(nx)nx.onclick=()=>{const l=cr.LESSONS.find(x=>x.id===nx.dataset.l);unlock();startAuto(cr,l,[])};}
 
 
 /** Start card of one live section: a big green mic button with a LIVE badge. along = follow-along by voice; check = words checked on the phone. */
@@ -129,12 +126,24 @@ function body(les,tt){
  return '';
 }
 
+/** The "Play lesson" card at the top of a lesson: play everything in order with the recordings, pause/stop, speed, repeat, continue to the next lesson. */
+function playBar(les,tt,n){
+ if(!lessonHasAudio(les,n))return `<div class="card q-pl q-pl-off" id="qPlOff"><b>🔇 ${tt('No recording for this lesson','اس سبق کی ریکارڈنگ نہیں')}</b><p class="muted">${les.kind==='joined'?tt('This lesson is about letter shapes, so there is nothing to play as a lesson. Tap a row to hear that letter.','یہ سبق حروف کی شکلوں کا ہے، اس لیے چلانے کے لیے کچھ نہیں۔ کسی قطار کو دبا کر وہ حرف سنیں۔'):tt('These phrases are typed for reading only. They have no recording, so Play skips this lesson.','یہ الفاظ صرف پڑھنے کے لیے لکھے ہیں۔ ان کی ریکارڈنگ نہیں، اس لیے پلے اس سبق کو چھوڑ دیتا ہے۔')}</p></div>`
+ const chip=(a,t)=>`<button class="rc-chp" ${a} aria-pressed="false">${t}</button>`;
+ return `<div class="card q-pl" id="qPl"><div class="q-plh"><b>🔊 ${tt('Listen to this lesson','یہ سبق سنیں')}</b><small class="muted">${tt(`${n} items`,`${n} چیزیں`)}</small></div>
+  <div class="bar q-plb"><button class="btn" id="qPlPlay"><span aria-hidden="true">▶</span> ${tt('Play lesson','سبق چلائیں')}</button><button class="btn ghost" id="qPlPause" hidden>⏸ ${tt('Pause','وقفہ')}</button><button class="btn ghost" id="qPlStop" hidden>■ ${tt('Stop','روکیں')}</button></div>
+  <div class="q-plo" role="group" aria-label="${tt('Playback options','پلے کی ترتیبات')}">${chip('data-rate="0.75"','0.75×')}${chip('data-rate="1"','1×')}${chip('id="qPlRep"','🔁 '+tt('Repeat','دہرائیں'))}${chip('id="qPlCont"',tt('Continue to next lesson','اگلے سبق پر جائیں'))}</div>
+  <p class="muted q-plm" id="qPlMsg" aria-live="polite"></p></div><p class="muted q-tapmsg" id="qTapMsg" aria-live="polite"></p>`}
+
+let PL=null;
 function lesson(C,tt,ur,I,les){
+ PL?.dispose();PL=null;
  const cr=crOf(les),P=load(cr),n=countOf(les),g=doneN(P,les),tu=cr.TUTOR[les.id];
  const rule=cr.RULES[les.id]?.[0];I_ICON=k=>I.icon(k);
  C.setTitle(tt(les.en,les.ur));
  C.app().innerHTML=`<section class="dsec q-wrap" data-lesson="${les.id}" data-course="${cr.id}"><div class="q-top"><a class="q-back" href="${cr.href}">‹ ${tt('All lessons','تمام اسباق')}</a>${switchChip(tt)}</div>
   <div class="q-lh"><h2 class="h3">${les.n}. ${tt(les.en,les.ur)}</h2>${n?`<span class="q-p" id="qProg">${g}/${n}</span>`:''}</div>
+  ${playBar(les,tt,n)}
   ${mainLive(les)?liveBar(...mainLive(les),tt,true):''}
   ${rule?`<div class="card q-rule"><p>${tt(rule[0],rule[1])}</p></div>`:''}
   <div class="card q-lp" id="qLp" hidden aria-live="polite"></div>
@@ -144,13 +153,16 @@ function lesson(C,tt,ur,I,les){
   </section>`;
  const root=C.app();
  let live=null;
+ PL=mountPlayer({tt,les,cr,root,count:countOf,live:()=>!!live});
+ const note=t=>{const m=root.querySelector('#qTapMsg');if(m)m.textContent=t||''};
  root.querySelector('.q-wrap').addEventListener('click',e=>{
-  const lb=e.target.closest('.q-lbtn');if(lb){live?.stop();live=liveUI(tt,les,root,lb.dataset.live,lb.dataset.sel,h=>{live=h});return}
+  const lb=e.target.closest('.q-lbtn');if(lb){PL?.stop();live?.stop();live=liveUI(tt,les,root,lb.dataset.live,lb.dataset.sel,h=>{live=h});return}
   const b=e.target.closest('[data-u]');if(!b)return;
   if(live&&live.slots.includes(b)){live.tap(live.slots.indexOf(b));return}
-  b.classList.add('on');playU(b.dataset.u).then(()=>b.classList.remove('on'))});
- window.addEventListener('hashchange',()=>live?.stop(),{once:true});
- const pr=root.querySelector('#qaPrac');if(pr)pr.onclick=()=>practice(C,tt,ur,I,les,root);
+  if(live){note(tt('Stop live reading first: the speaker would get into the microphone.','پہلے لائیو پڑھنا بند کریں: اسپیکر کی آواز مائیک میں چلی جائے گی۔'));return}
+  unlock();note('');b.classList.add('on');playU(b.dataset.u).then(ok=>{b.classList.remove('on');const f=lastFail();if(!ok&&f&&b.dataset.u.split('|').includes(f.u))note(f.why==='offline'?tt('This sound is not saved for offline use yet. Connect once and play it to save it.','یہ آواز ابھی آف لائن کے لیے محفوظ نہیں۔ ایک بار انٹرنیٹ سے چلا کر محفوظ کریں۔'):tt('No recording for this one (silent).','اس کی ریکارڈنگ دستیاب نہیں (خاموش)۔'))})});
+ window.addEventListener('hashchange',()=>{live?.stop();PL?.dispose()},{once:true});
+ const pr=root.querySelector('#qaPrac');if(pr)pr.onclick=()=>{PL?.stop();const pb=root.querySelector('#qPl');if(pb)pb.hidden=true;root.querySelector('#qTapMsg')?.remove();practice(C,tt,ur,I,les,root)};
 }
 
 // ---- live reading: follow-along (voice) and checked words ----
@@ -224,7 +236,7 @@ function practice(C,tt,ur,I,les,root){
    <p class="muted" id="qpAsk" hidden>${tt('Now say it out loud, then rate yourself honestly.','اب بلند آواز سے پڑھیں، پھر ایمانداری سے خود کو جانچیں۔')}</p>
    <div class="bar" id="qpRate" hidden><button class="btn" id="qpGot">✓ ${tt('I said it right','ٹھیک پڑھا')}</button><button class="btn ghost" id="qpAgain">↻ ${tt('Again','دوبارہ')}</button></div>
    <div class="bar"><button class="btn ghost" id="qpStop">${tt('Stop','بند کریں')}</button></div></div>`;
-  const hear=async()=>{host.querySelector('#qpHear').disabled=true;await playSeq(it.urls);const h=host.querySelector('#qpHear');if(h){h.disabled=false;host.querySelector('#qpAsk').hidden=false;host.querySelector('#qpRate').hidden=false}};
+  const hear=async()=>{host.querySelector('#qpHear').disabled=true;const ok=await playSeq(it.urls),f=lastFail();const h=host.querySelector('#qpHear');if(h){h.disabled=false;if(!ok&&f){host.querySelector('#qpAsk').textContent=tt('No recording for this one (silent). Read it from the screen, then rate yourself honestly.','اس کی ریکارڈنگ نہیں (خاموش)۔ اسکرین سے پڑھیں، پھر ایمانداری سے خود کو جانچیں۔')}host.querySelector('#qpAsk').hidden=false;host.querySelector('#qpRate').hidden=false}};
   host.querySelector('#qpHear').onclick=hear;
   host.querySelector('#qpGot').onclick=()=>{stop();q.shift();got++;rated.push(it.key);try{navigator.vibrate?.(15)}catch{/* no haptics */}show()};
   host.querySelector('#qpAgain').onclick=()=>{stop();it.tries++;q.shift();if(it.tries<2)q.push(it);else total_missed.push(it.key);show()};
