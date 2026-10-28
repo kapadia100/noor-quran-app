@@ -583,3 +583,12 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 .q-play{outline:3px solid #7c5cff;outline-offset:2px;background:rgba(124,92,255,.22)!important;border-radius:12px;transition:background .15s}
 .q-silent{outline:2px dashed #e8a33d;outline-offset:2px;opacity:.65}
 @media (prefers-reduced-motion:reduce){.q-play{transition:none}}
+
+/* v3.6.7 hadith: listen buttons + settings strip */
+.hl-btns{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-inline-end:4px}
+.tools .hl-b{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:999px;font-size:13px;padding:4px 12px;min-height:40px;min-width:40px;color:var(--pri);background:var(--card)}
+.tools .hl-b[data-st=playing],.tools .hl-b[data-st=starting],.tools .hl-b[data-st=paused]{background:var(--hl);border-color:var(--pri)}
+.tools .hl-x{padding:4px 10px}
+article.hd.hd-on{outline:2px solid var(--pri);outline-offset:2px}
+.card.hl{padding:8px 12px;margin:8px 0}.hl-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}.hl-row select{width:auto;padding:6px 8px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+#hlNote:empty{display:none}#hlNote{margin:4px 0 0}
