@@ -1,9 +1,9 @@
 // Shared by tests/e2e (iPhone/Android Chromium) and tests/ios (WebKit): proper language names + Play (listen) on hadith cards.
 // The hadith data and the phone's speech engine are both mocked: nothing is fetched from the network and nothing is really spoken.
-const LANGS={ara:'Arabic',ben:'Bengali',eng:'English',fra:'French',ind:'Indonesian',rus:'Russian',tur:'Turkish',urd:'Urdu',tam:'Tamil'};
-const BOOKS={bukhari:'Sahih al-Bukhari',muslim:'Sahih Muslim',nawawi:'40 Hadith Nawawi'};
+export const LANGS={ara:'Arabic',ben:'Bengali',eng:'English',fra:'French',ind:'Indonesian',rus:'Russian',tur:'Turkish',urd:'Urdu',tam:'Tamil'};
+export const BOOKS={bukhari:'Sahih al-Bukhari',muslim:'Sahih Muslim',nawawi:'40 Hadith Nawawi'};
 const TEXT={ara:n=>`إنما الأعمال بالنيات. وإنما لكل امرئ ما نوى. رقم ${n}`,eng:n=>`Actions are judged by intentions. Every person gets what they intended. Number ${n}`,urd:n=>`اعمال کا دارومدار نیتوں پر ہے۔ نمبر ${n}`,tam:n=>`செயல்கள் எண்ணங்களைப் பொறுத்தது. எண் ${n}`,ben:n=>`কাজ নিয়তের উপর নির্ভরশীল। নম্বর ${n}`};
-const txt=(l,n)=>(TEXT[l]||(x=>`[${l}] hadith text number ${x}.`))(n);
+export const txt=(l,n)=>(TEXT[l]||(x=>`[${l}] hadith text number ${x}.`))(n);
 export const MOCK_VOICES=[{name:'Samantha',lang:'en-US',localService:true,default:true},{name:'Imran',lang:'ur-PK',localService:true,default:false},{name:'Majed',lang:'ar-SA',localService:true,default:false},{name:'Amelie',lang:'fr-CA',localService:true,default:false}];
 export async function mockHadith(page){
  await page.route('https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/**',r=>{

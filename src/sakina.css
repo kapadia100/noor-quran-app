@@ -177,3 +177,24 @@ main small{opacity:1}
 .seg .btn:not(.ghost){background:var(--pri)!important;color:var(--onpri)!important;border-color:var(--pri)!important}
 .seg .btn.ghost{background:var(--card)!important;color:var(--fg)!important}
 .q-tile small{opacity:1!important;color:var(--mut)}
+
+/* v3.7.1 Hadith Audio */
+.ha-intro{margin:6px 2px 10px}
+.ha-pick .ha-row,.ha-now .ha-row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+.ha-lab{min-width:110px;font-weight:600;color:var(--fg)}
+.ha-pick select,.ha-now select{flex:1;min-width:0;padding:8px 10px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit}
+.ha-now select{flex:0 0 auto}
+.ha-lang{display:flex;gap:8px;flex:1 1 100%}.ha-lang .btn{flex:1;min-height:44px;white-space:nowrap}
+.ha-jump{display:flex;gap:8px;flex:1}.ha-jump .inp{flex:1;min-width:0}.ha-jump .btn{min-height:44px}
+.ha-ref{font-weight:700;margin:0 0 8px;color:var(--fg)}
+.ha-ctl{display:flex;gap:8px;justify-content:space-between}
+.ha-c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;padding:6px 4px;border-radius:16px;border:1px solid var(--bd);background:var(--card);color:var(--pri);font:inherit;font-size:12px}
+.ha-c:disabled{opacity:.45}
+.ha-main{background:var(--pri)!important;color:var(--onpri)!important;border-color:var(--pri)!important}
+.ha-main:disabled{opacity:.55}
+.ha-it{cursor:pointer}.ha-it.ha-on{outline:2px solid var(--pri);outline-offset:2px}
+.ha-it .tr{margin:6px 0 0;line-height:1.7}
+.ha-miss{opacity:1;cursor:default;border-style:dashed}
+.ha-nt{color:var(--mut)}
+#haMsg:empty,#haMsg[hidden]{display:none}
+.ha-entry{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0;min-height:44px}
