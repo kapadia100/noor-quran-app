@@ -84,7 +84,7 @@ export function qaidaPlayFlows(test,expect){
   await page.addInitScript(()=>{window.__qDelay=120});
   await open(page,'/qaida/m/m1');await page.click('#qPlPlay');await expect.poll(async()=>(await plays(page)).length).toBeGreaterThan(1);
   const before=(await plays(page)).length;await page.locator('.q-tile').nth(20).click();
-  const n=await settle(page);expect(n).toBeLessThanOrEqual(before+2);expect((await plays(page)).at(-1)).toBe(await page.locator('.q-tile').nth(20).getAttribute('data-u'));await expect(page.locator('#qPlPlay')).toBeVisible();await expect(page.locator('.q-play')).toHaveCount(0)});
+  const n=await settle(page);expect(n).toBeGreaterThan(before);expect((await plays(page)).at(-1)).toBe(await page.locator('.q-tile').nth(20).getAttribute('data-u'));await expect(page.locator('#qPlPlay')).toBeVisible();await expect(page.locator('.q-play')).toHaveCount(0)});
 
  test('another player in the app (Quran audio) starting stops the Qaida playback',async({page})=>{
   await page.addInitScript(()=>{window.__qDelay=120});

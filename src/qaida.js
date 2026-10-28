@@ -143,8 +143,8 @@ function lesson(C,tt,ur,I,les){
  C.setTitle(tt(les.en,les.ur));
  C.app().innerHTML=`<section class="dsec q-wrap" data-lesson="${les.id}" data-course="${cr.id}"><div class="q-top"><a class="q-back" href="${cr.href}">‹ ${tt('All lessons','تمام اسباق')}</a>${switchChip(tt)}</div>
   <div class="q-lh"><h2 class="h3">${les.n}. ${tt(les.en,les.ur)}</h2>${n?`<span class="q-p" id="qProg">${g}/${n}</span>`:''}</div>
-  ${playBar(les,tt,n)}
   ${mainLive(les)?liveBar(...mainLive(les),tt,true):''}
+  ${playBar(les,tt,n)}
   ${rule?`<div class="card q-rule"><p>${tt(rule[0],rule[1])}</p></div>`:''}
   <div class="card q-lp" id="qLp" hidden aria-live="polite"></div>
   <div id="qBody">${body(les,tt)}</div>
@@ -153,7 +153,7 @@ function lesson(C,tt,ur,I,les){
   </section>`;
  const root=C.app();
  let live=null;
- PL=mountPlayer({tt,les,cr,root,count:countOf,live:()=>!!live});
+ const mine=PL=mountPlayer({tt,les,cr,root,count:countOf,live:()=>!!live}); // this screen's own player (a late hashchange must not dispose the next lesson's)
  const note=t=>{const m=root.querySelector('#qTapMsg');if(m)m.textContent=t||''};
  root.querySelector('.q-wrap').addEventListener('click',e=>{
   const lb=e.target.closest('.q-lbtn');if(lb){PL?.stop();live?.stop();live=liveUI(tt,les,root,lb.dataset.live,lb.dataset.sel,h=>{live=h});return}
@@ -161,7 +161,7 @@ function lesson(C,tt,ur,I,les){
   if(live&&live.slots.includes(b)){live.tap(live.slots.indexOf(b));return}
   if(live){note(tt('Stop live reading first: the speaker would get into the microphone.','پہلے لائیو پڑھنا بند کریں: اسپیکر کی آواز مائیک میں چلی جائے گی۔'));return}
   unlock();note('');b.classList.add('on');playU(b.dataset.u).then(ok=>{b.classList.remove('on');const f=lastFail();if(!ok&&f&&b.dataset.u.split('|').includes(f.u))note(f.why==='offline'?tt('This sound is not saved for offline use yet. Connect once and play it to save it.','یہ آواز ابھی آف لائن کے لیے محفوظ نہیں۔ ایک بار انٹرنیٹ سے چلا کر محفوظ کریں۔'):tt('No recording for this one (silent).','اس کی ریکارڈنگ دستیاب نہیں (خاموش)۔'))})});
- window.addEventListener('hashchange',()=>{live?.stop();PL?.dispose()},{once:true});
+ window.addEventListener('hashchange',()=>{live?.stop();mine.dispose()},{once:true});
  const pr=root.querySelector('#qaPrac');if(pr)pr.onclick=()=>{PL?.stop();const pb=root.querySelector('#qPl');if(pb)pb.hidden=true;root.querySelector('#qTapMsg')?.remove();practice(C,tt,ur,I,les,root)};
 }
 

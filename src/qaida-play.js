@@ -84,7 +84,7 @@ export function mountPlayer(env){
  const mediaOff=()=>{if(!mset||!BR||!('mediaSession' in navigator))return;mset=false;try{navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState='none'}catch{/* ignore */}
   for(const a of['play','pause','stop','previoustrack','nexttrack'])try{navigator.mediaSession.setActionHandler(a,null)}catch{/* unsupported */}dispatchEvent(new Event('qs:media-restore'))};
  let idx=0,skip=0;
- const seek=d=>{if(state==='idle')return;skip=d;stop()}; // jump handled by the run loop (it sees the interruption and restarts at idx+d)
+ const seek=d=>{if(state==='idle')return;if(state==='paused'){resume();ui('playing')}skip=d;stop()}; // jump handled by the run loop (it sees the interruption and restarts at idx+d)
  async function itemRun(x,my){const us=x.dataset.u.split('|').filter(Boolean);if(!us.length)return false;
   for(const u of us){const ok=await one(u,my);if(my!==gen)return null;if(!ok)return false;await sleep(G(180/P.rate))}return true}
  async function go(start=0,auto=null){
@@ -100,12 +100,12 @@ export function mountPlayer(env){
     const nx=items[idx+1];if(nx)prefetch(nx.dataset.u.split('|'));
     const ok=await itemRun(x,my);
     if(mine!==run)return; // another play took over
-    if(ok===null){ // interrupted: a seek button, or something else took the player
-     if(skip){const d=skip;skip=0;idx=Math.max(0,Math.min(items.length-1,idx+d));my=begin();continue}
+    if(ok!==null){if(ok){res.played++;x.classList.remove('q-silent')}else{x.classList.add('q-silent');res.silent.push(label(x));x.dataset.silent='1'}
+     idx++;if(idx<items.length)await sleep(G(380/P.rate));if(mine!==run)return}
+    if(my!==gen){ // interrupted: a seek button (previous/next track), or something else took the player
+     if(skip){const d=skip;skip=0;idx=Math.max(0,Math.min(items.length-1,idx+(ok===null?d:d-1)));my=begin();continue}
      if(state==='paused')return;
-     clearMarks();ui('idle');say(tt('Stopped.','روک دیا۔'),res.silent);mediaOff();return}
-    if(ok){res.played++;x.classList.remove('q-silent')}else{x.classList.add('q-silent');res.silent.push(label(x));x.dataset.silent='1'}
-    idx++;if(idx<items.length)await sleep(G(380/P.rate));if(mine!==run||my!==gen)return}
+     clearMarks();ui('idle');say(tt('Stopped.','روک دیا۔'),res.silent);mediaOff();return}}
    if(P.repeat){idx=0;res.played=0;res.silent=[];continue}
    break}
   clearMarks();ui('idle');mediaOff();
