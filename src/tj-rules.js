@@ -4,7 +4,7 @@
 // IMPORTANT: this only COLOURS the text by the standard rules. The tutor cannot hear or grade tajweed.
 export const RULES=['madd_2','madd_246','madd_muttasil','madd_munfasil','madd_6','ghunnah','idghaam_ghunnah','idghaam_no_ghunnah','idghaam_shafawi','idghaam_mutajanisayn','idghaam_mutaqaribayn','ikhfa','ikhfa_shafawi','iqlab','qalqalah','hamzat_wasl','lam_shamsiyyah','silent'];
 /** ONE palette for every screen (tutor panel, surah reader, legend, tip card). Light/dark hexes; exposed as CSS variables --tjc-<group>. */
-export const PALETTE={madd:['#c2410c','#fb923c'],ghunnah:['#15803d','#4ade80'],idgham:['#0e7490','#22d3ee'],ikhfa:['#1d4ed8','#60a5fa'],iqlab:['#6d28d9','#a78bfa'],qalqalah:['#be185d','#f472b6'],silent:['#5b6270','#9ca3af']};
+export const PALETTE={madd:['#975125','#dd9c74'],ghunnah:['#3a6e34','#76ba6d'],idgham:['#216d74','#37bcc8'],ikhfa:['#375ebf','#96abe1'],iqlab:['#7d4abd','#bb9fdc'],qalqalah:['#ad3a66','#dd99b4'],silent:['#616656','#a8ae9f']};
 export const hex=(k,dark)=>PALETTE[k][dark?1:0];
 export const paletteCss=()=>`:root{${Object.entries(PALETTE).map(([k,v])=>`--tjc-${k}:${v[0]}`).join(';')}}[data-theme=dark]{${Object.entries(PALETTE).map(([k,v])=>`--tjc-${k}:${v[1]}`).join(';')}}`;
 export function installPalette(){if(typeof document==='undefined'||document.getElementById('tjpal'))return;const st=document.createElement('style');st.id='tjpal';st.textContent=paletteCss();document.head.append(st)}

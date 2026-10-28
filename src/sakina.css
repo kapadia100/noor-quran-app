@@ -126,3 +126,24 @@ nav button.on .ic{--icf:#E7C77A}
 .dsec{margin:6px -10px 0;padding:6px 12px 20px;border-radius:0}
 .stories{gap:10px!important}.story{width:72px!important}
 .stch{font-size:26px;transition:transform .15s}.story:active .stch{transform:scale(.94)}
+/* ================= READER & shared components ================= */
+.head{border-radius:60px 60px 18px 18px!important;border:1px solid var(--acc)!important;background:var(--card);box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px color-mix(in srgb,var(--acc) 45%,transparent),var(--sh)!important;padding:16px 14px 12px}
+.head .big{font-family:'Amiri Quran','Amiri',serif}
+.bism{color:var(--fg)}
+.ayah{border-radius:20px!important;background:var(--card);border:1px solid var(--bd)}
+.ayah.playing{border-color:var(--acc)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 45%,transparent)!important}
+.abar button,.abar .ab{color:var(--pri)}
+.tabs button,.seg button,.chips button,.chip{border-radius:999px!important}
+.tabs button.on,.seg button.on,.chips button.on,.chip.on{background:var(--pri)!important;color:var(--onpri)!important;border-color:var(--pri)!important}
+.tabs button:not(.on),.seg button:not(.on),.chip:not(.on){background:var(--card);color:var(--fg);border:1px solid var(--bd)}
+.list a,.mrc{border-radius:20px}
+.mi{background:var(--hl)!important;color:var(--pri)!important;border-radius:14px}
+.mi .ic{--icf:var(--pri)}
+.m-hero{background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 30%,var(--card)),var(--card))!important;color:var(--fg)!important;border-radius:26px!important}
+input[type=range]{accent-color:var(--pri)}input[type=checkbox],input[type=radio]{accent-color:var(--pri)}
+/* the big live-recitation mic: gradient + soft halo */
+#tutor.fab,.tut-fab,.live-fab,.mic-btn.big,.rl-mic{background:linear-gradient(160deg,#7F9470,#566B49)!important;color:#FFFBF2!important;box-shadow:0 0 0 7px rgba(156,170,138,.28),0 0 0 15px rgba(156,170,138,.14),0 14px 24px -8px rgba(60,80,45,.6)!important}
+.btn.live,.go-live,.rl-start{background:linear-gradient(160deg,#6F8660,#566B49)!important;color:#FFFBF2!important}
+[data-theme=dark] .btn.live,[data-theme=dark] .go-live,[data-theme=dark] .rl-start{background:#A9BA94!important;color:#1B2118!important}
+::selection{background:color-mix(in srgb,var(--brand) 45%,transparent)}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
