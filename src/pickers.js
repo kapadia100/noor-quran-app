@@ -22,7 +22,9 @@ export function defaultTranslator(list,lang){return translators(list,lang)[0]?.i
 /** The id to keep after the list loads: the stored one when it still exists, else the best match. */
 export function keepTranslation(list,id){return list.some(e=>e.identifier===id)?id:(defaultTranslator(list,'en')||list[0]?.identifier||id)}
 
-export function translatorLabel(e){const n=nameOf(e);return n+(e.name&&e.name!==n&&!/^[\s\-–—]*$/.test(e.name)?' — '+e.name:'')}
+// A few well-known translations are shown under the name people look for.
+const KNOWN={'ur.kanzuliman':['Kanz ul Iman — Ahmed Raza Khan','کنز الایمان — احمد رضا خان']};
+export function translatorLabel(e,ui='en'){const k=KNOWN[e.identifier];if(k)return ui==='ur'?k[1]:k[0];const n=nameOf(e);return n+(e.name&&e.name!==n&&!/^[\s\-–—]*$/.test(e.name)?' — '+e.name:'')}
 
 /** Reciter label: full English name plus the Arabic name when the data has one (Urdu UI puts Arabic first). */
 export function reciterLabel(e,ui='en'){const en=nameOf(e),ar=isArabicName(e.name)?e.name:'';if(!ar||ar===en)return en;return ui==='ur'?`${ar} — ${en}`:`${en} — ${ar}`}
@@ -35,6 +37,6 @@ export function reciters(list,sel,def='ar.alafasy'){
 
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 export const langOptions=(langs,sel,ui)=>langs.map(l=>`<option value="${esc(l)}" ${l===sel?'selected':''}>${esc(langName(l,ui))}</option>`).join('');
-export const translatorOptions=(list,lang,sel)=>translators(list,lang).map(e=>`<option value="${esc(e.identifier)}" ${e.identifier===sel?'selected':''}>${esc(translatorLabel(e))}</option>`).join('');
+export const translatorOptions=(list,lang,sel,ui='en')=>translators(list,lang).map(e=>`<option value="${esc(e.identifier)}" ${e.identifier===sel?'selected':''}>${esc(translatorLabel(e,ui))}</option>`).join('');
 export const reciterOptions=(list,sel,ui)=>reciters(list,sel).map(e=>`<option value="${esc(e.identifier)}" data-en="${esc(nameOf(e))}" ${e.identifier===sel?'selected':''}>${esc(reciterLabel(e,ui))}</option>`).join('');
 export {langRank};
