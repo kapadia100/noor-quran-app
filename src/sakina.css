@@ -1,7 +1,7 @@
 /* Sakina (Sage & Cream) — v3.7.0 design layer. Loaded last so it re-skins the legacy rules without changing any layout logic. */
 :root,[data-theme=light]{
- --bg:#F6F0E2;--fg:#2A3324;--card:#FFFBF2;--sec:#EDE6D3;--mut:#626959;--bd:#E2DAC4;--bd2:#C9C0A5;
- --pri:#586C4A;--onpri:#FFFBF2;--brand:#9CAA8A;--tile:#7C8F6C;--acc:#B8923A;--gold:#7E6428;--hl:#E4EAD6;
+ --bg:#F6F0E2;--fg:#2A3324;--card:#FFFBF2;--sec:#EDE6D3;--mut:#596050;--bd:#E2DAC4;--bd2:#C9C0A5;
+ --pri:#586C4A;--onpri:#FFFBF2;--brand:#9CAA8A;--tile:#647857;--acc:#B8923A;--gold:#7E6428;--hl:#E4EAD6;
  --good:#3A7335;--bad:#B3402F;--warn:#7E6428;--live:#C0503B;
  --r:22px;--ar:32px;--sh:0 6px 18px #3C462814;--sh2:0 14px 30px -12px rgba(60,70,40,.4);
  --f-head:'Fraunces','Noto Nastaliq Urdu',Georgia,serif;--f-ui:'DM Sans','Noto Nastaliq Urdu',system-ui,-apple-system,sans-serif;
@@ -55,7 +55,7 @@ body.is-home header button{width:42px!important;height:42px!important}
 .sbar input{color:var(--fg)!important}.sbar .ic{color:var(--mut)}
 .heart{background:var(--card)!important;border-radius:50%!important;color:var(--bad)!important}
 /* prayer hero */
-.pcard{border-radius:26px!important;padding:12px 14px!important;background:linear-gradient(155deg,#6F8660 0%,#566B49 100%)!important;color:#FFFBF2!important;box-shadow:0 18px 30px -18px rgba(60,80,45,.7)!important;overflow:hidden;position:relative}
+.pcard{border-radius:26px!important;padding:12px 14px!important;background:linear-gradient(155deg,#5F7552 0%,#4A5F3E 100%)!important;color:#FFFBF2!important;box-shadow:0 18px 30px -18px rgba(60,80,45,.7)!important;overflow:hidden;position:relative}
 [data-theme=dark] .pcard{background:linear-gradient(155deg,#4A5C3E,#33422B)!important}
 .pcard .mosque-art{opacity:.07}
 .pc-badge{background:rgba(255,251,242,.14)!important;color:#E7C77A!important;letter-spacing:.06em;text-transform:uppercase;font-size:10.5px!important;font-weight:700}
@@ -64,12 +64,12 @@ body.is-home header button{width:42px!important;height:42px!important}
 .pc-at{font-size:14px!important;font-weight:500}
 .pcard .cd{font-size:14px!important;font-weight:600!important;letter-spacing:0!important;color:#FFFBF2!important}.pc-cdw small{opacity:.8;color:#FFFBF2}
 .pc-bar{background:rgba(255,251,242,.28)!important}.pc-bar i{background:#E7C77A!important}
-.pc-arch{position:absolute;inset-inline-end:14px;top:38px;width:92px;height:96px;border-radius:46px 46px 12px 12px;background:linear-gradient(#9CAA8A,#7E9070);border:2px solid #D8B56A;display:grid;place-items:center;align-content:center;gap:2px;color:#FFFBF2;overflow:hidden}
+.pc-arch{position:absolute;inset-inline-end:14px;top:38px;width:92px;height:96px;border-radius:46px 46px 12px 12px;background:rgba(255,251,242,.14);border:2px solid #D8B56A;display:grid;place-items:center;align-content:center;gap:2px;color:#FFFBF2;overflow:hidden}
 .pc-arch::after{content:"";position:absolute;inset:5px;border-radius:40px 40px 8px 8px;border:1px solid rgba(255,251,242,.55);pointer-events:none}
 .pc-arch .ic{width:34px;height:34px;position:relative;--icf:#FFFBF2}.pc-arch .ar{font-size:17px!important;line-height:1.3!important;margin:0!important;color:#FFFBF2;position:relative}
 .pc-row{background:rgba(255,251,242,.12);border-radius:18px}
 .pc-i,.pc-i b,.pc-i .pc-t{color:#FFFBF2}.pc-i.cur{background:#FFFBF2!important;box-shadow:none!important;transform:none!important;border-radius:12px}.pc-i.cur,.pc-i.cur b,.pc-i.cur .pc-t,.pc-i.cur .pc-ic{color:#3E5033!important}
-.pc-i.nx{background:rgba(231,199,122,.2)!important;box-shadow:inset 0 0 0 1.5px rgba(231,199,122,.7)!important}
+.pc-i.nx{background:rgba(0,0,0,.16)!important;box-shadow:inset 0 0 0 1.5px rgba(231,199,122,.7)!important}
 /* Quran row */
 .hq-row{position:relative;overflow:hidden;border-radius:20px!important;background:var(--card)!important;color:var(--fg)!important;border:1px solid var(--acc)!important;box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4px color-mix(in srgb,var(--acc) 45%,transparent)!important}
 .hq-row .ti{border-radius:50%!important;background:var(--tile)!important;color:#FFFBF2!important}
@@ -86,14 +86,14 @@ body.is-home header button{width:42px!important;height:42px!important}
 .dhead{font:600 17px var(--f-head)!important;color:var(--fg)}
 .story{color:var(--fg)!important;font-size:11.5px!important}
 .stch{display:grid;place-items:center;width:100%;height:60px;margin:0 auto 6px;border-radius:44px 44px 12px 12px;background:var(--tile);color:#FFFBF2;position:relative;overflow:hidden;font-style:normal;box-shadow:var(--sh)}
-.stch .ic{width:26px;height:26px;--icf:#FFFBF2}.story:nth-child(even) .stch{background:#9A7A2E}[data-theme=dark] .story:nth-child(even) .stch{background:#8C6B22}
+.stch .ic{width:26px;height:26px;--icf:#FFFBF2}.story:nth-child(even) .stch{background:#8A6A25}[data-theme=dark] .story:nth-child(even) .stch{background:#8C6B22}
 /* duotone icons */
 .ic.duo .f{fill:var(--icf,var(--acc));fill-opacity:.26}
 /* tutor-card / datecard: cream cards instead of green gradients */
 .tutor-card{background:var(--card)!important;color:var(--fg)!important;border:1px solid var(--bd)!important;border-radius:22px!important;box-shadow:var(--sh)!important}
 .tutor-card .ti{background:var(--tile)!important;color:#FFFBF2!important;border-radius:50%!important}
 .tutor-card b{font:600 17px var(--f-head)}.tutor-card small{color:var(--mut)!important;opacity:1!important}.tutor-card .go{color:var(--pri)}
-.tutor-card.review{background:color-mix(in srgb,var(--acc) 14%,var(--card))!important}.tutor-card.review .ti{background:#9A7A2E!important}
+.tutor-card.review{background:color-mix(in srgb,var(--acc) 14%,var(--card))!important}.tutor-card.review .ti{background:#8A6A25!important}
 .q-hero-ar{background:color-mix(in srgb,var(--brand) 30%,var(--card))!important;border-radius:60px 60px 14px 14px!important;color:var(--fg)}
 .q-choice.q-last{border-color:var(--acc)!important}
 .datecard{background:linear-gradient(155deg,#6F8660,#566B49)!important;color:#FFFBF2!important;border-radius:22px!important}
@@ -162,3 +162,18 @@ input[type=range]{accent-color:var(--pri)}input[type=checkbox],input[type=radio]
 .pc-bar{margin:4px 0 6px!important}
 .pc-row{padding:3px}.pc-row .pc-i{padding-block:2px;min-height:0}
 .pc-i .pc-ic{width:18px;height:18px}.pc-i .pc-ic svg{width:18px;height:18px}
+
+/* ---- contrast hardening ---- */
+.pcard small,.pcard .pc-t small,.pc-i small{opacity:1!important;color:inherit}
+.pc-i b,.pc-i .pc-t{opacity:1!important}
+.dc-n,.dc-c{opacity:1!important;color:var(--mut)}
+.go{opacity:1!important;color:var(--mut)}
+.datecard,.datecard *{color:#FFFBF2}
+[data-theme=dark] .btn,[data-theme=dark] .btn.on,[data-theme=dark] .btn.pri,[data-theme=dark] .tabs a.on,[data-theme=dark] #player,[data-theme=dark] #player button,[data-theme=dark] .rc-chp.on,[data-theme=dark] .q-plo .rc-chp[aria-pressed=true],[data-theme=dark] .tile.on,[data-theme=dark] .tile.on .ic,[data-theme=dark] .pt.done,[data-theme=dark] .pt.missed,[data-theme=dark] .q-row.done .q-n,[data-theme=dark] .q-badge,[data-theme=dark] .mrc-st .btn.danger{color:var(--onpri)!important}
+[data-theme=dark] .btn.ghost,[data-theme=dark] .btn.sec,[data-theme=dark] .btn.alt{color:var(--fg)!important;background:var(--card)}
+.pc-badge{background:rgba(0,0,0,.2)!important;color:#F3DA9C!important}
+main small{opacity:1}
+.q-cell small,#rcTjk small,.rc-tjk small,.rc-panel small{opacity:1!important;color:var(--mut)}
+.seg .btn:not(.ghost){background:var(--pri)!important;color:var(--onpri)!important;border-color:var(--pri)!important}
+.seg .btn.ghost{background:var(--card)!important;color:var(--fg)!important}
+.q-tile small{opacity:1!important;color:var(--mut)}
