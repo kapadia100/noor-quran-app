@@ -1,20 +1,23 @@
 // Qaida audio: ONE player for the whole Qaida (taps, Hear & repeat, Play lesson, Play all), plus the "Play lesson" bar.
 // Rules: never two sounds at once; any other audio in the app (the Quran player) takes over and stops this one; playback never starts while
 // the microphone is live; a clip that cannot be loaded is reported as SILENT and is never counted as played.
+import{polishBlob}from'./clip-polish.js';
 const base=()=>import.meta.env.BASE_URL||'/';
 const BR=typeof window!=='undefined'&&typeof document!=='undefined';
 const WD=()=>BR&&navigator.webdriver&&!window.__qRealAudio;
 const G=ms=>WD()?ms*(window.__qGap??1):ms; // tests shrink the pauses between clips
 export const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let el=null,gen=0,paused=false,inClip=false,rate=1,fail=null,pend=null;const blobs=new Map();
-const AUD_CACHE='qsq-audio'; // Quran Safar Qaida clips (letters, vowels, words) kept for offline use; survives app updates
+const AUD_CACHE='qsq-audio',CLIPV='?v=366'; // CLIPV: change when the bundled letter clips are rebuilt, so devices that cached the old ones fetch the new ones // Quran Safar Qaida clips (letters, vowels, words) kept for offline use; survives app updates
 const elem=()=>{if(!el){el=new Audio();el.preload='auto';try{el.preservesPitch=true;el.webkitPreservesPitch=true}catch{/* older browsers */}}return el};
 /** Blob URL for a clip. Local clips and remote word clips are stored in Cache Storage the first time they are fetched, so they play offline afterwards. */
 async function srcOf(u){if(blobs.has(u))return blobs.get(u);
- const remote=/^https?:/.test(u),url=remote?u:base()+u;let r=null;
+ const remote=/^https?:/.test(u),url=remote?u:base()+u+CLIPV;let r=null;
+ if(!remote)caches.open(AUD_CACHE).then(c=>c.delete(base()+u)).catch(()=>{}); // drop the pre-3.6.6 copy
  try{const c=await caches.open(AUD_CACHE);r=await c.match(url);if(!r){const n=await fetch(url,remote?{mode:'cors'}:undefined);if(!n.ok)throw new Error('audio');c.put(url,n.clone()).catch(()=>{});r=n}}
  catch{if(!r){try{const n=await fetch(url,remote?{mode:'cors'}:undefined);if(!n.ok)throw new Error('audio');r=n}catch{if(remote&&navigator.onLine!==false)return u;throw new Error('audio')}}}
- const b=URL.createObjectURL(await r.blob());blobs.set(u,b);return b}
+ const raw=await r.blob(),pol=remote&&!WD()?await polishBlob(raw):null; // word clips: even loudness, no dead air, no clipping (letters are prepared at build time)
+ const b=URL.createObjectURL(pol||raw);blobs.set(u,b);return b}
 const SIL='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
 /** Call inside a tap: unlocks the one audio element for iOS/Safari so later clips (which start after an await) are allowed to play. */
 export function unlock(){if(!BR||WD())return;try{const a=elem();if(a.dataset.unlocked)return;a.dataset.unlocked='1';a.src=SIL;a.play().then(()=>{if(a.src===SIL)a.pause()}).catch(()=>{})}catch{/* ignore */}}
