@@ -4,7 +4,8 @@ import*as HL from './hadith-listen.js';
 import*as HA from './hadith-audio.js';
 import*as PK from './pickers.js';
 import * as PR from './prayer.js';
-import {hifzNext,surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRanges,nextPos,clampAdj,highlight,turn,AYAH_COUNTS,TRANS_AUDIO,AUDIO_MODES,ayahClips} from './lib.js';
+import * as QB from './qibla.js';
+import {hifzNext,surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRanges,nextPos,clampAdj,highlight,AYAH_COUNTS,TRANS_AUDIO,AUDIO_MODES,ayahClips} from './lib.js';
 const API='https://api.alquran.cloud/v1', HAD='https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1';
 const $=s=>document.querySelector(s);let app=$('#app');
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
@@ -93,12 +94,7 @@ function prayer(){setTitle(S.ui==='ur'?'اوقاتِ نماز':'Prayer Times');c
  $('#city').onchange=e=>{if(e.target.value){PR.setCity(e.target.value);re()}};$('#meth').onchange=e=>{P.method=e.target.value;re()};$('#madh').onchange=e=>{P.madhab=e.target.value;re()};
  $('#adh').onchange=e=>{P.adhan=e.target.checked;re()};$('#hm').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj-1);PR.saveP();prayer()};$('#hp').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj+1);PR.saveP();prayer()};
  app.querySelectorAll('[data-al]').forEach(c=>c.onchange=()=>{P.alerts[c.dataset.al]=c.checked;re()});$('#sched').onclick=re}
-function qibla(){setTitle(S.ui==='ur'?'قبلہ فائنڈر':'Qibla Finder');const P=PR.P,q=PR.qibla();
- app.innerHTML=`<div class="card c"><b>${I_('pin')} ${esc(P.city)}</b><br><small class="muted">${P.lat}, ${P.lng}</small></div><div class="compass"><div class="dial" id="dial"><span class="n">N</span><span class="e">E</span><span class="s">S</span><span class="w">W</span><div class="needle" style="transform:rotate(${q}deg)"><span>${I_('kaaba')}</span></div></div></div>
- <div class="c"><div class="deg">${q.toFixed(1)}°</div><small class="muted">${S.ui==='ur'?'شمال سے گھڑی کی سمت میں قبلہ کا زاویہ':'Qibla bearing from True North (clockwise)'}</small><p id="hd" class="muted">${S.ui==='ur'?'کمپاس کے لیے فون کو سیدھا رکھیں':'Hold your phone flat. Compass needs a device with a magnetometer.'}</p><button class="btn" id="cmp">${I_('qibla')} ${S.ui==='ur'?'کمپاس شروع کریں':'Start compass'}</button> <a class="btn" href="#/prayer">${I_('pin')} ${S.ui==='ur'?'لوکیشن بدلیں':'Change location'}</a></div>`;
- const on=e=>{let h=e.webkitCompassHeading??(e.absolute||e.type==='deviceorientationabsolute'?(360-e.alpha)%360:null);if(h==null)return;const d=$('#dial');if(!d)return off();d.style.transform=`rotate(${-h}deg)`;const diff=turn(q,h);$('#hd').textContent=`Heading ${h.toFixed(0)}° · ${Math.abs(diff)<5?'✓ Facing Qibla':(diff>0?'turn right ':'turn left ')+Math.abs(diff).toFixed(0)+'°'}`};
- const off=()=>{removeEventListener('deviceorientationabsolute',on);removeEventListener('deviceorientation',on)};
- $('#cmp').onclick=async()=>{if(!window.DeviceOrientationEvent){$('#hd').textContent='Compass not supported on this device. Use the bearing above.';return}try{if(DeviceOrientationEvent.requestPermission&&await DeviceOrientationEvent.requestPermission()!=='granted'){$('#hd').textContent='Motion permission denied. Enable it in Settings › Safari › Motion & Orientation.';return}}catch{$('#hd').textContent='Motion permission was not granted.';return}off();addEventListener('ondeviceorientationabsolute' in window?'deviceorientationabsolute':'deviceorientation',on)}}
+function qibla(){setTitle(S.ui==='ur'?'قبلہ فائنڈر':'Qibla Finder');QB.render(app,{P:PR.P,ur:S.ui==='ur',icon:I_,esc})}
 
 // ---------- Reader + audio ----------
 // One persistent <audio> element (required for iOS to keep playing on auto-advance / locked screen),

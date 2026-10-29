@@ -291,3 +291,30 @@ nav button{height:52px;min-height:52px}
 [data-theme=dark] .hgrid .fcard.feat-qibla{background:radial-gradient(120% 90% at 0% 0%,rgba(201,180,120,.25),transparent 60%),linear-gradient(150deg,#4a4630 0%,#26352a 100%)}
 /* v3.7.11 tighter gap: Quran Live row -> featured cards */
 .hero .hcards{margin-bottom:0!important}.hero{padding-bottom:8px!important}.hero+.dsec{margin-top:0!important;padding-top:0!important}.hero+.dsec>#homeBig{margin-top:6px!important}
+/* v3.7.12 Qibla Finder */
+.qf{--qg:#c9a54e;display:flex;flex-direction:column;align-items:center;gap:12px;padding-bottom:20px}
+.qf-loc{display:flex;justify-content:space-between;align-items:center;width:100%;gap:10px}.qf-loc>span:first-child{display:flex;flex-direction:column}.qf-loc small{display:block}
+.qf-km{text-align:end}.qf-km b{font-size:1.5em;color:var(--brand)}.qf-km small{font-size:.75em;color:var(--mut,#7a7f6e)}
+.qf-wrap{position:relative;width:min(84vw,320px);aspect-ratio:1;margin:18px 0 4px}
+.qf-dial{position:absolute;inset:0;transition:transform .12s linear;will-change:transform}.qf-dial svg{width:100%;height:100%;display:block;overflow:visible}
+.qring{fill:color-mix(in srgb,var(--brand) 10%,var(--card));stroke:color-mix(in srgb,var(--brand) 55%,transparent);stroke-width:3}
+.qs0{stop-color:var(--card)}.qs1{stop-color:color-mix(in srgb,var(--brand) 18%,var(--card))}.qin{stroke:color-mix(in srgb,var(--qg) 45%,transparent);stroke-width:1.2}
+.tk{stroke:color-mix(in srgb,var(--fg,#333) 45%,transparent);stroke-width:1.2}.tkM{stroke:var(--brand);stroke-width:2.4}
+.tn{font:600 10px system-ui;fill:color-mix(in srgb,var(--fg,#333) 60%,transparent);text-anchor:middle}
+.tc{font:700 17px system-ui;fill:var(--brand);text-anchor:middle}.tN{fill:#c0473a}
+.qray{stroke:var(--qg);stroke-width:2.5;stroke-dasharray:3 5;stroke-linecap:round;opacity:.8}
+.qf-kaaba{position:absolute;inset:0;pointer-events:none}.qf-kaaba>span{position:absolute;left:50%;top:-6%;width:46px;height:46px;margin-left:-23px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(160deg,#2b2b2b,#0f0f0f);border:2px solid var(--qg);box-shadow:0 0 0 4px color-mix(in srgb,var(--qg) 25%,transparent),0 6px 14px rgba(0,0,0,.3);color:var(--qg);transform-origin:50% 50%}
+.qf-kaaba svg{width:28px;height:28px}
+.qf-ptr{position:absolute;left:50%;top:-22px;width:0;height:0;margin-left:-13px;border:13px solid transparent;border-top:22px solid var(--brand);z-index:2;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));transition:border-color .25s}
+.qf-hub{position:absolute;inset:30%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--brand) 25%,transparent),0 6px 18px -6px rgba(0,0,0,.25);text-align:center;transition:box-shadow .3s,background .3s}
+.qf-hub .deg{font:700 clamp(26px,8vw,34px) var(--serif,Georgia,serif);color:var(--brand)}.qf-hub small{font-size:.7em;color:var(--mut,#7a7f6e)}
+.qf-hd{font-weight:700;font-size:1.15em;min-height:1.5em;margin:6px 0 0;text-align:center}
+.qf.near .qf-hd{color:var(--brand)}
+.qf.ok .qf-ptr{border-top-color:var(--qg);animation:qfb 1s ease-in-out infinite}
+.qf.ok .qf-hub{background:radial-gradient(circle,color-mix(in srgb,var(--qg) 30%,var(--card)),var(--card));box-shadow:0 0 0 3px var(--qg),0 0 28px 6px color-mix(in srgb,var(--qg) 55%,transparent);animation:qfp 1.4s ease-in-out infinite}
+.qf.ok .qf-hd,.qf.ok .qf-hub .deg{color:#a8842c}.qf.ok .qf-kaaba>span{box-shadow:0 0 0 4px var(--qg),0 0 24px 8px color-mix(in srgb,var(--qg) 60%,transparent)}
+@keyframes qfb{50%{opacity:.35}}@keyframes qfp{50%{box-shadow:0 0 0 3px var(--qg),0 0 40px 14px color-mix(in srgb,var(--qg) 35%,transparent)}}
+.qf-cal{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--qg) 16%,var(--card));font-size:.9em}.qf-cal svg{width:54px;flex:none;fill:none;stroke:var(--brand);stroke-width:2.5;stroke-dasharray:6 4;animation:qfc 1.2s linear infinite}@keyframes qfc{to{stroke-dashoffset:-20}}
+.qf-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}.qf-note{text-align:center;max-width:34em;line-height:1.5;font-size:.78em}
+[data-theme=dark] .qf{--qg:#d9b864}[data-theme=dark] .qf.ok .qf-hd,[data-theme=dark] .qf.ok .qf-hub .deg{color:#e6c877}
+@media(prefers-reduced-motion:reduce){.qf.ok .qf-ptr,.qf.ok .qf-hub,.qf-cal svg{animation:none}}
