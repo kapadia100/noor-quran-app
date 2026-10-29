@@ -1,11 +1,11 @@
 import {describe,it,expect} from 'vitest';
-import {hav,buildQuery,parse,dedupe,rank,fmtDist,gmapsDir,dirLinks,appleDir,cached,RAD,overpass,find,cacheGet,cachePut} from '../../src/mosques-core.js';
+import {hav,buildQuery,parse,dedupe,rank,fmtDist,gmapsDir,dirLinks,appleDir,cached,RAD,overpass,find,cacheGet,cachePut,PHOTON,NOMI,BUNDLE} from '../../src/mosques-core.js';
 const mem=()=>{const m={};return {getItem:k=>m[k]??null,setItem:(k,v)=>{m[k]=v},m}};
 describe('mosques core',()=>{
  it('haversine is correct (known distances)',()=>{expect(hav(0,0,0,0)).toBe(0);expect(hav(24.8607,67.0011,24.8607,67.0011)).toBe(0);
   expect(hav(0,0,0,1)/1000).toBeCloseTo(111.19,1);expect(hav(51.5074,-0.1278,48.8566,2.3522)/1000).toBeGreaterThan(342);expect(hav(51.5074,-0.1278,48.8566,2.3522)/1000).toBeLessThan(345);
   expect(hav(24.8607,67.0011,24.8607+0.018,67.0011)).toBeCloseTo(2001.5,-1)});
- it('query covers amenity+religion and building=mosque for nodes/ways/relations with centre',()=>{const q=buildQuery(24.86,67,2000);expect(q).toContain('nw["amenity"="place_of_worship"]["religion"="muslim"](around:2000,24.86000,67.00000)');expect(q).toContain('nw["building"="mosque"]');expect(q).not.toContain('nwr');expect(q).toContain('[timeout:12]');expect(RAD).toBe(2000);expect(q).toContain('out center');expect(q).not.toMatch(/out center \d/)});
+ it('query covers amenity+religion and building=mosque for nodes/ways/relations with centre',()=>{const q=buildQuery(24.86,67,2000);expect(q).toContain('nw["amenity"="place_of_worship"]["religion"="muslim"](around:2000,24.86000,67.00000)');expect(q).toContain('nw["building"="mosque"]');expect(q).not.toContain('nwr');expect(q).toContain('[timeout:40]');expect(RAD).toBe(2000);expect(q).toContain('out center');expect(q).not.toMatch(/out center \d/)});
  it('parses nodes, ways (centre) and drops entries without coordinates',()=>{const l=parse([{type:'node',id:1,lat:1,lon:2,tags:{name:'A'}},{type:'way',id:2,center:{lat:3,lon:4},tags:{}},{type:'relation',id:3,tags:{name:'x'}}]);expect(l.length).toBe(2);expect(l[1].named).toBe(false)});
  it('dedupes node+building, same-name nearby, keeps distinct',()=>{const l=parse([{type:'node',id:1,lat:24.8,lon:67,tags:{name:'Masjid Noor'}},{type:'way',id:2,center:{lat:24.80001,lon:67.00001},tags:{name:'Noor Mosque'}},{type:'way',id:3,center:{lat:24.80002,lon:67.00002},tags:{}},{type:'node',id:4,lat:24.81,lon:67,tags:{name:'Masjid Noor'}},{type:'node',id:5,lat:24.8,lon:67,tags:{name:'Masjid Noor'}}]);
   const d=dedupe(l);expect(d.map(x=>x.id).sort()).toEqual(['node1','node4']);expect(dedupe([...l,...l]).length).toBe(2)});
@@ -16,7 +16,7 @@ describe('mosques core',()=>{
  it('races mirrors: a slow first mirror does not delay a fast one',async()=>{const t=Date.now();const f=(u,{signal})=>u==='slow'?new Promise((_,rej)=>signal.addEventListener('abort',()=>rej(new Error('abort')))):Promise.resolve({ok:true,json:async()=>({elements:[{type:'node',id:9,lat:1,lon:1}]})});const r=await overpass('q',{fetchFn:f,mirrors:['slow','fast'],timeout:5000});expect(r.mirror).toBe('fast');expect(Date.now()-t).toBeLessThan(500)});
  it('serves the cache instantly',()=>{const st=mem();cachePut(24.86,67,2000,[{type:'node',id:1,lat:24.861,lon:67,tags:{name:'A'}}],st);const c=cached(24.8601,67,2000,st);expect(c.fromCache).toBe(true);expect(c.list.length).toBe(1);expect(cached(30,70,2000,st)).toBeNull()});
  it('falls over to the next mirror and retries',async()=>{let n=0;const f=async()=>{n++;if(n<3)throw new Error('x');return {ok:true,json:async()=>({elements:[{type:'node',id:1,lat:1,lon:1}]})}};const r=await overpass('q',{fetchFn:f,mirrors:['a','b','c'],wait:async()=>{}});expect(r.mirror).toBe('c');expect(n).toBe(3);
-  let m=0;const g=async()=>{m++;if(m<4)return {ok:false,status:504};return {ok:true,json:async()=>({elements:[]})}};expect((await overpass('q',{fetchFn:g,mirrors:['a','b'],wait:async()=>{}})).els).toEqual([]);expect(m).toBe(4)});
+  let m=0;const g=async()=>{m++;if(m<4)return {ok:false,status:504};return {ok:true,json:async()=>({elements:[]})}};expect((await overpass('q',{fetchFn:g,mirrors:['a','b'],rounds:2,wait:async()=>{}})).els).toEqual([]);expect(m).toBe(4)});
  it('times out slow mirrors',async()=>{const f=(u,{signal})=>new Promise((_,rej)=>signal.addEventListener('abort',()=>rej(new Error('abort'))));await expect(overpass('q',{fetchFn:f,mirrors:['a'],timeout:20,rounds:1,wait:async()=>{}})).rejects.toThrow()});
  it('caches and serves offline; reports offline/error states',async()=>{const st=mem();const els=[{type:'node',id:1,lat:24.8607,lon:67.0021,tags:{name:'Masjid A'}},{type:'node',id:2,lat:24.8607,lon:67.0411,tags:{name:'Far'}}];
   const f=async()=>({ok:true,json:async()=>({elements:els})});const a=await find(24.8607,67.0011,5000,{store:st,fetchFn:f,mirrors:['a'],rounds:1});expect(a.fromCache).toBe(false);expect(a.list.length).toBe(2);
@@ -25,4 +25,12 @@ describe('mosques core',()=>{
   await expect(find(10,10,2000,{store:mem(),online:false})).rejects.toMatchObject({code:'offline'});await expect(find(10,10,2000,{store:mem(),fetchFn:bad,mirrors:['a'],rounds:1})).rejects.toMatchObject({code:'error'});
   expect(cacheGet(24.8607,67.0011,6000,st)).toBeNull();cachePut(1,1,1000,[],st);expect(cacheGet(1,1,1000,st)).not.toBeNull()});
  it('empty result is an empty list, not an error',async()=>{const r=await find(0,0,1000,{store:mem(),fetchFn:async()=>({ok:true,json:async()=>({elements:[]})}),mirrors:['a'],rounds:1});expect(r.list).toEqual([])});
+ it('v3.7.7: overpass down -> keyless search fallbacks fill the list (filtered to 2 km)',async()=>{const parts=[];
+  const f=async u=>{if(u.startsWith(PHOTON))return {ok:true,json:async()=>({features:[{properties:{osm_type:'N',osm_id:5,name:'Masjid Bilal',osm_value:'place_of_worship'},geometry:{coordinates:[67.0717,24.8770]}},{properties:{osm_type:'W',osm_id:6,name:'Masjid Far',osm_value:'place_of_worship'},geometry:{coordinates:[67.2,24.9]}}]})};
+   if(u.startsWith(NOMI))return {ok:true,json:async()=>[{osm_type:'way',osm_id:7,lat:'24.8790',lon:'67.0700',name:'مسجد مکہ',category:'amenity',type:'place_of_worship'}]};return {ok:false,status:504}};
+  const r=await find(24.8766,67.0707,2000,{store:mem(),fetchFn:f,mirrors:['a'],rounds:1,wait:async()=>{},onPartial:p=>parts.push(p.list.length)});
+  expect(r.src).toBe('fallback');expect(r.list.map(x=>x.name)).toEqual(['Masjid Bilal','مسجد مکہ']);expect(parts.length).toBeGreaterThan(0)});
+ it('v3.7.7: everything online fails -> bundled list; outside the bundle -> error',async()=>{const f=async u=>u===BUNDLE?{ok:true,json:async()=>({m:[[24.877,67.071,'Masjid X','n1'],[25.2,67.5,'Far','n2']]})}:{ok:false,status:503};
+  const r=await find(24.8766,67.0707,2000,{store:mem(),fetchFn:f,mirrors:['a'],rounds:1,wait:async()=>{}});expect(r.bundled).toBe(true);expect(r.list.map(x=>x.name)).toEqual(['Masjid X']);
+  await expect(find(10,10,2000,{store:mem(),fetchFn:f,mirrors:['a'],rounds:1,wait:async()=>{}})).rejects.toMatchObject({code:'error'})});
 });
