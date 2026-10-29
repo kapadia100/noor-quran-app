@@ -98,5 +98,5 @@ for(const dark of [false,true])for(const ui of ['en','ur'])test(`layout at 390px
  for(let i=0;i<10;i++){if(i)await page.click('#dcFlip');await page.click('#dcNo')}await expect(page.locator('#dcSum')).toBeVisible();expect(await over()).toEqual([])});
 
 test('service worker: v41 precaches the dictionary data',async({request,baseURL})=>{
- const sw=await (await request.get(new URL('sw.js',baseURL).href)).text();expect(sw).toMatch(/qsafar-v46/);expect(sw).toContain('offline/x/dict.json');expect(sw).toContain('offline/x/dict-idx.json');
+ const sw=await (await request.get(new URL('sw.js',baseURL).href)).text();expect(sw).toMatch(/qsafar-v47/);expect(sw).toContain('offline/x/dict.json');expect(sw).toContain('offline/x/dict-idx.json');
  for(const f of ['offline/x/dict.json','offline/x/dict-idx.json']){const r=await request.get(new URL(f,baseURL).href);expect(r.ok()).toBe(true)}});
