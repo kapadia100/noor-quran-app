@@ -9,15 +9,14 @@ const box=(page,s)=>page.locator(s).first().boundingBox();
 
 test('home v2.9.3: search, then compact prayer card first, then the Quran row, then Quran Live, Qaida Live and Hifz Test side by side in one row, Daily stories lower',async({page})=>{
  await init(page,{dark:false},{s:2,a:1,name:'Al-Baqara'});await page.goto('./');await expect(page.locator('.pcard')).toBeVisible();
- const [sb,pc,q,t,dh,st,a,h]=await Promise.all(['.srow','.pcard','#homeQuran','#homeTutor','.dhead','#daily','#homeQaida','#homeHifz'].map(s=>box(page,s)));
+ const [sb,pc,q,t,a,h]=await Promise.all(['.srow','.pcard','#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));
  expect(sb.y).toBeLessThan(pc.y);expect(pc.y+pc.height).toBeLessThanOrEqual(q.y+1);expect(pc.height).toBeLessThan(170); // compact
  // the Quran row is full width above three equal cards: Quran Live, Qaida, Hifz
  expect(q.y+q.height).toBeLessThanOrEqual(t.y+1);expect(q.width).toBeGreaterThan(t.width*2.5);
  for(const b of [a,h]){expect(Math.abs(b.width-t.width)).toBeLessThanOrEqual(1);expect(Math.abs(b.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(b.y-t.y)).toBeLessThanOrEqual(1)}expect(t.x).toBeLessThan(a.x);expect(a.x).toBeLessThan(h.x);
  expect(t.height).toBeGreaterThan(80); // compact but still a card
- // stories are out of the header/hero and live in the Daily section below the cards
- expect(await page.locator('.hero .stories, .hero .story').count()).toBe(0);expect(st.y).toBeGreaterThan(t.y+t.height);expect(dh.y).toBeLessThan(st.y);
- await expect(page.locator('#daily .story')).toHaveCount(4);
+ // v3.7.11: the Daily row is gone (Ayah of the day card, Duas, Tasbeeh and Ramadan stay on Home)
+ await expect(page.locator('#daily, .dhead, .story')).toHaveCount(0);await expect(page.locator('#aotd')).toBeVisible();await expect(page.locator('#homeRamadan')).toBeVisible();
  // continue-reading bar is folded into the Quran card
  expect(await page.locator('.cont').count()).toBe(0);await expect(page.locator('#homeQuran')).toContainText('Continue 2:1');await expect(page.locator('#homeQuran')).toHaveAttribute('href','#/surah/2/1');
  // bottom navigation is still there
@@ -31,7 +30,8 @@ test('home v2.9.3: Urdu + dark keeps order, equal cards and no overflow',async({
  const [pc,q,t,a,h]=await Promise.all(['.pcard','#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));const vw=page.viewportSize().width;
  expect(pc.height).toBeLessThan(170);expect(Math.abs(a.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(h.width-t.width)).toBeLessThanOrEqual(1);
  expect(t.x).toBeGreaterThan(a.x);expect(a.x).toBeGreaterThan(h.x); // RTL: Quran Live on the right
- expect(q.x+q.width).toBeLessThanOrEqual(vw+1);expect(h.x).toBeGreaterThanOrEqual(-1);await expect(page.locator('#daily .story')).toHaveCount(4)});
+ expect(q.x+q.width).toBeLessThanOrEqual(vw+1);expect(h.x).toBeGreaterThanOrEqual(-1);await expect(page.locator('#daily')).toHaveCount(0);
+ for(const b of await page.locator('#homeBig a').evaluateAll(a=>a.map(x=>{const r=x.getBoundingClientRect();return [r.left,r.right]}))){expect(b[0]).toBeGreaterThanOrEqual(-1);expect(b[1]).toBeLessThanOrEqual(vw+1)}});
 test('home v2.9.3: weak-word review card (when due) sits under the cards',async({page})=>{
  await init(page);await page.goto('./');await expect(page.locator('#homeReview')).toHaveCount(0);
  await page.evaluate(()=>localStorage.setItem('qsWeak',JSON.stringify({'1:2:1':{key:'1:2:1',sn:1,a:2,k:1,t:'x',nw:'x',tr:'x',m:'x',au:'https://x.test/a.mp3',ph:[],pi:0,cn:[5,3],ci:0,miss:2,box:0,due:Date.now()-1000,last:Date.now()}})));

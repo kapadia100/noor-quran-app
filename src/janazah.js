@@ -1,0 +1,40 @@
+// v3.7.11 Namaz-e-Janazah: short method + the duas (Arabic with full harakat, Urdu, English); Arabic read by the device voice when available.
+import*as H from'./hadith-tts.js';
+/** Steps: [title en, title ur, how en, how ur, arabic|null] */
+export const STEPS=[
+ ['Intention & 1st takbeer','نیت اور پہلی تکبیر','Make the intention in the heart, say Allahu Akbar raising the hands, fold them, and read the Thana.','دل میں نیت کریں، ہاتھ اٹھا کر اللہ اکبر کہیں، ہاتھ باندھیں اور ثنا پڑھیں۔',
+  'سُبْحَانَكَ اللّٰهُمَّ وَبِحَمْدِكَ، وَتَبَارَكَ اسْمُكَ، وَتَعَالٰى جَدُّكَ، وَجَلَّ ثَنَاؤُكَ، وَلَا إِلٰهَ غَيْرُكَ'],
+ ['2nd takbeer','دوسری تکبیر','Say Allahu Akbar (without raising the hands) and read Durood Ibrahimi.','ہاتھ اٹھائے بغیر اللہ اکبر کہیں اور درودِ ابراہیمی پڑھیں۔',
+  'اَللّٰهُمَّ صَلِّ عَلٰى مُحَمَّدٍ وَّعَلٰى اٰلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلٰى إِبْرَاهِيْمَ وَعَلٰى اٰلِ إِبْرَاهِيْمَ، إِنَّكَ حَمِيْدٌ مَّجِيْدٌ. اَللّٰهُمَّ بَارِكْ عَلٰى مُحَمَّدٍ وَّعَلٰى اٰلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلٰى إِبْرَاهِيْمَ وَعَلٰى اٰلِ إِبْرَاهِيْمَ، إِنَّكَ حَمِيْدٌ مَّجِيْدٌ'],
+ ['3rd takbeer','تیسری تکبیر','Say Allahu Akbar and read the dua for the deceased (below: adult, boy or girl).','اللہ اکبر کہیں اور میت کے لیے دعا پڑھیں (نیچے: بالغ، لڑکا یا لڑکی)۔',null],
+ ['4th takbeer & salam','چوتھی تکبیر اور سلام','Say Allahu Akbar, then turn to the right and then to the left saying the salam.','اللہ اکبر کہیں، پھر دائیں اور بائیں سلام پھیریں۔',
+  'اَلسَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللّٰهِ']];
+/** Duas for the deceased: [title en, title ur, arabic, urdu, english] */
+export const DUAS=[
+ ['Adult (man or woman)','بالغ مرد و عورت',
+  'اَللّٰهُمَّ اغْفِرْ لِحَيِّنَا وَمَيِّتِنَا، وَشَاهِدِنَا وَغَائِبِنَا، وَصَغِيْرِنَا وَكَبِيْرِنَا، وَذَكَرِنَا وَأُنْثَانَا. اَللّٰهُمَّ مَنْ أَحْيَيْتَهٗ مِنَّا فَأَحْيِهٖ عَلَى الْإِسْلَامِ، وَمَنْ تَوَفَّيْتَهٗ مِنَّا فَتَوَفَّهٗ عَلَى الْإِيْمَانِ',
+  'اے اللہ! ہمارے زندوں اور ہمارے مُردوں کو، ہمارے حاضر اور ہمارے غائب کو، ہمارے چھوٹوں اور ہمارے بڑوں کو، ہمارے مردوں اور ہماری عورتوں کو بخش دے۔ اے اللہ! ہم میں سے جسے تو زندہ رکھے اسے اسلام پر زندہ رکھ، اور جسے تو موت دے اسے ایمان پر موت دے۔',
+  'O Allah, forgive our living and our dead, those present and those absent, our young and our old, our males and our females. O Allah, whoever of us You keep alive, keep him alive upon Islam, and whoever of us You take, take him upon faith.'],
+ ['Boy (child)','نابالغ لڑکا',
+  'اَللّٰهُمَّ اجْعَلْهُ لَنَا فَرَطًا، وَّاجْعَلْهُ لَنَا أَجْرًا وَّذُخْرًا، وَّاجْعَلْهُ لَنَا شَافِعًا وَّمُشَفَّعًا',
+  'اے اللہ! اس (بچے) کو ہمارے لیے آگے پہنچ کر سامان کرنے والا بنا، اسے ہمارے لیے اجر اور ذخیرہ بنا، اور اسے ہمارے حق میں سفارش کرنے والا اور جس کی سفارش قبول ہو، بنا۔',
+  'O Allah, make him for us one who goes ahead to prepare, make him for us a reward and a treasure, and make him for us an intercessor whose intercession is accepted.'],
+ ['Girl (child)','نابالغ لڑکی',
+  'اَللّٰهُمَّ اجْعَلْهَا لَنَا فَرَطًا، وَّاجْعَلْهَا لَنَا أَجْرًا وَّذُخْرًا، وَّاجْعَلْهَا لَنَا شَافِعَةً وَّمُشَفَّعَةً',
+  'اے اللہ! اس (بچی) کو ہمارے لیے آگے پہنچ کر سامان کرنے والی بنا، اسے ہمارے لیے اجر اور ذخیرہ بنا، اور اسے ہمارے حق میں سفارش کرنے والی اور جس کی سفارش قبول ہو، بنا۔',
+  'O Allah, make her for us one who goes ahead to prepare, make her for us a reward and a treasure, and make her for us an intercessor whose intercession is accepted.']];
+export function leave(){H.stop()}
+export function page(C,tt,ur,I){
+ H.stop();C.setTitle(tt('Namaz-e-Janazah','نمازِ جنازہ'));const app=C.app();let voice=null,cur=null;
+ const pb=id=>`<button class="btn jz-play" data-p="${id}" hidden>${I.icon('play')}<span>${tt('Listen','سنیں')}</span></button>`;
+ app.innerHTML=`<div class="jz" dir="${ur()?'rtl':'ltr'}"><div class="card"><p class="muted">${tt('Funeral prayer is said standing, with four takbeers, no ruku or sajda. Below is the order and what to read after each takbeer.','نمازِ جنازہ کھڑے ہو کر چار تکبیروں کے ساتھ پڑھی جاتی ہے، اس میں رکوع اور سجدہ نہیں۔ نیچے ترتیب اور ہر تکبیر کے بعد پڑھی جانے والی چیزیں ہیں۔')}</p><p class="muted" id="jzNoV" hidden>${tt('No Arabic voice on this device, so the duas are text only.','اس ڈیوائس پر عربی آواز دستیاب نہیں، اس لیے دعائیں صرف متن میں ہیں۔')}</p></div>
+ ${STEPS.map((s,i)=>`<section class="card jz-step" id="jzS${i}"><div class="rq-h"><b>${i+1}. ${tt(s[0],s[1])}</b>${s[4]?pb('s'+i):''}</div><p>${tt(s[2],s[3])}</p>${s[4]?`<p class="ar jz-ar" dir="rtl" lang="ar">${s[4]}</p>`:''}</section>`).join('')}
+ <h3 class="dhead jz-dh">${tt('Dua for the deceased (3rd takbeer)','میت کے لیے دعا (تیسری تکبیر)')}</h3>
+ ${DUAS.map((d,i)=>`<section class="card jz-dua" id="jzD${i}"><div class="rq-h"><b>${tt(d[0],d[1])}</b>${pb('d'+i)}</div><p class="ar jz-ar" dir="rtl" lang="ar">${d[2]}</p><p class="jz-ur" dir="rtl" lang="ur">${d[3]}</p><p class="jz-en" dir="ltr" lang="en">${d[4]}</p></section>`).join('')}</div>`;
+ const text=id=>id[0]==='s'?STEPS[+id.slice(1)][4]:DUAS[+id.slice(1)][2];
+ const paint=()=>app.querySelectorAll('.jz-play').forEach(b=>{const on=b.dataset.p===cur;b.innerHTML=`${I.icon(on?'pause':'play')}<span>${on?tt('Stop','روکیں'):tt('Listen','سنیں')}</span>`;b.closest('section').classList.toggle('rq-on',on)});
+ app.querySelectorAll('.jz-play').forEach(b=>b.onclick=()=>{const id=b.dataset.p;H.stop();if(cur===id){cur=null;paint();return}
+  cur=id;paint();try{dispatchEvent(new CustomEvent('qs:audio',{detail:'janazah'}))}catch{/* ignore */}
+  H.play({id:'jz:'+id,text:text(id),lang:'ara',voice,onEnd:()=>{if(cur===id){cur=null;if(app.isConnected)paint()}}})});
+ H.voicesReady().then(v=>{voice=H.pickVoice(v,'ara');if(!app.isConnected)return;app.querySelector('#jzNoV').hidden=!!voice;app.querySelectorAll('.jz-play').forEach(b=>b.hidden=!voice)});
+ window.__jz=1}

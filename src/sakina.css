@@ -266,3 +266,13 @@ nav button{height:52px;min-height:52px}
 .rq-a,.rq-d{cursor:pointer;border-radius:10px;transition:background .2s}.rq-n{color:var(--pri);font-size:.8em}
 .rq-on{background:color-mix(in srgb,var(--gold,#C9A24A) 26%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold,#C9A24A) 26%,transparent)}
 .rq-d{padding:8px 6px;border-top:1px solid var(--bd)}.rq-d:first-of-type{border-top:0}.rq-d p.ar{font-size:24px;line-height:2;margin:0}
+
+/* v3.7.11 Home: Daily row removed; big grid columns can't overflow on narrow phones */
+.hgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.hgrid .fcard{min-width:0;overflow:hidden}.hgrid .fcard b,.hgrid .fcard small{overflow-wrap:anywhere}
+.jz-ar{font-size:24px;line-height:2.1;margin:8px 0}.jz-ur{font-family:var(--ur,inherit);line-height:2;margin:4px 0}.jz-en{margin:4px 0;color:var(--mut)}.jz-play{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;min-height:36px}.jz-play .ic{width:18px;height:18px}.jz-dh{margin:14px 4px 6px}
+/* v3.7.11 big live countdown on the same line as the next prayer time */
+.pc-nx{display:flex!important;align-items:baseline;gap:8px;flex-wrap:nowrap;white-space:nowrap;padding-inline-end:clamp(78px,22vw,92px)}
+.pc-nx .pc-cdw{display:inline-flex!important;flex-direction:column!important;align-items:flex-end!important;margin:0!important;margin-inline-start:auto!important;gap:0;line-height:1}
+.pcard .pc-nx .cd{font:700 clamp(21px,6.2vw,27px)/1 var(--f-head)!important;font-variant-numeric:tabular-nums;letter-spacing:.5px!important;opacity:1!important}
+.pc-nx .pc-cdw small{font-size:11px;opacity:.85;margin-top:2px}
+@media(max-width:380px){.pc-nx b{font-size:28px!important}.pc-nx{gap:6px}.pc-at{font-size:12px!important}}

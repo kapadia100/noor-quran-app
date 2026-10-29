@@ -26,10 +26,10 @@ export const readStreak=()=>L.streak(LS.get('readDays',[]));
 // [route, icon, EN, UR, size] — 'L' = large 2-column card, otherwise compact
 const TILES=[['#/quran','quran','Quran','قرآن','L'],['#/mushaf','mushaf','Mushaf','مصحف','L'],['#/duas','duas','Duas & Azkar','دعائیں و اذکار','L'],['#/prayer','prayer','Prayer times','اوقاتِ نماز','L'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح','L'],['#/qibla','qibla','Qibla','قبلہ','L'],
  ['#/names','names','99 Names','اسماء الحسنیٰ'],['#/tracker','tracker','Prayer tracker','نماز ٹریکر'],['#/khatam','khatam','Khatam','ختم پلانر'],['#/hifz','hifz','Hifz','حفظ'],['#/calendar','calendar','Calendar','اسلامی کیلنڈر'],['#/ramadan','ramadan','Ramadan','رمضان'],
- ['#/zakat','zakat','Zakat','زکوٰۃ'],['#/mosques','mosques','Mosques','قریبی مساجد'],['#/hadith','hadith','Hadith','حدیث'],['#/notes','notes','Notes','نوٹس'],['#/search','search','Search','تلاش'],['#/settings','settings','Settings','ترتیبات']];
-const SUB={ruqyah:['Quranic ruqyah · play all','قرآنی رقیہ · پورا سنیں'],quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
+ ['#/zakat','zakat','Zakat','زکوٰۃ'],['#/mosques','mosques','Mosque Finder','مسجد فائنڈر'],['#/hadith','hadith','Hadith','حدیث'],['#/notes','notes','Notes','نوٹس'],['#/search','search','Search','تلاش'],['#/settings','settings','Settings','ترتیبات']];
+const SUB={janazah:['Method & duas','طریقہ اور دعائیں'],ruqyah:['Quranic ruqyah · play all','قرآنی رقیہ · پورا سنیں'],quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
 // v3.7.8 Home layout: big cards (last one full width so the odd count stays balanced), then a 3-up utility row, then Ramadan at the bottom
-const HOME_BIG=['#/mushaf','#/duas','#/tasbeeh','#/qibla','#/tracker','#/calendar','#/mosques','#/ruqyah'],HOME_SM=['#/search','#/notes','#/dict'];
+const HOME_BIG=['#/janazah','#/duas','#/mosques','#/qibla','#/tasbeeh','#/tracker','#/calendar','#/ruqyah'],HOME_SM=['#/search','#/notes','#/dict'];
 const T=h=>TILES.find(t=>t[0]===h)||MORE_EXTRA.find(t=>t[0]===h);
 const homeGrid=()=>{const big=HOME_BIG.map(T),last=big.length%2?big.length-1:-1;
  return `<div class="fgrid hgrid" id="homeBig">${big.map(([h,i,e,u],k)=>`<a class="fcard${k===last?' wide':''}" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
@@ -39,7 +39,6 @@ const grid=list=>{const big=list.filter(x=>x[4]),sm=list.filter(x=>!x[4]);
  return `<div class="fgrid">${big.map(([h,i,e,u])=>`<a class="fcard" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
  <div class="cgrid">${sm.map(([h,i,e,u])=>`<a class="ccard" href="${h}"><span class="fi">${I.icon(i)}</span><span>${tt(e,u)}</span></a>`).join('')}</div>`};
 function nowPrayer(){const n=new Date(),pt=PR.times(n);let cur='isha';for(const k of PR.PRAYERS)if(pt[k]<=n)cur=k;return cur}
-const STORIES=[['#aotd','quran','Ayah of day','آج کی آیت'],['#/duas/daily-dua','duas','Dua of day','آج کی دعا'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح'],['#/ramadan','ramadan','Ramadan','رمضان']];
 const PAR={fajr:'الفجر',sunrise:'الشروق',dhuhr:'الظهر',asr:'العصر',maghrib:'المغرب',isha:'العشاء'};
 const PIC={fajr:'p-fajr',sunrise:'p-sunrise',dhuhr:'p-dhuhr',asr:'p-asr',maghrib:'p-maghrib',isha:'p-isha'};
 /** Home prayer-times card: next prayer + countdown + progress, and a 6-prayer row with the current one emphasised. */
@@ -48,7 +47,7 @@ function pcard(nx){const n=new Date(),pt=PR.times(n),cur=nowPrayer(),y=PR.times(
  const cell=k=>{const[t,ap]=PR.fmt12(pt[k]).split(' ');const st=k===cur?'cur':(nx&&nx.key===k?'nx':(pt[k]<n&&k!==cur?'past':''));return `<div class="pc-i ${st}"><span class="pc-ic">${I.icon(PIC[k])}</span><b>${C.pn(k)}</b><span class="pc-t">${t}<small>${ap||''}</small></span></div>`};
  return `<a class="pcard" href="#/prayer" id="homePrayer" aria-label="${tt('Prayer times','اوقاتِ نماز')}">${I.mosqueArt}
   <div class="pc-top"><span class="pc-badge"><i></i>${nx?tt('Next prayer','اگلی نماز'):tt('Now','اب')+' · '+C.pn(cur)}</span><span class="pc-loc">${I.icon('pin')}${esc(PR.P.city||'')}</span></div>
-  ${nx?`<span class="pc-arch" aria-hidden="true">${I.icon(PIC[nx.key])}<span class="ar" lang="ar" dir="rtl">${PAR[nx.key]}</span></span><div class="pc-main"><div class="pc-nx"><b>${C.pn(nx.key)}</b><bdi dir="ltr" class="pc-at">${PR.fmt12(nx.time)}</bdi></div><div class="pc-cdw"><span class="cd" data-at="${+nx.time}"></span><small>${tt('Time left','باقی وقت')}</small></div></div>
+  ${nx?`<span class="pc-arch" aria-hidden="true">${I.icon(PIC[nx.key])}<span class="ar" lang="ar" dir="rtl">${PAR[nx.key]}</span></span><div class="pc-main"><div class="pc-nx"><b>${C.pn(nx.key)}</b><bdi dir="ltr" class="pc-at">${PR.fmt12(nx.time)}</bdi><span class="pc-cdw"><bdi dir="ltr" class="cd" data-at="${+nx.time}"></bdi><small>${tt('left','باقی')}</small></span></div></div>
   <div class="pc-bar" data-from="${+from}" data-at="${+nx.time}"><i style="--w:${pct.toFixed(1)}%"></i></div>`:''}
   <div class="pc-row">${PR.PRAYERS.map(cell).join('')}</div></a>`}
 export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر'));document.body.classList.add('is-home');const [AR,tr,list]=await Promise.all([C.arabic([L.ayahOfDay().s]),C.transFor(L.ayahOfDay().s),C.surahs()]);
@@ -63,22 +62,22 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
   ${(()=>{const n=dueItems(weakLoad()).length;return n?`<a class="tutor-card review" href="#/recite/review" id="homeReview"><span class="ti">★</span><div><b>${tt('Review weak words','کمزور الفاظ کی دہرائی')}</b><small>${tt(n+' word'+(n>1?'s':'')+' ready to practice',n+' الفاظ مشق کے لیے تیار')}</small></div><span class="go">›</span></a>`:''})()}
  </section>
  <section class="dsec">
- <div class="dhead">${tt('Daily','روزانہ')}</div>
- <div class="stories" id="daily">${STORIES.map(([h,img,e,u])=>`<a class="story" href="${h}"><i class="stch">${I.icon(img)}</i><span>${tt(e,u)}</span></a>`).join('')}</div>
  ${plan?`<a class="card kcard" href="#/khatam">${I.icon('khatam')} ${tt('Khatam','ختم')}: <b>${plan.pct}%</b> · ${tt('today','آج')} ${plan.perDay} ${tt('pages','صفحات')}<div class="prog"><i style="width:${plan.pct}%"></i></div></a>`:''}
  ${homeGrid()}
  <div class="card aotd" id="aotd">${I.corner}<small class="muted">${tt('Ayah of the day','آج کی آیت')} · ${esc(list[s-1].englishName)} ${s}:${a}</small><p class="ar" dir="rtl" lang="ar">${esc(L.ayahText(s,a,AR[s-1][a-1]))}</p><p class="tr" dir="${tr.edition.direction==='rtl'?'rtl':'ltr'}">${esc(tr.texts[a-1]||'')}</p>
  <div class="bar"><a class="btn" href="#/surah/${s}/${a}">${I.icon('quran')} ${tt('Open','کھولیں')}</a><button class="btn ghost" id="aShare">${I.icon('share')} ${tt('Share image','تصویر شیئر')}</button></div></div>
  </section>`;
  $('#aShare').onclick=()=>shareAyah(s,a);$('#hs').onsubmit=e=>{e.preventDefault();location.hash='#/search/'+encodeURIComponent($('#hq').value)};
- app().querySelector('a[href="#aotd"]').onclick=e=>{e.preventDefault();$('#aotd').scrollIntoView({behavior:'smooth',block:'center'})};C.tick()}
+C.tick()}
 const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
-const MORE_EXTRA=[['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/ruqyah','ruqyah','Ruqyah Shariah','رقیہ شرعیہ'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+const MORE_EXTRA=[['#/janazah','janazah','Namaz-e-Janazah','نمازِ جنازہ'],['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/ruqyah','ruqyah','Ruqyah Shariah','رقیہ شرعیہ'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
 export const ruqyah=()=>import('./ruqyah.js').then(m=>m.page(C,tt,ur,I));
+export const janazah=()=>import('./janazah.js').then(m=>m.page(C,tt,ur,I));
+export const janazahLeave=()=>import('./janazah.js').then(m=>m.leave()).catch(()=>{});
 export const ruqyahLeave=()=>import('./ruqyah.js').then(m=>m.leave()).catch(()=>{});
 export const dict=(a,b)=>import('./dict.js').then(m=>m.dictPage(C,tt,ur,I,a,b));
 export const dictRank=(s,a,w)=>import('./dict.js').then(m=>m.rankOf(C,s,a,w));
@@ -279,7 +278,7 @@ export function zakat(){C.setTitle(tt('Zakat calculator','زکوٰۃ کیلکو�
 // ---------- nearby mosques (OpenStreetMap data, list only, no map) ----------
 // v3.7.6: fixed 2 km radius; saved results for this place render instantly, then a raced refresh; follows the user when they move (GPS mode)
 let mqWatch=null;
-export async function mosques(){C.setTitle(tt('Nearby mosques','قریبی مساجد'));const M=await import('./mosques-core.js');const rad=M.RAD;let seq=0;
+export async function mosques(){C.setTitle(tt('Mosque Finder','مسجد فائنڈر'));const M=await import('./mosques-core.js');const rad=M.RAD;let seq=0;
  app().innerHTML=`<div class="bar mq-bar"><button class="btn" id="mGps">${I_('gps')} ${tt('Use my location','میری لوکیشن')}</button><small class="muted mq-rad">${tt('Within 2 km','2 کلومیٹر کے اندر')}</small></div>
  <small class="muted" id="mWhere">${I_('pin')} ${esc(PR.P.city)}</small><p class="muted" id="mNote" hidden></p><ul class="list" id="ml" aria-live="polite"><li class="muted">${C.t('loading')}</li></ul>`;
  const note=(s,cls)=>{const n=$('#mNote');if(!n)return;n.textContent=s||'';n.hidden=!s;n.className='muted '+(cls||'')};
