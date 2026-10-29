@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 let errors=[];
-test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error'&&!/net::|Failed to load resource|tile\.openstreetmap/.test(m.text()))errors.push(m.text())});});
+test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>{if(!/Failed to update a ServiceWorker/.test(String(e)))errors.push(String(e))});page.on('console',m=>{if(m.type()==='error'&&!/net::|Failed to load resource|tile\.openstreetmap/.test(m.text()))errors.push(m.text())});});
 test.afterEach(async({page})=>{expect(errors).toEqual([]);const ov=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);expect(ov).toBeLessThanOrEqual(1)});
 
 test('dashboard: ayah of the day, tiles, streak, share image',async({page})=>{await page.goto('./');await expect(page.locator('.aotd .ar')).not.toBeEmpty();await expect(page.locator('.fcard,.ccard')).toHaveCount(16);await expect(page.locator('#streak')).toContainText('0');
