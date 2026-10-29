@@ -63,7 +63,7 @@ test('hifz test: finishing a surah offers the next one, repeat, choose another',
  await page.goto('./#/hifztest');await page.click('.hz-s[data-s="114"]');await expect.poll(()=>page.evaluate(()=>window.__recite.raw()?.listening)).toBe(true);await sayAll(page);
  await expect(page.locator('#sNx2')).toContainText('Start again: Al-Faatiha');await page.click('#sPick');await expect(page).toHaveURL(/#\/hifztest$/);await expect(page.locator('#recite')).toHaveCount(0);
  await page.click('.hz-s[data-s="2"]');await expect(page.locator('#recite')).toBeVisible();await page.click('.rc-x');
- await page.goto('./#/surah/7');await expect(page.locator('#recT')).toBeVisible();await expect(page.locator('#toHzT')).toBeVisible()});
+ await page.goto('./#/surah/7');await expect(page.locator('#recT')).toBeVisible();await expect(page.locator('#toHzT')).toHaveCount(0)});
 
 test('home live cards still work after a session on later surahs',async({page})=>{
  await live(page,3);await page.click('.rc-x');

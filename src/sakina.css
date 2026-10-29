@@ -216,3 +216,11 @@ main small{opacity:1}
 .hd-ct{min-width:64px;text-align:center}
 
 .hd-sp{height:84px}
+
+/* v3.7.3 surah reader tool row: three equal, centred tiles in one row */
+.rtiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}
+.rtiles .tile{min-height:72px;height:100%;justify-content:center;align-items:center;gap:7px;padding:10px 6px;box-sizing:border-box;text-align:center;border-radius:16px}
+.rtiles .tile .ic{width:24px;height:24px;margin:0 auto}
+.rtiles .tile b{font-size:12px;line-height:1.25;width:100%;display:block;-webkit-line-clamp:unset;overflow:visible;text-align:center;overflow-wrap:break-word}
+:lang(ur) .rtiles .tile{padding-top:10px}:lang(ur) .rtiles .tile b{font-size:13px;line-height:1.6}
+@media (max-width:340px){.rtiles{gap:6px}.rtiles .tile b{font-size:11px}}

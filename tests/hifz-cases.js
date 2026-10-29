@@ -13,7 +13,23 @@ const start=async(page,{tr=false}={})=>{await page.goto('./#/hifztest/1');await 
 test('Hifz Test has its own More tile and a Home card',async({page})=>{
  await page.goto('./#/more');await expect(page.locator('a[href="#/hifztest"]')).toBeVisible();
  await page.goto('./#/');await expect(page.locator('#app a#homeHifz[href="#/hifztest"]')).toHaveCount(1);
- await page.goto('./#/surah/1');await expect(page.locator('#toHzT')).toBeVisible()});
+ await page.goto('./#/surah/1');await expect(page.locator('#toHzT')).toHaveCount(0)});
+test('v3.7.3: reader tool row has only Play, Word by word, Tajweed; removed entries stay reachable',async({page})=>{
+ await page.goto('./#/surah/1');await expect(page.locator('.rtiles .tile')).toHaveCount(3);
+ for(const id of ['#playAll','#wbwT','#tjT'])await expect(page.locator('.rtiles '+id)).toBeVisible();
+ for(const id of ['#hideT','#toMushaf','#toHzT','.rtiles a[href="#/hifz"]'])await expect(page.locator(id)).toHaveCount(0);
+ const bx=await page.locator('.rtiles .tile').evaluateAll(a=>a.map(e=>{const r=e.getBoundingClientRect();return[Math.round(r.top),Math.round(r.width),Math.round(r.height)]}));
+ expect(new Set(bx.map(b=>b[0])).size).toBe(1);expect(new Set(bx.map(b=>b[1])).size).toBe(1);expect(new Set(bx.map(b=>b[2])).size).toBe(1);
+ await page.goto('./#/more');await expect(page.locator('a[href="#/mushaf"]').first()).toBeVisible();await expect(page.locator('a[href="#/hifz"]').first()).toBeVisible();await expect(page.locator('a[href="#/hifztest"]').first()).toBeVisible();
+ await page.goto('./#/mushaf/2');await expect(page.getByRole('spinbutton')).toBeVisible();
+ await page.goto('./#/hifz');await expect(page.locator('#hH')).toBeVisible();
+ await page.goto('./#/hifztest/2');await expect(page.locator('.hz-s[data-s="2"], #recite').first()).toBeVisible()});
+test('v3.7.3: Hide text from the Hifz page still blurs that surah, but is not sticky',async({page})=>{
+ await page.goto('./#/hifz');await page.selectOption('#hS','112');await page.check('#hH');await page.click('#hGo');
+ await expect(page.locator('#ays.hide-ar')).toHaveCount(1);await page.goto('./#/surah/1');await expect(page.locator('#ays .ar').first()).toBeVisible();await expect(page.locator('#ays.hide-ar')).toHaveCount(0)});
+test('v3.7.3: stale hide-text setting no longer blurs the reader',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('settings',JSON.stringify({hifzHide:true,ui:'en'})));
+ await page.goto('./#/surah/1');await expect(page.locator('#ays.hide-ar')).toHaveCount(0);await expect(page.locator('#ays .ar').first()).toBeVisible()});
 
 test('correct recitation reveals the words; nothing is shown before',async({page})=>{
  await start(page);
