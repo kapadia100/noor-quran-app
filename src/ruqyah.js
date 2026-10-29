@@ -31,16 +31,20 @@ export async function page(C,tt,ur,I){
  const duas=`<section class="card rq-sec rq-duas" id="rqDuas"><div class="rq-h"><b>${tt('Prophetic ruqyah duas','مسنون دعائیں')}</b></div>${DUAS.map((d,j)=>`<div class="rq-d" data-i="${d0+j}" role="button" tabindex="0"><p class="ar" dir="rtl" lang="ar">${d[0]}</p><small class="muted">${d[1]>1?tt(`${d[1]} times · `,`${d[1]} بار · `):''}${tt(d[2],d[3])}</small></div>`).join('')}<p class="muted rq-nov" id="rqNoV" hidden>${tt('Your device has no Arabic voice, so these duas are shown as text and are not played.','آپ کے آلے میں عربی آواز نہیں، اس لیے یہ دعائیں صرف متن کے طور پر ہیں۔')}</p></section>`;
  app.innerHTML=`<div class="rq" dir="${ur()?'rtl':'ltr'}"><div class="card rq-top"><p class="muted">${tt('The Quranic ruqyah verses with the prophetic duas. Press Play to hear it all in Arabic; tap any ayah to start from there.','قرآنی آیاتِ رقیہ اور مسنون دعائیں۔ پوری عربی سننے کے لیے سنیں دبائیں، یا کسی بھی آیت کو چھو کر وہیں سے شروع کریں۔')}</p>
  <div class="rq-ctl"><button class="btn rq-play" id="rqPlay">${I.icon('play')}<span>${tt('Play all','پورا سنیں')}</span></button><button class="btn ghost" id="rqStop" disabled>${tt('Stop','بند')}</button></div>
- <div class="prog" aria-hidden="true"><i id="rqBar" style="width:0%"></i></div><p class="muted rq-st" id="rqSt" role="status">${tt(`${d0} ayahs · ${RQ.length} passages`,`${d0} آیات · ${RQ.length} حصے`)}</p></div>${sec}${duas}</div>`;
+ <div class="prog" aria-hidden="true"><i id="rqBar" style="width:0%"></i></div><p class="muted rq-st" id="rqSt" role="status">${tt(`${d0} ayahs · ${RQ.length} passages`,`${d0} آیات · ${RQ.length} حصے`)}</p></div>${sec}${duas}<div class="rq-mini" id="rqMini" hidden><button class="btn" id="rqMP" aria-label="play/pause"></button><span id="rqMS"></span><div class="prog"><i id="rqMB"></i></div></div></div>`;
  const q=s=>app.querySelector(s),st={i:-1,state:'idle'},urls={};let voice=null;
  H.voicesReady().then(v=>{voice=H.pickVoice(v,'ara');if(app.isConnected)q('#rqNoV').hidden=!!voice});
  const getUrl=async s=>urls[s]??=C.j(`${API}/surah/${s}/${C.S.reciter||'ar.alafasy'}`).then(r=>r.ayahs.map(x=>x.audio));
- const paint=()=>{const on=st.state==='playing'||st.state==='loading';q('#rqPlay').innerHTML=`${I.icon(on?'pause':'play')}<span>${on?tt('Pause','وقفہ'):st.state==='paused'?tt('Resume','جاری رکھیں'):tt('Play all','پورا سنیں')}</span>`;
+ let paint=()=>{const on=st.state==='playing'||st.state==='loading';q('#rqPlay').innerHTML=`${I.icon(on?'pause':'play')}<span>${on?tt('Pause','وقفہ'):st.state==='paused'?tt('Resume','جاری رکھیں'):tt('Play all','پورا سنیں')}</span>`;
   q('#rqStop').disabled=st.state==='idle';q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))/seq.length*100)}%`;
   app.querySelectorAll('.rq-on').forEach(e=>e.classList.remove('rq-on'));
   if(st.i>=0&&st.state!=='idle'){const e=app.querySelector(`[data-i="${st.i}"]`);e?.classList.add('rq-on');const x=seq[st.i];
    q('#rqSt').textContent=x.k==='q'?`${list[x.s-1].name} ${arN(x.a)} · ${st.i+1} / ${seq.length}`:`${tt('Dua','دعا')} ${x.j+1} · ${st.i+1} / ${seq.length}`}};
+ const top=q('.rq-top'),mini=q('#rqMini');let topVis=true;
+ const mp=()=>{mini.hidden=topVis||st.state==='idle';q('#rqMP').innerHTML=I.icon(st.state==='paused'?'play':'pause');q('#rqMS').textContent=q('#rqSt').textContent;q('#rqMB').style.width=q('#rqBar').style.width};
+ try{new IntersectionObserver(([e])=>{topVis=e.isIntersecting;mp()}).observe(top)}catch{/* old browsers: no mini player */}
  const end=()=>{st.state='idle';st.i=-1;paint();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
+ const paint0=paint;paint=()=>{paint0();mp()};
  const go=async i=>{if(i>=seq.length||(seq[i].k==='d'&&!voice)){end();return}
   st.i=i;st.state='loading';paint();const e=app.querySelector(`[data-i="${i}"]`);e?.scrollIntoView({block:'center',behavior:'smooth'});const x=seq[i];
   try{dispatchEvent(new CustomEvent('qs:audio',{detail:'ruqyah'}))}catch{/* ignore */}
@@ -54,6 +58,7 @@ export async function page(C,tt,ur,I){
   if(st.state==='playing'||st.state==='loading'){if(x?.k==='d')H.pause();else au.pause();st.state='paused';paint()}
   else if(st.state==='paused'){if(x?.k==='d')H.resume();else au.play().catch(()=>{});st.state='playing';paint()}
   else go(0)};
+ q('#rqMP').onclick=()=>q('#rqPlay').click();
  q('#rqStop').onclick=()=>{au.pause();H.stop();st.state='idle';st.i=-1;paint()};
  const pick=e=>{const el=e.target.closest('[data-i]');if(!el)return;au.pause();H.stop();go(+el.dataset.i)};
  app.addEventListener('click',e=>{if(e.target.closest('.rq-a,.rq-d'))pick(e)});

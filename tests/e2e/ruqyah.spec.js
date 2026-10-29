@@ -29,3 +29,10 @@ test('Play all plays every ruqyah ayah in order with highlight, progress, pause/
  // tap an ayah to start there, then stop
  await page.locator('#rq5 .rq-a').first().click();await expect.poll(()=>page.evaluate(()=>window.__played.at(-1))).toBe('https://audio.test/2/285.mp3');
  await page.click('#rqStop');await expect(page.locator('.rq-on')).toHaveCount(0)});
+test('v3.7.10: Play card sits in normal flow above Al-Fatiha; mini player appears only when scrolled past while playing',async({page})=>{
+ await mock(page);await page.addInitScript(()=>{window.__dur=1500});await page.goto('./#/ruqyah');
+ const t=await page.locator('.rq-top').boundingBox(),f=await page.locator('#rq0').boundingBox();expect(t.y+t.height).toBeLessThanOrEqual(f.y+1);
+ expect(await page.locator('.rq-top').evaluate(e=>getComputedStyle(e).position)).toBe('static');await expect(page.locator('#rqMini')).toBeHidden();
+ await page.click('#rqPlay');await page.locator('#rq6').scrollIntoViewIfNeeded();await page.evaluate(()=>document.querySelector('#rq6').scrollIntoView());await expect(page.locator('#rqMini')).toBeVisible();
+ await page.click('#rqMP');await expect(page.locator('#rqPlay')).toContainText(/Resume/);
+ await page.evaluate(()=>document.querySelector('.rq-top').scrollIntoView());await expect(page.locator('#rqMini')).toBeHidden()});
