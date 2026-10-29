@@ -8,44 +8,44 @@ test.afterEach(async({page})=>{expect(errors).toEqual([]);const ov=await page.ev
 const weak=()=>({'1:2:1':{key:'1:2:1',sn:1,a:2,k:1,t:'ٱلْحَمْدُ',nw:'الحمد',tr:'al-hamdu',m:'praise',au:'https://x.test/a.mp3',ph:[],pi:0,cn:[5,3],ci:0,miss:2,box:0,due:Date.now()-1000,last:Date.now()}});
 
 test('more: Recite & Learn hub lists every tutor feature at the top',async({page})=>{
- await page.goto('./#/more');const hub=page.locator('#moreRecite');await expect(hub).toBeVisible();
- await expect(hub.locator('.mrc-h b')).toHaveText('Recite & Learn');
+ await page.goto('./#/more');await page.click('#moreRecite > summary');const hub=page.locator('#moreRecite');await expect(hub).toBeVisible();
+ await expect(hub.locator('.mrc-h b').first()).toHaveText('Recite & Learn');
  await expect(page.locator('#mrcPick')).toHaveAttribute('href','#/recite');
  await expect(page.locator('#mrcReview')).toHaveAttribute('href','#/recite/review');
  await expect(page.locator('#mrcDrill')).toBeDisabled();
  await expect(page.locator('#mrcHow')).toBeVisible();await expect(page.locator('#mdlSt')).toHaveText(/Not downloaded/);
- const hubTop=(await hub.boundingBox()).y,gridTop=(await page.locator('.dsec .fgrid, .dsec .cgrid').first().boundingBox()).y;expect(hubTop).toBeLessThan(gridTop);
+ const hubTop=(await hub.boundingBox()).y,gridTop=(await page.locator('.dsec .mlist, .dsec .fgrid, .dsec .cgrid').first().boundingBox()).y;expect(hubTop).toBeLessThan(gridTop);
  // header icon + Home card still exist
  await expect(page.locator('#tutor')).toBeVisible();
  await page.click('#mrcPick');await expect(page.locator('h1,.pagetitle,#ptitle').first()).toBeVisible();expect(page.url()).toContain('#/recite');
 });
 test('more: how-it-works explainer opens and links to the FAQ',async({page})=>{
- await page.goto('./#/more');await page.click('#mrcHow summary');
+ await page.goto('./#/more');await page.click('#moreRecite > summary');await page.click('#mrcHow summary');
  await expect(page.locator('#mrcHow')).toContainText('Stuck help');await expect(page.locator('#mrcHow')).toContainText('Pronunciation drill');
  await page.click('#mrcHow a[href="#/help"]');expect(page.url()).toContain('#/help')});
 test('more: weak words count, review link, clear weak list needs a second tap',async({page})=>{
  await page.addInitScript(w=>{if(!localStorage.qsWeak)localStorage.setItem('qsWeak',JSON.stringify(w))},weak());
- await page.goto('./#/more');
+ await page.goto('./#/more');await page.click('#moreRecite > summary');
  await expect(page.locator('#mrcReview')).toContainText('1 saved');await expect(page.locator('#weakN')).toHaveText('1');await expect(page.locator('#mrcDrill')).toBeEnabled();
  await page.click('#weakClr');await expect(page.locator('#weakClr')).toContainText(/again/i);expect(await page.evaluate(()=>!!localStorage.qsWeak)).toBe(true);
  await page.click('#weakClr');await expect(page.locator('#weakN')).toHaveText('0');expect(await page.evaluate(()=>localStorage.qsWeak||null)).toBeNull();
  await expect(page.locator('#mrcDrill')).toBeDisabled()});
 test('more: practice drill starts straight from the More tab',async({page})=>{
  await page.addInitScript(w=>{if(!localStorage.qsWeak)localStorage.setItem('qsWeak',JSON.stringify(w))},weak());
- await page.goto('./#/more');await page.click('#mrcDrill');await expect(page.locator('#recite')).toBeVisible()});
+ await page.goto('./#/more');await page.click('#moreRecite > summary');await page.click('#mrcDrill');await expect(page.locator('#recite')).toBeVisible()});
 test('more: model status shows downloaded and delete removes it after confirm',async({page})=>{
  await page.goto('./');await page.evaluate(async()=>{localStorage.setItem('qsCtc','1');const c=await caches.open('qs-asr-model');await c.put('/m.onnx',new Response('x'))});
- await page.goto('./#/more');await expect(page.locator('#mdlSt')).toContainText('Downloaded');
+ await page.goto('./#/more');await page.click('#moreRecite > summary');await expect(page.locator('#mdlSt')).toContainText('Downloaded');
  await page.click('#mdlDel');await expect(page.locator('#mdlDel')).toContainText(/again/i);expect(await page.evaluate(()=>caches.has('qs-asr-model'))).toBe(true);
  await page.click('#mdlDel');await expect(page.locator('#mdlSt')).toContainText('Not downloaded');
  expect(await page.evaluate(()=>caches.has('qs-asr-model'))).toBe(false);expect(await page.evaluate(()=>localStorage.qsCtc||null)).toBeNull()});
 test('more: Bookmarks, Notes, Duas and FAQ are reachable from More',async({page})=>{
- await page.goto('./#/more');
- for(const h of ['#/bookmarks','#/notes','#/duas','#/help'])await expect(page.locator(`:is(.fgrid,.cgrid) a[href="${h}"]`).first()).toBeVisible();
- await page.click(':is(.fgrid,.cgrid) a[href="#/bookmarks"]');expect(page.url()).toContain('#/bookmarks')});
+ await page.goto('./#/more');await page.click('#moreRecite > summary');
+ for(const h of ['#/bookmarks','#/notes','#/duas','#/help'])await expect(page.locator(`:is(.fgrid,.cgrid,.mlist) a[href="${h}"]`).first()).toBeVisible();
+ await page.click(':is(.fgrid,.cgrid,.mlist) a[href="#/bookmarks"]');expect(page.url()).toContain('#/bookmarks')});
 test('more: Urdu + dark hub has no overflow and shows Urdu labels',async({page})=>{
  await page.addInitScript(()=>{if(!sessionStorage.getItem('qsS')){sessionStorage.setItem('qsS','1');localStorage.setItem('settings',JSON.stringify({ui:'ur',dark:true}))}});
- await page.goto('./#/more');await expect(page.locator('#moreRecite')).toContainText('تلاوت اور سیکھیں');
+ await page.goto('./#/more');await page.click('#moreRecite > summary');await expect(page.locator('#moreRecite')).toContainText('تلاوت اور سیکھیں');
  const r=await page.locator('#moreRecite').boundingBox();const vw=page.viewportSize().width;expect(r.x).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(vw)});
 
 test('home: quick-button row is gone; prayer card shows next prayer, countdown, 6 rows with one current',async({page})=>{

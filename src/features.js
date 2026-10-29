@@ -27,12 +27,19 @@ export const readStreak=()=>L.streak(LS.get('readDays',[]));
 const TILES=[['#/quran','quran','Quran','قرآن','L'],['#/mushaf','mushaf','Mushaf','مصحف','L'],['#/duas','duas','Duas & Azkar','دعائیں و اذکار','L'],['#/prayer','prayer','Prayer times','اوقاتِ نماز','L'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح','L'],['#/qibla','qibla','Qibla','قبلہ','L'],
  ['#/names','names','99 Names','اسماء الحسنیٰ'],['#/tracker','tracker','Prayer tracker','نماز ٹریکر'],['#/khatam','khatam','Khatam','ختم پلانر'],['#/hifz','hifz','Hifz','حفظ'],['#/calendar','calendar','Calendar','اسلامی کیلنڈر'],['#/ramadan','ramadan','Ramadan','رمضان'],
  ['#/zakat','zakat','Zakat','زکوٰۃ'],['#/mosques','mosques','Mosques','قریبی مساجد'],['#/hadith','hadith','Hadith','حدیث'],['#/notes','notes','Notes','نوٹس'],['#/search','search','Search','تلاش'],['#/settings','settings','Settings','ترتیبات']];
-const SUB={quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس']};
+const SUB={quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
+// v3.7.8 Home layout: big cards (last one full width so the odd count stays balanced), then a 3-up utility row, then Ramadan at the bottom
+const HOME_BIG=['#/mushaf','#/duas','#/tasbeeh','#/qibla','#/tracker','#/calendar','#/mosques'],HOME_SM=['#/search','#/notes','#/dict'];
+const T=h=>TILES.find(t=>t[0]===h)||MORE_EXTRA.find(t=>t[0]===h);
+const homeGrid=()=>{const big=HOME_BIG.map(T),last=big.length%2?big.length-1:-1;
+ return `<div class="fgrid hgrid" id="homeBig">${big.map(([h,i,e,u],k)=>`<a class="fcard${k===last?' wide':''}" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
+ <div class="cgrid hsm" id="homeSm">${HOME_SM.map(T).map(([h,i,e,u])=>`<a class="ccard" href="${h}"><span class="fi">${I.icon(i)}</span><span>${tt(e,u)}</span></a>`).join('')}</div>
+ <a class="hram" href="#/ramadan" id="homeRamadan"><span class="fi">${I.icon('ramadan')}</span><span><b>${tt('Ramadan','رمضان')}</b><small>${tt('Suhoor & iftar times, fasting log','سحری و افطار کے اوقات، روزوں کا ریکارڈ')}</small></span><span class="go">›</span></a>`};
 const grid=list=>{const big=list.filter(x=>x[4]),sm=list.filter(x=>!x[4]);
  return `<div class="fgrid">${big.map(([h,i,e,u])=>`<a class="fcard" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
  <div class="cgrid">${sm.map(([h,i,e,u])=>`<a class="ccard" href="${h}"><span class="fi">${I.icon(i)}</span><span>${tt(e,u)}</span></a>`).join('')}</div>`};
 function nowPrayer(){const n=new Date(),pt=PR.times(n);let cur='isha';for(const k of PR.PRAYERS)if(pt[k]<=n)cur=k;return cur}
-const STORIES=[['#aotd','quran','Ayah of day','آج کی آیت'],['#/duas/daily-dua','duas','Dua of day','آج کی دعا'],['#/names','names','99 Names','اسماء'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح'],['#/ramadan','ramadan','Ramadan','رمضان']];
+const STORIES=[['#aotd','quran','Ayah of day','آج کی آیت'],['#/duas/daily-dua','duas','Dua of day','آج کی دعا'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح'],['#/ramadan','ramadan','Ramadan','رمضان']];
 const PAR={fajr:'الفجر',sunrise:'الشروق',dhuhr:'الظهر',asr:'العصر',maghrib:'المغرب',isha:'العشاء'};
 const PIC={fajr:'p-fajr',sunrise:'p-sunrise',dhuhr:'p-dhuhr',asr:'p-asr',maghrib:'p-maghrib',isha:'p-isha'};
 /** Home prayer-times card: next prayer + countdown + progress, and a 6-prayer row with the current one emphasised. */
@@ -59,7 +66,7 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
  <div class="dhead">${tt('Daily','روزانہ')}</div>
  <div class="stories" id="daily">${STORIES.map(([h,img,e,u])=>`<a class="story" href="${h}"><i class="stch">${I.icon(img)}</i><span>${tt(e,u)}</span></a>`).join('')}</div>
  ${plan?`<a class="card kcard" href="#/khatam">${I.icon('khatam')} ${tt('Khatam','ختم')}: <b>${plan.pct}%</b> · ${tt('today','آج')} ${plan.perDay} ${tt('pages','صفحات')}<div class="prog"><i style="width:${plan.pct}%"></i></div></a>`:''}
- ${grid(TILES.filter(x=>x[0]!=='#/quran'&&x[0]!=='#/prayer'))}
+ ${homeGrid()}
  <div class="card aotd" id="aotd">${I.corner}<small class="muted">${tt('Ayah of the day','آج کی آیت')} · ${esc(list[s-1].englishName)} ${s}:${a}</small><p class="ar" dir="rtl" lang="ar">${esc(L.ayahText(s,a,AR[s-1][a-1]))}</p><p class="tr" dir="${tr.edition.direction==='rtl'?'rtl':'ltr'}">${esc(tr.texts[a-1]||'')}</p>
  <div class="bar"><a class="btn" href="#/surah/${s}/${a}">${I.icon('quran')} ${tt('Open','کھولیں')}</a><button class="btn ghost" id="aShare">${I.icon('share')} ${tt('Share image','تصویر شیئر')}</button></div></div>
  </section>`;
@@ -69,14 +76,17 @@ const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
-const MORE_EXTRA=[['#/dict','tafsir','Quran Dictionary','قرآن ڈکشنری'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+const MORE_EXTRA=[['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
 export const dict=(a,b)=>import('./dict.js').then(m=>m.dictPage(C,tt,ur,I,a,b));
 export const dictRank=(s,a,w)=>import('./dict.js').then(m=>m.rankOf(C,s,a,w));
 export const qaida=(a,b)=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,a,b));
+// v3.7.8 More tiles: layout A = list of big rows (default), B = card grid. localStorage moreLayout='B' switches (mockups).
+const moreTiles=list=>{if(localStorage.getItem('moreLayout')==='B')return grid(list.map((x,i)=>i<6?[...x.slice(0,4),'L']:x.slice(0,4)));
+ return `<div class="mlist" id="moreList">${list.map(([h,i,e,u])=>`<a class="mrow" href="${h}"><span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><span class="go">›</span></a>`).join('')}</div>`};
 export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=Object.keys(W).length,nD=dueItems(W).length;
  const row=(href,ic,en,u,sub,id)=>`<a class="mrc-row" href="${href}" id="${id}"><span class="mi">${ic}</span><span class="mt"><b>${tt(en,u)}</b><small>${sub}</small></span><span class="go">›</span></a>`;
- app().innerHTML=`<section class="dsec"><div class="mrc" id="moreRecite"><div class="mrc-h"><span class="ti">${I.icon('tutor')}</span><div><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Your live Quran tutor','آپ کا لائیو قرآنی ٹیوٹر')}</small></div></div>
+ app().innerHTML=`<section class="dsec">${row('#/settings',I.icon('settings'),'Settings','ترتیبات',tt('Language, theme, reciter, prayer','زبان، تھیم، قاری، نماز'),'moreSettings').replace('mrc-row','mrc-row more-set')}<details class="mrc" id="moreRecite"><summary class="mrc-h"><span class="ti">${I.icon('tutor')}</span><div><b>${tt('Recite & Learn','تلاوت اور سیکھیں')}</b><small>${tt('Live tutor, weak words, progress, drill','لائیو ٹیوٹر، کمزور الفاظ، پیش رفت، مشق')}</small></div><span class="go">⌄</span></summary>
   ${row('#/recite',I.icon('tutor'),'Recite & Learn','تلاوت اور سیکھیں',tt('Pick a surah and start reciting','سورت منتخب کریں اور تلاوت شروع کریں'),'mrcPick')}
   ${row('#/recite/review',I.icon('star'),'Review weak words','کمزور الفاظ کی دہرائی',nW?tt(`${nW} saved · ${nD} due now`,`${nW} محفوظ · ${nD} ابھی تیار`):tt('None yet — missed words appear here','ابھی کوئی نہیں — غلط الفاظ یہاں آئیں گے'),'mrcReview')}
   ${row('#/progress',I.icon('star'),'My progress','میری پیش رفت',tt('Streak, accuracy per surah, weak letters','سلسلہ، سورت وار درستی، کمزور حروف'),'mrcProg')}
@@ -88,9 +98,9 @@ export function more(){C.setTitle(tt('More','مزید'));const W=weakLoad(),nW=O
   <div class="mrc-st" id="mrcData"><div class="mrc-sr"><span>${tt('Tutor model','ٹیوٹر ماڈل')}</span><b id="mdlSt">…</b></div>
    <div class="mrc-sr"><span>${tt('Weak words saved','محفوظ کمزور الفاظ')}</span><b id="weakN">${nW}</b></div>
    <div class="bar"><button class="btn ghost" id="mdlDel" disabled>${I.icon('trash')} ${tt('Delete downloaded model','ڈاؤن لوڈ شدہ ماڈل حذف کریں')}</button><button class="btn ghost" id="weakClr" ${nW?'':'disabled'}>${I.icon('trash')} ${tt('Clear weak list','کمزور فہرست صاف کریں')}</button></div>
-   <small class="muted" id="mrcMsg" role="status" aria-live="polite">${tt('The model (~19 MB) downloads once, the first time you use Recite & Learn. Your voice never leaves your phone.','ماڈل (~19 MB) پہلی بار تلاوت اور سیکھیں استعمال کرنے پر ایک بار ڈاؤن لوڈ ہوتا ہے۔ آپ کی آواز فون سے باہر نہیں جاتی۔')}</small></div></div>
+   <small class="muted" id="mrcMsg" role="status" aria-live="polite">${tt('The model (~19 MB) downloads once, the first time you use Recite & Learn. Your voice never leaves your phone.','ماڈل (~19 MB) پہلی بار تلاوت اور سیکھیں استعمال کرنے پر ایک بار ڈاؤن لوڈ ہوتا ہے۔ آپ کی آواز فون سے باہر نہیں جاتی۔')}</small></div></details>
   ${qaidaEntry(tt,I,{big:true})}
-  ${grid([...TILES,...MORE_EXTRA])}</section><p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`;
+  ${moreTiles([...TILES,...MORE_EXTRA].filter(x=>x[0]!=='#/settings'))}</section><p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`;
  const msg=x=>{const e=$('#mrcMsg');if(e)e.textContent=x};
  $('#mrcDrill').onclick=()=>{if(nW)C.weakDrill?.()};
  modelHave().then(have=>{const e=$('#mdlSt');if(!e)return;e.textContent=have?tt('Downloaded (~19 MB)','ڈاؤن لوڈ شدہ (~19 MB)'):tt('Not downloaded','ڈاؤن لوڈ نہیں ہوا');e.dataset.have=have?'1':'0';const b=$('#mdlDel');if(b){b.disabled=!have;twoTap(b,tt('Tap again to delete','حذف کے لیے دوبارہ دبائیں'),async()=>{try{await caches.delete(MODEL_CACHE)}catch{/* ignore */}localStorage.removeItem('qsCtc');C.resetModel?.();C.toast(tt('Model deleted','ماڈل حذف ہو گیا'));more()})}});

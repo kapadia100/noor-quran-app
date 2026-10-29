@@ -55,7 +55,7 @@ test('progress screen: empty state, then streak, accuracy, weak letters after se
  await page.click('#pgClr');await page.click('#pgClr');await expect(page.locator('.pg')).toContainText(/Start reciting/i)});
 
 test('more tab has a progress entry; onboarding card appears first time and can be dismissed',async({page})=>{
- await page.goto('./#/more');await expect(page.locator('#mrcProg')).toBeVisible();
+ await page.goto('./#/more');await page.click('#moreRecite > summary');await expect(page.locator('#mrcProg')).toBeVisible();
  await page.evaluate(()=>localStorage.setItem('qsRcOnbTest','1'));await open(page);await expect(page.locator('#rcOnb')).toBeVisible();await expect(page.locator('#rcOnb')).toContainText(/quiet room/i);
  await page.click('#onbOk');await expect(page.locator('#rcOnb')).toBeHidden();await page.reload();await expect(page.locator('#rcOnb')).toBeHidden()});
 

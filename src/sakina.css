@@ -239,3 +239,20 @@ nav button{height:52px;min-height:52px}
 .mq-act .mq-dir{background:var(--tile,#566B49);color:#FFFBF2;border:0}.mq-act .mq-dir .ic{width:16px;height:16px}
 .mq-act .mq-alt{min-height:32px;padding:4px 10px;font-size:.78rem;font-weight:500}
 [data-theme=dark] .mq-act .mq-dir{background:#6E8A5C!important;color:#FFFBF2!important}[data-theme=dark] .mq-act .mq-dir .ic{color:#FFFBF2}
+/* v3.7.8 Home: odd big card spans the row; 3-up utility row; Ramadan row at the bottom */
+.hgrid .fcard.wide{grid-column:1/-1;min-height:104px}
+@media(min-width:620px){.hgrid{grid-template-columns:1fr 1fr}}
+.cgrid.hsm{grid-template-columns:repeat(3,1fr)}
+.hram{display:flex;align-items:center;gap:12px;padding:14px 16px;margin:12px 0;border-radius:22px;text-decoration:none;color:var(--fg);border:1px solid var(--bd);box-shadow:var(--sh);background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 14%,var(--card,#FFFBF2)),var(--card,#FFFBF2))}
+.hram .fi{width:42px;height:42px;border-radius:14px;flex:none}.hram b{display:block;font-size:15px}.hram small{color:var(--mut);font-size:12px}.hram .go{margin-inline-start:auto;color:var(--mut);font-size:22px}
+[data-theme=dark] .hram{background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 12%,#1E241C),#1A1F18)}
+/* v3.7.8 More: Settings first, Recite & Learn collapsed accordion, tiles as list rows (A) */
+#moreRecite>summary{list-style:none;cursor:pointer;padding:2px}#moreRecite>summary::-webkit-details-marker{display:none}
+#moreRecite>summary .go{margin-inline-start:auto;font-size:20px;opacity:.6;transition:transform .2s}#moreRecite[open]>summary{padding-bottom:10px}#moreRecite[open]>summary .go{transform:rotate(180deg)}
+.more-set{background:var(--card,#FFFBF2)!important;border:1px solid var(--bd)!important;box-shadow:var(--sh);margin:0 0 12px!important;min-height:58px;border-radius:20px!important}
+.mlist{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.mrow{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 10px;border-radius:18px;text-decoration:none;color:var(--fg);background:var(--card,#FFFBF2);border:1px solid var(--bd);box-shadow:var(--sh)}
+.mrow .fi{width:36px;height:36px;border-radius:12px;flex:none}.mrow .fi .ic{width:20px;height:20px}.mrow b{font-size:13.5px;font-weight:600;line-height:1.25;min-width:0}.mrow .go{margin-inline-start:auto;opacity:.45}
+.mrow:active{transform:scale(.97)}
+.more-set .mt{display:flex;flex-direction:column;gap:2px;min-width:0}.more-set .mt small{opacity:.7;font-size:12px}
+.more-set .mt{flex:1}
