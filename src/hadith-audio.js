@@ -71,13 +71,13 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){
   const s=st(),cur=S.items[S.idx],playing=s.state==='playing'||s.state==='starting';
   q('#haRef').textContent=cur?`${cur.ref} · ${t.nowOf(S.items.slice(0,S.idx+1).filter(x=>x.text).length||'', S.items.filter(x=>x.text).length)}`:t.noneTr;
   const pb=q('#haPlay'),lab=playing?t.pause:s.state==='paused'?t.resume:t.play;pb.innerHTML=(playing?IC.pause:IC.play)+`<span>${lab}</span>`;pb.setAttribute('aria-label',lab);pb.dataset.st=s.state;
-  const can=!!voice&&S.items.some(x=>x.text);
+  const can=(!!voice||!!H.audioBase()&&S.lang==='urd')&&S.items.some(x=>x.text);
   pb.disabled=!can;q('#haStop').disabled=!(s.state!=='idle');q('#haPrev').disabled=!can||nextOk(S.idx,-1)<0;q('#haNext').disabled=!can||nextOk(S.idx,1)<0;
   list.querySelectorAll('.ha-it').forEach(el=>el.classList.toggle('ha-on',+el.dataset.i===S.idx));
   list.querySelectorAll('.ha-it').forEach(el=>el.setAttribute('aria-current',+el.dataset.i===S.idx&&s.state!=='idle'?'true':'false'))};
  const idOf=i=>`ha:${S.book}:${S.sec}:${i}`;
- const speak=i=>{const x=S.items[i];if(!x||!x.text||!voice)return false;S.idx=i;msg('');
-  msg(x.auto?t.autoNow:'');const ok=H.play({id:idOf(i),text:x.text,lang:S.lang,voice,rate:S.rate,onEnd:()=>{
+ const speak=i=>{const x=S.items[i];const url=x&&!x.auto?H.audioUrl(S.book,x.n,S.lang):'';if(!x||!x.text||(!voice&&!url))return false;S.idx=i;msg('');
+  msg(x.auto?t.autoNow:'');const ok=H.play({id:idOf(i),text:x.text,lang:S.lang,voice,url,rate:S.rate,onEnd:()=>{
    if(!root.isConnected)return;if(!S.cont){paintNow();return}
    const n=nextOk(i,1);if(n>=0){speak(n);scroll(n)}else{msg(t.done);paintNow()}}});
   paintNow();return ok};
@@ -108,7 +108,7 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){
   if(k<0){msg(t.notFound(raw));return}
   S.idx=k;if(!S.items[k].text){msg(t.missingJump(raw,lname(S.lang)));const n=nextOk(k,1);if(n>=0)S.idx=n}paintList();scroll(S.idx)};
  const needVoice=()=>{voice=H.supported()?H.pickVoice(voices,S.lang):null;
-  if(!H.supported()||!voice)msg(t.noVoice(lname(S.lang)));else if(S.msg===t.noVoice(lname(S.lang)))msg('')};
+  if((!H.supported()||!voice)&&!(S.lang==='urd'&&H.audioBase()))msg(t.noVoice(lname(S.lang)));else if(S.msg===t.noVoice(lname(S.lang)))msg('')};
  const setLang=async l=>{S.lang=l;savePref({...pref(),lang:l});
   root.querySelectorAll('[data-lang]').forEach(b=>{const on=b.dataset.lang===l;b.classList.toggle('on',on);b.classList.toggle('ghost',!on);b.setAttribute('aria-checked',on)});
   const pb=S.book;if(!has(S.book,l))S.book=books.find(k=>has(k,l))||S.book;if(S.book!==pb)S.sec='';
