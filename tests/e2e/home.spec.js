@@ -9,8 +9,8 @@ const box=(page,s)=>page.locator(s).first().boundingBox();
 
 test('home v2.9.3: search, then compact prayer card first, then the Quran row, then Quran Live, Qaida Live and Hifz Test side by side in one row, Daily stories lower',async({page})=>{
  await init(page,{dark:false},{s:2,a:1,name:'Al-Baqara'});await page.goto('./');await expect(page.locator('.pcard')).toBeVisible();
- const [sb,pc,q,t,a,h]=await Promise.all(['.srow','.pcard','#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));
- expect(sb.y).toBeLessThan(pc.y);expect(pc.y+pc.height).toBeLessThanOrEqual(q.y+1);expect(pc.height).toBeLessThan(170); // compact
+ const [hd,pc,q,t,a,h]=await Promise.all(['header','.pcard','#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));
+ expect(hd.y).toBeLessThan(pc.y);await expect(page.locator('.srow, #hs, #hq')).toHaveCount(0);expect(pc.y+pc.height).toBeLessThanOrEqual(q.y+1);expect(pc.height).toBeLessThan(170); // compact
  // the Quran row is full width above three equal cards: Quran Live, Qaida, Hifz
  expect(q.y+q.height).toBeLessThanOrEqual(t.y+1);expect(q.width).toBeGreaterThan(t.width*2.5);
  for(const b of [a,h]){expect(Math.abs(b.width-t.width)).toBeLessThanOrEqual(1);expect(Math.abs(b.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(b.y-t.y)).toBeLessThanOrEqual(1)}expect(t.x).toBeLessThan(a.x);expect(a.x).toBeLessThan(h.x);

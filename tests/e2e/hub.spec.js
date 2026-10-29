@@ -58,7 +58,7 @@ test('home: quick-button row is gone; prayer card shows next prayer, countdown, 
  const r=await page.locator('.pcard').boundingBox();expect(r.x).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(page.viewportSize().width);
  // no link row between the prayer card / stories and the search bar
  for(const h of ['#/notes','#/duas','#/help'])expect(await page.locator(`.hero a[href="${h}"]`).count()).toBe(0);
- expect(await page.locator('.hero a[href="#/bookmarks"]').count()).toBe(1); // only the heart button next to search
+  expect(await page.locator('.hero a[href="#/bookmarks"]').count()).toBe(0); // search bar + heart removed from Home (v3.7.11)
  await page.click('.pcard');expect(page.url()).toContain('#/prayer')});
 test('home: prayer card in Urdu + dark stays inside the screen',async({page})=>{
  await page.addInitScript(()=>{if(!sessionStorage.getItem('qsS')){sessionStorage.setItem('qsS','1');localStorage.setItem('settings',JSON.stringify({ui:'ur',dark:true}))}});

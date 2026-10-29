@@ -54,7 +54,6 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
  const {s,a}=L.ayahOfDay(),lr=LS.get('lastRead'),st=readStreak(),kp=LS.get('khatam');const nx=PR.next();const plan=kp?L.khatamPlan({current:kp.page,end:kp.end}):null;
  app().innerHTML=`<section class="hero">
   <div class="htop"><a class="round" href="#/more" aria-label="${tt('Menu','مینو')}">${I.icon('menu')}</a><div class="htitle"><b class="appname">${tt('Quran Safar','قرآن سفر')}</b><small><span data-greg="short">${DT.gregText(new Date(),S().ui,{weekday:'short',day:true,month:'short',year:true})}</span> · <span class="hij" data-hij>${PR.hijri(new Date(),S().ui)}</span><span data-hijsep> · </span><span class="streak" id="streak"><b>${st}</b> ${tt('day streak','دن مسلسل')}</span></small></div></div>
-  <div class="srow"><form class="sbar" id="hs">${I.icon('search')}<input id="hq" aria-label="${tt('Search','تلاش')}" placeholder="${C.t('q')}"></form><a class="round heart" href="#/bookmarks" aria-label="${tt('Favourites','پسندیدہ')}">${I.icon('heart')}</a></div>
   ${pcard(nx)}
   <a class="hq-row" href="${lr?`#/surah/${lr.s}/${lr.a}`:'#/quran'}" id="homeQuran"><span class="ti hq-ti">${I.icon('quran')}</span><b>${tt('Quran','قرآن')}</b><small>${lr?`${tt('Continue','جاری')} ${lr.s}:${lr.a}`:tt('114 surahs','114 سورتیں')}</small></a>
   <div class="hcards"><a class="hc hc-tutor" href="#/recite" id="homeTutor"><span class="ti">${I.icon('tutor')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Quran Live','قرآن لائیو')}</b><small>${tt('Recite & Learn','تلاوت اور سیکھیں')}</small></a>
@@ -67,7 +66,7 @@ export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر')
  <div class="card aotd" id="aotd">${I.corner}<small class="muted">${tt('Ayah of the day','آج کی آیت')} · ${esc(list[s-1].englishName)} ${s}:${a}</small><p class="ar" dir="rtl" lang="ar">${esc(L.ayahText(s,a,AR[s-1][a-1]))}</p><p class="tr" dir="${tr.edition.direction==='rtl'?'rtl':'ltr'}">${esc(tr.texts[a-1]||'')}</p>
  <div class="bar"><a class="btn" href="#/surah/${s}/${a}">${I.icon('quran')} ${tt('Open','کھولیں')}</a><button class="btn ghost" id="aShare">${I.icon('share')} ${tt('Share image','تصویر شیئر')}</button></div></div>
  </section>`;
- $('#aShare').onclick=()=>shareAyah(s,a);$('#hs').onsubmit=e=>{e.preventDefault();location.hash='#/search/'+encodeURIComponent($('#hq').value)};
+ $('#aShare').onclick=()=>shareAyah(s,a);
 C.tick()}
 const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
