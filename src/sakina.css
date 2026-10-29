@@ -214,3 +214,5 @@ main small{opacity:1}
 .hd-big .tr{font-size:1.12em;line-height:1.7}.hd-big .ar{font-size:1.5em;line-height:2.1}
 .hd-pager{display:flex;align-items:center;justify-content:center;gap:18px;margin:10px auto 70px;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nh,64px) + 8px);width:max-content;max-width:calc(100% - 24px);padding:6px 14px;background:color-mix(in srgb,var(--bg) 94%,var(--card));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--bd);border-radius:999px;box-shadow:var(--sh);z-index:4}.hd-pager .btn{min-width:56px;min-height:48px;font-size:26px;display:inline-flex;align-items:center;justify-content:center}.hd-pager [aria-disabled=true]{opacity:.35}
 .hd-ct{min-width:64px;text-align:center}
+
+.hd-sp{height:84px}
