@@ -289,3 +289,5 @@ nav button{height:52px;min-height:52px}
 .hgrid .fcard.feat svg{stroke:currentColor}
 [data-theme=dark] .hgrid .fcard.feat{background:radial-gradient(120% 90% at 100% 0%,rgba(201,180,120,.22),transparent 60%),linear-gradient(150deg,#2f4a38 0%,#1e2f25 100%);border-color:rgba(201,180,120,.25)}
 [data-theme=dark] .hgrid .fcard.feat-qibla{background:radial-gradient(120% 90% at 0% 0%,rgba(201,180,120,.25),transparent 60%),linear-gradient(150deg,#4a4630 0%,#26352a 100%)}
+/* v3.7.11 tighter gap: Quran Live row -> featured cards */
+.hero .hcards{margin-bottom:0!important}.hero{padding-bottom:8px!important}.hero+.dsec{margin-top:0!important;padding-top:0!important}.hero+.dsec>#homeBig{margin-top:6px!important}

@@ -6,7 +6,7 @@ test('v3.7.11 Namaz-e-Janazah: Home card opens the page with 4 takbeers and the 
  await expect(page.locator('#jzD0 .jz-ar')).toContainText('اغْفِرْ لِحَيِّنَا وَمَيِّتِنَا');await expect(page.locator('#jzD1 .jz-ar')).toContainText('اجْعَلْهُ لَنَا فَرَطًا');await expect(page.locator('#jzD2 .jz-ar')).toContainText('شَافِعَةً وَّمُشَفَّعَةً');
  for(const i of [0,1,2]){await expect(page.locator(`#jzD${i} .jz-ur`)).not.toBeEmpty();await expect(page.locator(`#jzD${i} .jz-en`)).not.toBeEmpty()}});
 test('v3.7.11 Mosque Finder name on the Home card and page heading; Mushaf still in More',async({page})=>{
- await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./');await expect(page.locator('#homeBig a[href="#/mosques"] b')).toHaveText('Mosque Finder');
+ await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./');await expect(page.locator('#homeBig a[href="#/mosques"] b')).toHaveText('Mosque Finder');await expect(page.locator('#homeBig a[href="#/qibla"] b')).toHaveText('Qibla Finder');await page.goto('./#/qibla');await expect(page.locator('#title')).toHaveText('Qibla Finder');await page.goto('./#/more');await expect(page.locator('a[href="#/qibla"]').filter({hasText:'Qibla Finder'}).first()).toBeVisible();await page.goto('./');
  await page.goto('./#/more');await expect(page.locator('a[href="#/mushaf"]').first()).toBeAttached();
  await page.goto('./#/mosques');await expect(page.locator('#title')).toContainText('Mosque Finder')});
 test('v3.7.11 header: big live countdown on the same line as the next prayer time, clear of the arch, on a 360px phone',async({page})=>{
