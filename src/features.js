@@ -29,10 +29,10 @@ const TILES=[['#/quran','quran','Quran','قرآن','L'],['#/mushaf','mushaf','Mu
  ['#/zakat','zakat','Zakat','زکوٰۃ'],['#/mosques','mosques','Mosque Finder','مسجد فائنڈر'],['#/hadith','hadith','Hadith','حدیث'],['#/notes','notes','Notes','نوٹس'],['#/search','search','Search','تلاش'],['#/settings','settings','Settings','ترتیبات']];
 const SUB={janazah:['Method & duas','طریقہ اور دعائیں'],ruqyah:['Quranic ruqyah · play all','قرآنی رقیہ · پورا سنیں'],quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
 // v3.7.8 Home layout: big cards (last one full width so the odd count stays balanced), then a 3-up utility row, then Ramadan at the bottom
-const HOME_BIG=['#/janazah','#/duas','#/mosques','#/qibla','#/tasbeeh','#/tracker','#/calendar','#/ruqyah'],HOME_SM=['#/search','#/notes','#/dict'];
+const HOME_BIG=['#/mosques','#/qibla','#/janazah','#/duas','#/tasbeeh','#/tracker','#/calendar','#/ruqyah'],HOME_SM=['#/search','#/notes','#/dict'];
 const T=h=>TILES.find(t=>t[0]===h)||MORE_EXTRA.find(t=>t[0]===h);
 const homeGrid=()=>{const big=HOME_BIG.map(T),last=big.length%2?big.length-1:-1;
- return `<div class="fgrid hgrid" id="homeBig">${big.map(([h,i,e,u],k)=>`<a class="fcard${k===last?' wide':''}" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
+ return `<div class="fgrid hgrid" id="homeBig">${big.map(([h,i,e,u],k)=>`<a class="fcard${k===last?' wide':''}${k<2?' feat feat-'+i:''}" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
  <div class="cgrid hsm" id="homeSm">${HOME_SM.map(T).map(([h,i,e,u])=>`<a class="ccard" href="${h}"><span class="fi">${I.icon(i)}</span><span>${tt(e,u)}</span></a>`).join('')}</div>
  <a class="hram" href="#/ramadan" id="homeRamadan"><span class="fi">${I.icon('ramadan')}</span><span><b>${tt('Ramadan','رمضان')}</b><small>${tt('Suhoor & iftar times, fasting log','سحری و افطار کے اوقات، روزوں کا ریکارڈ')}</small></span><span class="go">›</span></a>`};
 const grid=list=>{const big=list.filter(x=>x[4]),sm=list.filter(x=>!x[4]);
