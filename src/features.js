@@ -27,9 +27,9 @@ export const readStreak=()=>L.streak(LS.get('readDays',[]));
 const TILES=[['#/quran','quran','Quran','قرآن','L'],['#/mushaf','mushaf','Mushaf','مصحف','L'],['#/duas','duas','Duas & Azkar','دعائیں و اذکار','L'],['#/prayer','prayer','Prayer times','اوقاتِ نماز','L'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح','L'],['#/qibla','qibla','Qibla','قبلہ','L'],
  ['#/names','names','99 Names','اسماء الحسنیٰ'],['#/tracker','tracker','Prayer tracker','نماز ٹریکر'],['#/khatam','khatam','Khatam','ختم پلانر'],['#/hifz','hifz','Hifz','حفظ'],['#/calendar','calendar','Calendar','اسلامی کیلنڈر'],['#/ramadan','ramadan','Ramadan','رمضان'],
  ['#/zakat','zakat','Zakat','زکوٰۃ'],['#/mosques','mosques','Mosques','قریبی مساجد'],['#/hadith','hadith','Hadith','حدیث'],['#/notes','notes','Notes','نوٹس'],['#/search','search','Search','تلاش'],['#/settings','settings','Settings','ترتیبات']];
-const SUB={quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
+const SUB={ruqyah:['Quranic ruqyah · play all','قرآنی رقیہ · پورا سنیں'],quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
 // v3.7.8 Home layout: big cards (last one full width so the odd count stays balanced), then a 3-up utility row, then Ramadan at the bottom
-const HOME_BIG=['#/mushaf','#/duas','#/tasbeeh','#/qibla','#/tracker','#/calendar','#/mosques'],HOME_SM=['#/search','#/notes','#/dict'];
+const HOME_BIG=['#/mushaf','#/duas','#/tasbeeh','#/qibla','#/tracker','#/calendar','#/mosques','#/ruqyah'],HOME_SM=['#/search','#/notes','#/dict'];
 const T=h=>TILES.find(t=>t[0]===h)||MORE_EXTRA.find(t=>t[0]===h);
 const homeGrid=()=>{const big=HOME_BIG.map(T),last=big.length%2?big.length-1:-1;
  return `<div class="fgrid hgrid" id="homeBig">${big.map(([h,i,e,u],k)=>`<a class="fcard${k===last?' wide':''}" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
@@ -76,8 +76,10 @@ const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
-const MORE_EXTRA=[['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+const MORE_EXTRA=[['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/ruqyah','ruqyah','Ruqyah Shariah','رقیہ شرعیہ'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
+export const ruqyah=()=>import('./ruqyah.js').then(m=>m.page(C,tt,ur,I));
+export const ruqyahLeave=()=>import('./ruqyah.js').then(m=>m.leave()).catch(()=>{});
 export const dict=(a,b)=>import('./dict.js').then(m=>m.dictPage(C,tt,ur,I,a,b));
 export const dictRank=(s,a,w)=>import('./dict.js').then(m=>m.rankOf(C,s,a,w));
 export const qaida=(a,b)=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,a,b));

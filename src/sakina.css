@@ -256,3 +256,12 @@ nav button{height:52px;min-height:52px}
 .mrow:active{transform:scale(.97)}
 .more-set .mt{display:flex;flex-direction:column;gap:2px;min-width:0}.more-set .mt small{opacity:.7;font-size:12px}
 .more-set .mt{flex:1}
+/* v3.7.9 Ruqyah Shariah page */
+.rq-top{position:sticky;top:calc(var(--hh,56px) + 4px);z-index:5}
+.rq-ctl{display:flex;gap:10px;margin:10px 0 8px}.rq-play{display:inline-flex;align-items:center;gap:8px;min-width:140px;justify-content:center}.rq-play .ic{width:20px;height:20px}
+.rq-st{margin:6px 0 0;font-size:13px}
+.rq-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}.rq-h b.ar{font-size:20px}
+.rq-t{font-size:calc(var(--qs,26px));line-height:2.15;text-align:justify;margin:4px 0}
+.rq-a,.rq-d{cursor:pointer;border-radius:10px;transition:background .2s}.rq-n{color:var(--pri);font-size:.8em}
+.rq-on{background:color-mix(in srgb,var(--gold,#C9A24A) 26%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold,#C9A24A) 26%,transparent)}
+.rq-d{padding:8px 6px;border-top:1px solid var(--bd)}.rq-d:first-of-type{border-top:0}.rq-d p.ar{font-size:24px;line-height:2;margin:0}
