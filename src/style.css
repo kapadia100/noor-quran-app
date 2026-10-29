@@ -555,7 +555,6 @@ body.rc-blind .ayah.reciting .ar,body.rc-blind .ayah.reciting .arabic,body.rc-bl
 
 .dc-pct,.dc-pg,.dc-c,.dc-n,.dc-nav small,.dc-facts b:not(.ar){unicode-bidi:isolate;direction:ltr}
 
-.recfab{position:fixed;right:14px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:40;display:flex;align-items:center;gap:6px;padding:10px 14px;border:0;border-radius:999px;color:#fff;font:inherit;font-weight:700;background:linear-gradient(135deg,#7C8F6C,#566B49);box-shadow:0 4px 14px rgba(0,0,0,.35)}.recfab[hidden]{display:none}.recfab .ic{width:20px;height:20px}
 [data-hij][hidden],[data-hijsep][hidden]{display:none}
 /* Qaida chooser, Madani course */
 .q-hero{flex-wrap:wrap}.q-hero>div{flex:1;min-width:150px}
