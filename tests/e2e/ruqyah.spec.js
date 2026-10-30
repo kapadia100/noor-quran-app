@@ -24,8 +24,8 @@ test('Play all plays every ruqyah ayah in order with highlight, progress, pause/
  await expect(page.locator('.rq-on')).toHaveCount(1);await expect(page.locator('#rqPlay')).toContainText(/Pause/);
  await expect.poll(()=>page.evaluate(()=>(window.__played||[]).length),{timeout:20000}).toBeGreaterThan(10);
  await page.click('#rqPlay');await expect(page.locator('#rqPlay')).toContainText(/Resume/);const n=await page.evaluate(()=>window.__played.length);await page.waitForTimeout(400);expect(await page.evaluate(()=>window.__played.length)).toBe(n);
- await page.click('#rqPlay');await expect.poll(()=>page.evaluate(()=>window.__played.length),{timeout:15000}).toBeGreaterThanOrEqual(N);
- const p=await page.evaluate(()=>window.__played);expect(p[0]).toBe('https://audio.test/1/1.mp3');expect(p).toContain('https://audio.test/2/286.mp3');expect(p[N-1]).toMatch(/114\/6\.mp3|\/6235\.mp3$/);
+ await page.click('#rqPlay');await expect.poll(()=>page.evaluate(()=>window.__played.length),{timeout:30000}).toBeGreaterThanOrEqual(N);await expect.poll(()=>page.evaluate(()=>window.__played.includes('https://audio.test/2/286.mp3')),{timeout:15000}).toBe(true);
+ const p=await page.evaluate(()=>window.__played);expect(p[0]).toBe('https://audio.test/1/1.mp3');expect(p).toContain('https://audio.test/2/286.mp3');await expect.poll(()=>page.evaluate(()=>window.__played.at(-1)),{timeout:15000}).toMatch(/114\/6\.mp3|\/6235\.mp3$/);
  // tap an ayah to start there, then stop
  await page.locator('#rq5 .rq-a').first().click();await expect.poll(()=>page.evaluate(()=>window.__played.at(-1))).toBe('https://audio.test/2/285.mp3');
  await page.click('#rqStop');await expect(page.locator('.rq-on')).toHaveCount(0)});

@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';import fs from 'fs';
-const shot=(p,n)=>process.env.SHOTS&&p.screenshot({path:`/workspace/shots393/${n}.png`});
+const shot=(p,n)=>process.env.SHOTS&&p.screenshot({path:`/shots393/${n}.png`});
 const N=JSON.parse(fs.readFileSync('public/offline/x/names.json','utf8'));
 test('data: 99 unique names, fully vowelled, standard list spot-checks',()=>{expect(N.length).toBe(99);expect(new Set(N.map(n=>n.ar)).size).toBe(99);
  for(const n of N){expect(n.ar).toMatch(/[\u064E-\u0652]/);expect(n.ar).not.toMatch(/ٱ|^اَل/);expect(n.en&&n.ur&&n.tr).toBeTruthy();if(n.ref)expect(n.ref).toMatch(/^\d+:\d+$/)}
@@ -14,7 +14,7 @@ test('detail: swipe, favourite, learned, Quran ref, deep link, close',async({pag
  await page.click('#nmX');await expect(page.locator('#nmv')).toBeHidden();await expect(page.locator('.nm-prog')).toContainText('1/99');await page.click('[data-tab=fav]');await expect(page.locator('.nm-card')).toHaveCount(1)});
 test('share image: square + story canvases, branded, share/download',async({page})=>{await page.goto('./#/names/1');await page.locator('#nmv .nm-slide.on [data-img]').click();await expect(page.locator('#nmSq')).toBeVisible();
  const sz=await page.evaluate(()=>[...document.querySelectorAll('#nmSq,#nmSt')].map(i=>[i.naturalWidth,i.naturalHeight]));expect(sz).toEqual([[1080,1080],[1080,1920]]);await shot(page,'share-sheet');
- for(const [id,f] of [['#nmSq','share-square'],['#nmSt','share-story']]){const d=await page.locator(id).getAttribute('src');fs.mkdirSync('/workspace/shots393',{recursive:true});if(process.env.SHOTS)fs.writeFileSync(`/workspace/shots393/${f}-1.png`,Buffer.from(d.split(',')[1],'base64'))}
+ for(const [id,f] of [['#nmSq','share-square'],['#nmSt','share-story']]){const d=await page.locator(id).getAttribute('src');fs.mkdirSync(`/shots393`,{recursive:true});if(process.env.SHOTS)fs.writeFileSync(`/shots393/${f}-1.png`,Buffer.from(d.split(',')[1],'base64'))}
  const [dl]=await Promise.all([page.waitForEvent('download'),page.click('[data-sz=sq]')]);expect(dl.suggestedFilename()).toBe('name-1-square.png')});
 test('learn: flashcards + quiz update progress',async({page})=>{await page.goto('./#/names');await page.click('[data-tab=learn]');await page.click('#nmFlip');await expect(page.locator('#nmFlip')).toHaveClass(/flip/);await shot(page,'learn-card');await page.click('#nmKnow');await expect(page.locator('.nm-prog')).toContainText('1/99');
  await page.click('[data-tab=learn]');await page.click('[data-mode=quiz]');const n=await page.locator('.nm-q').getAttribute('data-n');await page.click(`.nm-opt[data-a="${n}"]`);await expect(page.locator('#nmQmsg')).toContainText('Correct');await shot(page,'learn-quiz')});
