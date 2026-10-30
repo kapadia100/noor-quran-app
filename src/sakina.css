@@ -318,3 +318,12 @@ nav button{height:52px;min-height:52px}
 .qf-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}.qf-note{text-align:center;max-width:34em;line-height:1.5;font-size:.78em}
 [data-theme=dark] .qf{--qg:#d9b864}[data-theme=dark] .qf.ok .qf-hd,[data-theme=dark] .qf.ok .qf-hub .deg{color:#e6c877}
 @media(prefers-reduced-motion:reduce){.qf.ok .qf-ptr,.qf.ok .qf-hub,.qf-cal svg{animation:none}}
+
+/* v3.7.11 header: arch in-flow on the name row, no overlap with strip */
+.pcard .pc-nx{align-items:center!important;padding-inline-end:0!important}
+.pcard .pc-nx>b,.pcard .pc-nx>.pc-at{align-self:baseline}
+.pcard .pc-arch{position:relative!important;inset:auto!important;top:auto!important;flex:none;width:clamp(50px,14vw,58px)!important;height:clamp(50px,13.5vw,56px)!important;border-radius:30px 32px 9px 9px!important;margin-inline-start:clamp(6px,2vw,12px);margin-block:-4px;gap:0!important}
+.pcard .pc-arch::after{inset:3px!important;border-radius:28px 28px 6px 6px!important}
+.pcard .pc-arch .ic{width:clamp(18px,5vw,21px)!important;height:clamp(18px,5vw,21px)!important}.pcard .pc-arch .ar{font-size:clamp(11px,3.2vw,13px)!important;line-height:1.15!important}
+.pc-row{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important}
+@media(max-width:380px){.pcard .pc-nx b{font-size:26px!important}.pcard .pc-nx .cd{font-size:20px!important}}

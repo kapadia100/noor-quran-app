@@ -27,13 +27,13 @@ export async function page(C,tt,ur,I){
  const sec=RQ.map(([s,f,t],i)=>{const m=list[s-1],ays=[];for(let a=f;a<=t;a++){seq.push({k:'q',s,a,i:seq.length});ays.push(`<span class="rq-a" data-i="${seq.length-1}" role="button" tabindex="0">${C.esc?C.esc(ayahTxt(s,a,txt[s-1][a-1])):ayahTxt(s,a,txt[s-1][a-1])} <span class="rq-n">﴿${arN(a)}﴾</span></span>`)}
   const whole=f===1&&t===m.numberOfAyahs,ref=whole?`${s}`:f===t?`${s}:${f}`:`${s}:${f}–${t}`;
   return `<section class="card rq-sec" id="rq${i}"><div class="rq-h"><b class="ar">${m.name}</b><span class="badge" dir="ltr">${ref}</span></div>${s!==1&&s!==9&&f===1?`<div class="ar bism c">${BISM}</div>`:''}<p class="ar rq-t" dir="rtl" lang="ar">${ays.join(' ')}</p></section>`}).join('');
- const d0=seq.length;DUAS.forEach((d,j)=>seq.push({k:'d',j,i:seq.length}));
- const duas=`<section class="card rq-sec rq-duas" id="rqDuas"><div class="rq-h"><b>${tt('Prophetic ruqyah duas','مسنون دعائیں')}</b></div>${DUAS.map((d,j)=>`<div class="rq-d" data-i="${d0+j}" role="button" tabindex="0"><p class="ar" dir="rtl" lang="ar">${d[0]}</p><small class="muted">${d[1]>1?tt(`${d[1]} times · `,`${d[1]} بار · `):''}${tt(d[2],d[3])}</small></div>`).join('')}<p class="muted rq-nov" id="rqNoV" hidden>${tt('Your device has no Arabic voice, so these duas are shown as text and are not played.','آپ کے آلے میں عربی آواز نہیں، اس لیے یہ دعائیں صرف متن کے طور پر ہیں۔')}</p></section>`;
+ 
+ const duas=`<section class="card rq-sec rq-duas" id="rqDuas"><div class="rq-h"><b>${tt('Prophetic ruqyah duas','مسنون دعائیں')}</b></div>${DUAS.map(d=>`<div class="rq-d"><p class="ar" dir="rtl" lang="ar">${d[0]}</p><small class="muted">${d[1]>1?tt(`${d[1]} times · `,`${d[1]} بار · `):''}${tt(d[2],d[3])}</small></div>`).join('')}<p class="muted rq-nov">${tt('Read these duas yourself; only the Quran ayat above are played.','یہ دعائیں خود پڑھیں؛ صرف اوپر کی آیات سنائی جاتی ہیں۔')}</p></section>`;
  app.innerHTML=`<div class="rq" dir="${ur()?'rtl':'ltr'}"><div class="card rq-top"><p class="muted">${tt('The Quranic ruqyah verses with the prophetic duas. Press Play to hear it all in Arabic; tap any ayah to start from there.','قرآنی آیاتِ رقیہ اور مسنون دعائیں۔ پوری عربی سننے کے لیے سنیں دبائیں، یا کسی بھی آیت کو چھو کر وہیں سے شروع کریں۔')}</p>
  <div class="rq-ctl"><button class="btn rq-play" id="rqPlay">${I.icon('play')}<span>${tt('Play all','پورا سنیں')}</span></button><button class="btn ghost" id="rqStop" disabled>${tt('Stop','بند')}</button></div>
- <div class="prog" aria-hidden="true"><i id="rqBar" style="width:0%"></i></div><p class="muted rq-st" id="rqSt" role="status">${tt(`${d0} ayahs · ${RQ.length} passages`,`${d0} آیات · ${RQ.length} حصے`)}</p></div>${sec}${duas}<div class="rq-mini" id="rqMini" hidden><button class="btn" id="rqMP" aria-label="play/pause"></button><span id="rqMS"></span><div class="prog"><i id="rqMB"></i></div></div></div>`;
- const q=s=>app.querySelector(s),st={i:-1,state:'idle'},urls={};let voice=null;
- H.voicesReady().then(v=>{voice=H.pickVoice(v,'ara');if(app.isConnected)q('#rqNoV').hidden=!!voice});
+ <div class="prog" aria-hidden="true"><i id="rqBar" style="width:0%"></i></div><p class="muted rq-st" id="rqSt" role="status">${tt(`${seq.length} ayahs · ${RQ.length} passages`,`${seq.length} آیات · ${RQ.length} حصے`)}</p></div>${sec}${duas}<div class="rq-mini" id="rqMini" hidden><button class="btn" id="rqMP" aria-label="play/pause"></button><span id="rqMS"></span><div class="prog"><i id="rqMB"></i></div></div></div>`;
+ const q=s=>app.querySelector(s),st={i:-1,state:'idle'},urls={};
+ 
  const getUrl=async s=>urls[s]??=C.j(`${API}/surah/${s}/${C.S.reciter||'ar.alafasy'}`).then(r=>r.ayahs.map(x=>x.audio));
  let paint=()=>{const on=st.state==='playing'||st.state==='loading';q('#rqPlay').innerHTML=`${I.icon(on?'pause':'play')}<span>${on?tt('Pause','وقفہ'):st.state==='paused'?tt('Resume','جاری رکھیں'):tt('Play all','پورا سنیں')}</span>`;
   q('#rqStop').disabled=st.state==='idle';q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))/seq.length*100)}%`;
@@ -45,13 +45,13 @@ export async function page(C,tt,ur,I){
  try{new IntersectionObserver(([e])=>{topVis=e.isIntersecting;mp()}).observe(top)}catch{/* old browsers: no mini player */}
  const end=()=>{st.state='idle';st.i=-1;paint();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
  const paint0=paint;paint=()=>{paint0();mp()};
- const go=async i=>{if(i>=seq.length||(seq[i].k==='d'&&!voice)){end();return}
+ const go=async i=>{if(i>=seq.length){end();return}
   st.i=i;st.state='loading';paint();const e=app.querySelector(`[data-i="${i}"]`);e?.scrollIntoView({block:'center',behavior:'smooth'});const x=seq[i];
   try{dispatchEvent(new CustomEvent('qs:audio',{detail:'ruqyah'}))}catch{/* ignore */}
   if(x.k==='q'){let u;try{u=(await getUrl(x.s))[x.a-1]}catch{u=null}if(st.i!==i||st.state!=='loading')return;
    if(!u){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔');return}
    au.src=u;au.play().then(()=>{if(st.i===i){st.state='playing';paint()}}).catch(()=>{if(st.i===i){st.state='paused';paint()}})}
-  else{const d=DUAS[x.j];H.play({id:'rq:'+i,text:Array(d[1]).fill(d[0]).join('۔ '),lang:'ara',voice,onEnd:()=>{if(st.i===i&&app.isConnected)go(i+1)}});st.state='playing';paint()}};
+};
  au.onended=()=>{if(app.isConnected&&st.state==='playing')go(st.i+1)};
  au.onerror=()=>{if(app.isConnected&&st.state!=='idle'&&au.src){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔')}};
  q('#rqPlay').onclick=()=>{const x=seq[st.i];
