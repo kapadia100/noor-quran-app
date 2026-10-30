@@ -154,7 +154,9 @@ const rng=(m,s,f,t)=>`${m.englishName} ${s}:${f}${t>f?`–${t}`:''}`;
 export async function quranBlocks(s,f,t){const {AR,tr,meta}=await qData(s);const out=[];for(let a=f;a<=t;a++)out.push({ar:`${L.ayahText(s,a,AR[a-1])} ﴿${arn(a)}﴾`,tr:(tr.texts[a-1]||'')+(t>f?` (${a})`:''),ref:''});out[out.length-1].ref=rng(meta,s,f,t);return out}
 export async function quranText(s,f,t){const {AR,tr,meta}=await qData(s);const body=[];for(let a=f;a<=t;a++)body.push(`${L.ayahText(s,a,AR[a-1])} ﴿${arn(a)}﴾\n${tr.texts[a-1]||''}${t>f?` (${a})`:''}`);
  return [body.join('\n\n'),`— ${rng(meta,s,f,t)}`,'via Quran Safar',siteUrl(`#/surah/${s}/${f}`),`${tt('Get the app','ایپ حاصل کریں')}: ${INSTALL_URL}`].join('\n\n')}
-export const hueOf=s=>(150+s*37)%360;
+/** Share-card colour themes per category (Sakina palette). */
+export const THEME={quran:168,hadith:140,duas:262,names:null};
+export const hueOf=()=>THEME.quran;
 export async function ayahCard(s,a){return (await SC.render(await quranBlocks(s,a,a),{hue:hueOf(s)}))[0]}
 export async function quranCards(s,f,t){return SC.render(await quranBlocks(s,f,t),{hue:hueOf(s)})}
 async function shareFiles(cvs,base,title,out){const files=await SC.toFiles(cvs,base);
@@ -186,7 +188,7 @@ export async function shareAyah(s,a){GC.event('share-ayah');const {meta}=await q
 const SH=[];export const shareBtn=item=>{SH.push(item);return `<button class="shr" data-shr="${SH.length-1}" aria-label="${tt('Share','شیئر')}">${I_('share')}</button>`};
 export const shareText=it=>[it.ar,it.tr,`— ${it.ref}`,'via Quran Safar',it.url,`${tt('Get the app','ایپ حاصل کریں')}: ${INSTALL_URL}`].filter(Boolean).join('\n\n');
 async function nativeShare(o){try{const {Capacitor}=await import('@capacitor/core');if(Capacitor.isNativePlatform()){const {Share}=await import('@capacitor/share');await Share.share(o);return true}}catch{}return false}
-export async function textCards(it){return SC.render([{ar:it.ar,tr:it.tr,ref:it.ref}],{hue:it.hue??150})}
+export async function textCards(it){return SC.render(it.blocks||[{ar:it.ar,tr:it.tr,ref:it.ref}],{hue:it.hue??THEME.hadith})}
 export async function textCard(it){return (await textCards(it))[0]}
 export function openShare(it){const txt=shareText(it);$('#sheet').hidden=false;
  $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share','شیئر کریں')}</h2><pre class="shtxt" id="shTxt">${esc(txt)}</pre>
@@ -195,7 +197,9 @@ export function openShare(it){const txt=shareText(it);$('#sheet').hidden=false;
  $('#shText').onclick=async()=>{GC.event('share-text');if(await nativeShare({title:it.ref,text:txt}))return;if(navigator.share){try{await navigator.share({title:it.ref,text:txt})}catch{}}else copy()};
  const copy=async()=>{GC.event('share-copy');try{await navigator.clipboard.writeText(txt)}catch{const t=document.createElement('textarea');t.value=txt;document.body.append(t);t.select();document.execCommand('copy');t.remove()}C.toast(tt('Copied','کاپی ہو گیا'))};$('#shCopy').onclick=copy;
  $('#shImg').onclick=async()=>{GC.event('share-image');const cvs=await textCards(it);window.__shareCvs=cvs;await shareFiles(cvs,it.ref.replace(/\W+/g,'-')||'share',it.ref,$('#shOut'))}}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-shr]');if(b){e.stopPropagation();openShare(SH[+b.dataset.shr])}},true);
+// Share uses the translation currently picked on the card (hadith language row), not the one at render time.
+export function liveItem(b,it){const art=b.closest('article.hd');if(!art)return it;const p=[...art.querySelectorAll('.hd-t')].find(x=>!x.hidden&&!x.dataset.miss);if(!p||p.dataset.l==='ara')return it;const t=p.querySelector('p')?.textContent.trim();return t?{...it,tr:t+(p.dataset.auto?' ('+(p.querySelector('.hd-auto')?.textContent||'')+')':'')}:it}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-shr]');if(b){e.stopPropagation();openShare(liveItem(b,SH[+b.dataset.shr]))}},true);
 window.__gcShare=n=>GC.event(n);
 export const siteUrl=h=>location.origin+location.pathname+h;
 
@@ -416,5 +420,11 @@ export async function hifzTest(pre){C.setTitle(tt('Hifz Test','حفظ ٹیسٹ')
  $$('#zGo').onclick=()=>{let s,f,t;const juz=+$$('#zJu').value;let next=[];if(by==='juz'){const rs=L.juzRanges(juz);[s,f,t]=rs[0];next=rs.slice(1)}else{s=+$$('#zSu').value;const n=cnt(s);f=Math.max(1,Math.min(n,+$$('#zF').value||1));t=Math.max(f,Math.min(n,+$$('#zT').value||n))}
   const cfg={by,s,from:f,to:t,juz,showTr:$$('#zTr').checked,auto:$$('#zAu').checked};LS.set('qsHzCfg',cfg);C.startHifzTest({...cfg,next})}}
 window.__cards={ayahCard,textCard,textCards,quranCards,nameCard:NM.drawCard,paginate:SC.paginate,quranBlocks};
-document.addEventListener('click',e=>{const b=e.target.closest?.('.tv-shr');if(!b)return;const c=b.closest('.tv-c'),q=x=>c.querySelector(x)?.textContent.trim()||'';const u=document.documentElement.lang==='ur';
- openShare({ar:q('.tv-ar'),tr:(u?q('.tv-ur'):q('.tv-en'))||q('.tv-en')||q('.tv-ur'),ref:q('.tv-h b')||tt('Adhkar','اذکار')+' '+q('.tv-n'),url:siteUrl(location.hash)})});
+export function visBlocks(c){const vis=e=>e.getClientRects().length>0&&!e.closest('.tv-h');const tx=e=>e.textContent.trim();
+ let els=[...c.querySelectorAll('.tv-ar,.tv-tr,.tv-ur,.tv-en')].filter(e=>vis(e)&&!e.matches('.az-vu,.az-bis'));
+ if(!els.some(e=>e.matches('.tv-ar')))els=[...c.querySelectorAll('.az-v,.az-vu')].filter(vis).concat(els);
+ const bl=[];for(const e of els){const t=tx(e);if(!t)continue;if(e.matches('.tv-ar')){const l=bl.at(-1);if(l&&l.ar!=null&&!l.tr&&!l.t2)l.ar+='\n'+t;else bl.push({ar:t,tr:''})}else{const l=bl.at(-1);if(l&&!l.tr)l.tr=t;else bl.push({ar:'',tr:t})}}
+ return bl}
+document.addEventListener('click',e=>{const b=e.target.closest?.('.tv-shr');if(!b)return;const c=b.closest('.tv-c'),q=x=>c.querySelector(x)?.textContent.trim()||'';
+ const ref=q('.az-ref').replace(/^\[|\]$/g,'')||q('.tv-h b')||tt('Adhkar','اذکار')+' '+q('.tv-n');const bl=visBlocks(c);if(bl.length)bl.at(-1).ref=ref;
+ openShare({ar:bl.flatMap(x=>[x.ar,x.tr]).filter(Boolean).join('\n\n'),tr:'',ref,blocks:bl,hue:THEME.duas,url:siteUrl(location.hash)})});

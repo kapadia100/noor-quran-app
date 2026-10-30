@@ -408,3 +408,9 @@ body.tb-focus-on #back{visibility:hidden!important}
 body.mz-focus>header,body.mz-focus>nav,body.mz-focus .tabbar,body.mz-focus #tabs,body.mz-focus .mz-top,body.mz-focus .pager{display:none!important}
 body.mz-focus #app{padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 .mz-exit{position:fixed;z-index:1000}
+/* v72: long prayer names (Maghrib) + countdown must fit beside the arch at 360–430px */
+.pcard .pc-nx{gap:clamp(4px,1.4vw,8px)!important;min-width:0;flex-wrap:nowrap}
+.pcard .pc-nx>b{font-size:clamp(20px,6.1vw,26px)!important;white-space:nowrap}
+.pcard .pc-nx>.pc-at{font-size:clamp(11px,3.2vw,13px)!important;white-space:nowrap}
+.pcard .pc-cdw .cd{font-size:clamp(18px,5.6vw,24px)!important;white-space:nowrap}
+.pcard .pc-cdw{flex:none;margin-inline-start:auto}

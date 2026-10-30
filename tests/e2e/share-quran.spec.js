@@ -27,3 +27,17 @@ test('hadith share: whole hadith, new card style, long hadith becomes numbered s
   const s=await C.textCards({ar,tr,ref:'Sahih al-Bukhari 1'});const l=await C.textCards({ar:ar.repeat(14),tr:tr.repeat(22),ref:'Sahih al-Bukhari 2'});return {s:s.map(c=>c.toDataURL()),l:l.map(c=>c.toDataURL())}});
  expect(r.s.length).toBe(1);expect(r.l.length).toBeGreaterThan(1);for(const d of [...r.s,...r.l])expect(dec(d)).toBe(URL_);
  if(ti.project.name==='iphone'){save('hadith',r.s[0]);r.l.forEach((d,i)=>save(`hadith-long-${i+1}`,d))}});
+for(const l of ['urd','eng'])test(`hadith share follows the picked translation (${l})`,async({page},ti)=>{await page.goto('./#/hadith/bukhari/1');const art=page.locator('article.hd').first();await art.locator(`[data-sl=${l}]`).click();
+ await art.locator('[data-shr]').click();const t=await page.locator('#shTxt').textContent();const ur=/[\u0600-\u06ff]{3,}[^\n]*\n*—/.test(t);
+ const shown=(await art.locator(`.hd-t[data-l=${l}] p`).textContent()).trim();expect(t).toContain(shown);
+ if(l==='urd')expect(t.split('—')[0]).not.toMatch(/\b(the|and|Allah's Messenger)\b/);else expect(ur).toBe(false);
+ await page.click('#shImg');await page.locator('#cardImg').waitFor();const d=await page.locator('#cardImg').evaluate(async i=>{const b=await (await fetch(i.src)).blob();return await new Promise(o=>{const f=new FileReader();f.onload=()=>o(f.result);f.readAsDataURL(b)})});
+ expect(dec(d)).toBe(URL_);if(ti.project.name==='iphone')save(`hadith-${l}`,d)});
+for(const [nm,v] of [['ur-only',{tr:0,ur:1,en:0}],['en-only',{tr:0,ur:0,en:1}],['all',{tr:1,ur:1,en:1}]])test(`Light of Hadith share mirrors visible chips (${nm})`,async({page},ti)=>{
+ await page.addInitScript(v=>localStorage.setItem('txtView',JSON.stringify(v)),v);await page.goto('./#/duas/hadith');const c=page.locator('#az20');await c.waitFor();
+ expect(await page.locator('.az-o .tv-shr').count()).toBeGreaterThan(0);expect(await page.locator('.az-i .tv-shr').count()).toBe(await page.locator('.az-i').count());
+ await c.locator('.tv-shr').click();const t=await page.locator('#shTxt').textContent();const body=t.split('—')[0];
+ expect(body).toContain('لَا حَوْلَ');const U=/ہمت/,E_=/no power/;
+ expect(U.test(body)).toBe(!!v.ur);expect(E_.test(body)).toBe(!!v.en);
+ await page.click('#shImg');await page.locator('#cardImg').waitFor();const d=await page.locator('#cardImg').evaluate(async i=>{const b=await (await fetch(i.src)).blob();return await new Promise(o=>{const f=new FileReader();f.onload=()=>o(f.result);f.readAsDataURL(b)})});
+ expect(dec(d)).toBe(URL_);if(ti.project.name==='iphone')save(`light-hadith-${nm}`,d)});
