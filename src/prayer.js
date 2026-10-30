@@ -10,7 +10,7 @@ export const PRAYERS=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
 export const PNAME={fajr:['Fajr','فجر'],sunrise:['Sunrise','طلوع'],dhuhr:['Dhuhr','ظہر'],asr:['Asr','عصر'],maghrib:['Maghrib','مغرب'],isha:['Isha','عشاء']};
 export const P=Object.assign({city:'Karachi',lat:24.8607,lng:67.0011,tz:'Asia/Karachi',src:'city',method:'Karachi',madhab:'Hanafi',hijriAdj:0,alerts:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true,sunrise:false},adhan:true,days:7},LS.get('prayer',{}));
 export const saveP=()=>LS.set('prayer',P);
-export function params(){const p=(CalculationMethod[P.method]||CalculationMethod.Karachi)();p.madhab=P.madhab==='Hanafi'?Madhab.Hanafi:Madhab.Shafi;if(Math.abs(P.lat)>48)p.highLatitudeRule=HighLatitudeRule.recommended(new Coordinates(P.lat,P.lng));return p}
+export function params(){const p=(CalculationMethod[P.method]||CalculationMethod.Karachi)();p.madhab=P.madhab==='Hanafi'?Madhab.Hanafi:Madhab.Shafi;if(P.hlr&&P.hlr!=='auto'&&HighLatitudeRule[P.hlr])p.highLatitudeRule=HighLatitudeRule[P.hlr];else if(Math.abs(P.lat)>48)p.highLatitudeRule=HighLatitudeRule.recommended(new Coordinates(P.lat,P.lng));if(P.adj)for(const k of Object.keys(p.adjustments))p.adjustments[k]=+P.adj[k]||0;return p}
 // Prayer times for the calendar day of `date` in the selected city's timezone (not the device's).
 export function times(date=new Date()){return new PrayerTimes(new Coordinates(P.lat,P.lng),dayIn(P.tz,date),params())}
 export const fmt=d=>d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:P.tz||undefined});

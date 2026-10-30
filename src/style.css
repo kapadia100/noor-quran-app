@@ -595,3 +595,34 @@ article.hd.hd-on{outline:2px solid var(--pri);outline-offset:2px}
 .mq-bar{display:flex;align-items:center;gap:10px}.mq-loc{width:40px;height:40px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--pri,inherit);display:inline-grid;place-items:center;padding:0;cursor:pointer;flex:none}
 .mq-loc svg{width:20px;height:20px}.mq-loc.spin svg{animation:mqSpin 1s linear infinite}.mq-loc:disabled{opacity:.7}@keyframes mqSpin{to{transform:rotate(360deg)}}
 .mq-locating{animation:mqPulse 1.2s ease-in-out infinite}@keyframes mqPulse{50%{opacity:.45}}.mq-retry{margin-inline-start:6px;padding:4px 12px;font-size:13px}
+/* t169u prayer times redesign (Sakina) */
+.ph-hero{margin:14px 0 12px;padding:18px 18px 16px;border-radius:24px;background:linear-gradient(150deg,var(--pri),color-mix(in srgb,var(--pri) 70%,#000));color:var(--onpri);box-shadow:0 10px 28px color-mix(in srgb,var(--pri) 30%,transparent);position:relative;overflow:hidden}
+.ph-hero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;border:1px solid color-mix(in srgb,var(--acc) 60%,transparent);opacity:.5}
+.ph-hero.mk{background:linear-gradient(150deg,#8a6a2c,#5e4a22)}
+.ph-dates{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;opacity:.92}.ph-dates b{font-weight:600}
+.ph-lbl{display:block;margin-top:12px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.ph-next{display:flex;align-items:baseline;gap:10px;margin-top:2px}.ph-next b{font:600 30px/1.1 var(--f-head,Fraunces,serif)}.ph-next span{font-size:18px;opacity:.9}
+.ph-cd{font:600 40px/1.1 var(--f-ui);font-variant-numeric:tabular-nums;margin:6px 0 10px;letter-spacing:.02em}
+.ph-bar{height:5px;border-radius:3px;background:rgba(255,251,242,.25);overflow:hidden}.ph-bar i{display:block;height:100%;width:var(--w,0%);background:var(--acc);border-radius:3px;transition:width 1s linear}
+.ph-loc{display:flex;align-items:center;gap:10px;padding:10px 12px!important;flex-wrap:wrap}.ph-loc .grow{flex:1;min-width:0;display:flex;flex-direction:column}.ph-loc b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-pin{color:var(--acc);display:grid}
+.ph-chip{position:relative;display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border:1px solid var(--bd2);border-radius:999px;font-size:13px;color:var(--pri);background:var(--sec);margin:0!important}
+.ph-chip select{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}.mq-warn{color:#a0522d}
+.ph-seg{display:flex;background:var(--sec);border-radius:999px;padding:3px;margin:12px 0}.ph-seg button{flex:1;border:0;background:none;padding:7px;border-radius:999px;font:600 13px var(--f-ui);color:var(--mut)}.ph-seg button.on{background:var(--card);color:var(--pri);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.ph-list{padding:4px 0!important;overflow:hidden}.ph-list .ptimes{margin:0;border:0;background:none;box-shadow:none}
+.ph-head,.ph-list .ph-row{display:grid!important;grid-template-columns:30px minmax(0,1fr) 84px 36px 36px;align-items:center;gap:6px;padding:11px 14px!important}
+.ph-head{padding:6px 14px 0!important;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}.ph-head svg{width:14px;height:14px}
+.ph-row .t,.ph-head .t{text-align:end;font-variant-numeric:tabular-nums;font-weight:600;min-width:0}.ph-c{display:grid;place-items:center}
+.ph-ic{width:24px;height:24px;color:var(--acc)}.ph-n{display:flex;flex-direction:column;min-width:0}.ph-n small{font-size:12px;color:var(--mut)}.ph-mk{font-style:normal;font-size:11px;color:var(--gold);margin-top:2px}
+.ph-row+.ph-row{border-top:1px solid var(--bd)}.ph-row.info{opacity:.72}.ph-row.info .t{font-weight:500}.ph-row.past:not(.cur){opacity:.55}
+.ph-row.cur{background:var(--hl)!important;box-shadow:inset 3px 0 0 var(--pri)}.ph-row.cur b{color:var(--pri)}
+.ph-done input,.ph-row .sw input{position:absolute;opacity:0;width:1px;height:1px}.ph-done{position:relative;width:26px;height:26px;border:1.6px solid var(--bd2);border-radius:8px;cursor:pointer}.ph-done i{display:none;color:var(--onpri)}.ph-done i svg{width:16px;height:16px}
+.ph-done:has(input:checked){background:var(--pri);border-color:var(--pri)}.ph-done:has(input:checked) i{display:grid}
+.ph-row .sw{position:relative;color:var(--mut);cursor:pointer}.ph-row .sw:has(input:checked){color:var(--acc)}.ph-row .sw:not(:has(input:checked)) svg{opacity:.4}
+.ph-set summary{cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;list-style:none}.ph-set summary small{margin-inline-start:auto;font-weight:400;font-size:12px;text-align:end}.ph-set summary::-webkit-details-marker{display:none}.ph-set .form{margin-top:10px}
+.ph-adjs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}.ph-adjs>small{grid-column:1/-1}.ph-adj{display:grid;grid-template-columns:1fr 32px 30px 32px;align-items:center;gap:4px;font-size:13px}.ph-adj .btn{padding:4px 0;min-height:30px}.ph-adj b{text-align:center;font-variant-numeric:tabular-nums}
+.ph-tt{padding:0!important;overflow-x:auto}.ph-tt table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}.ph-tt th,.ph-tt td{padding:8px 6px;text-align:center;white-space:nowrap}.ph-tt thead th{position:sticky;top:0;background:var(--sec);font-size:11px}.ph-tt tbody tr:nth-child(even){background:color-mix(in srgb,var(--sec) 50%,transparent)}.ph-tt tr.on{background:var(--hl)!important;font-weight:600}.ph-tt tbody th{text-align:start;font-weight:600}
+.ph-done{align-self:center;justify-self:center;height:26px!important;width:26px!important;box-sizing:border-box}
+.ph-row .ph-done{min-height:0!important;min-width:0!important;display:grid!important;place-items:center;padding:0!important}.ph-row .sw{min-height:36px;display:grid!important;place-items:center}
+.ph-row .t bdi{unicode-bidi:isolate}
+.ph-adjs{grid-template-columns:1fr}.ph-adj{grid-template-columns:1fr 40px 36px 40px}.ph-adj .btn{min-width:0!important;width:40px;height:34px;min-height:34px!important;padding:0!important;display:grid;place-items:center;font-size:18px}
+@media(min-width:520px){.ph-adjs{grid-template-columns:1fr 1fr}}
