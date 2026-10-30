@@ -26,9 +26,9 @@ export function render(app,{P,ur,icon,esc}){const tt=(e,u)=>ur?u:e,q=bearing(+P.
    <g id="qrot" transform="rotate(0 150 150)"><circle cx="150" cy="150" r="146" class="qring"/><circle cx="150" cy="150" r="118" fill="url(#qfg)" class="qin"/>${tick()}
    <g id="qk" class="qf-kaaba" data-q="${q.toFixed(2)}" transform="rotate(${q.toFixed(2)} 150 150)"><line x1="150" y1="150" x2="150" y2="40" class="qray"/><g id="qki" transform="rotate(${(-q).toFixed(2)} 150 6)"><rect x="127" y="-17" width="46" height="46" rx="12" class="qkb"/><svg x="136" y="-8" width="28" height="28" viewBox="0 0 24 24" class="qki">${icon('kaaba').replace(/^<svg[^>]*>|<\/svg>$/g,'')}</svg></g></g></g></svg></div>
   <div class="qf-hub"><div class="deg">${q.toFixed(1)}°</div><small>${tt('from True North','حقیقی شمال سے')}</small></div></div>
- <p id="hd" class="qf-hd" aria-live="polite">${tt('Tap Start compass and hold your phone flat.','کمپاس شروع کریں اور فون سیدھا رکھیں۔')}</p>
+ <p id="hd" class="qf-hd" aria-live="polite">${tt('Hold your phone flat…','فون سیدھا رکھیں…')}</p>
  <div id="qcal" class="qf-cal" hidden><svg viewBox="0 0 60 30" aria-hidden="true"><path d="M30 15c-6-8-18-8-18 0s12 8 18 0 18-8 18 0-12 8-18 0"/></svg><span>${tt('Compass accuracy is low. Move away from metal and wave your phone in a figure-8.','کمپاس کی درستی کم ہے۔ دھات سے دور ہو کر فون کو 8 کی شکل میں گھمائیں۔')}</span></div>
- <div class="qf-btns"><button class="btn pri" id="cmp">${icon('qibla')} ${tt('Start compass','کمپاس شروع کریں')}</button><a class="btn" href="#/prayer">${icon('pin')} ${tt('Change location','لوکیشن بدلیں')}</a></div>
+ <div class="qf-btns" id="qbtns" hidden><button class="btn pri" id="cmp">${icon('qibla')} ${tt('Allow compass','کمپاس کی اجازت دیں')}</button></div>
  <small class="muted qf-note">${tt(`Qibla ${q.toFixed(1)}° clockwise from true north (shortest path to the Kaaba). Compass corrected for magnetic declination ${dec>=0?'+':''}${dec.toFixed(1)}°.`,`قبلہ حقیقی شمال سے گھڑی کی سمت ${q.toFixed(1)}° (کعبہ تک مختصر ترین راستہ)۔ کمپاس میں مقناطیسی انحراف ${dec>=0?'+':''}${dec.toFixed(1)}° درست کیا گیا ہے۔`)}</small></div>`;
  const $=s=>app.querySelector(s),dial=$('#dial'),qf=$('#qf'),hd=$('#hd'),cal=$('#qcal');
  const rot=$('#qrot'),ki=$('#qki');let shown=null,target=null,raf=0,ok=false,gotAbs=false,t0=0;
@@ -47,8 +47,16 @@ export function render(app,{P,ur,icon,esc}){const tt=(e,u)=>ur?u:e,q=bearing(+P.
   if(h==null){if(Date.now()-t0>2500&&!gotAbs)cal.hidden=false;return}
   h=trueHeading(h,dec,screenAngle());target=h;if(!raf)raf=requestAnimationFrame(draw)};
  const off=()=>{if(raf)cancelAnimationFrame(raf);raf=0;removeEventListener('deviceorientationabsolute',on);removeEventListener('deviceorientation',on)};
- $('#cmp').onclick=async()=>{if(!window.DeviceOrientationEvent){hd.textContent=tt('Compass not supported on this device. Use the bearing above.','اس فون پر کمپاس دستیاب نہیں۔ اوپر کا زاویہ استعمال کریں۔');return}
-  try{if(typeof DeviceOrientationEvent.requestPermission==='function'&&await DeviceOrientationEvent.requestPermission()!=='granted'){hd.textContent=tt('Motion permission denied. Enable it in Settings › Safari › Motion & Orientation.','موشن کی اجازت نہیں ملی۔ سیٹنگز › سفاری › موشن اور اورینٹیشن میں فعال کریں۔');return}}catch{hd.textContent=tt('Motion permission was not granted.','موشن کی اجازت نہیں ملی۔');return}
-  off();t0=Date.now();qf.classList.add('live');hd.textContent=tt('Hold your phone flat…','فون سیدھا رکھیں…');
-  addEventListener('ondeviceorientationabsolute' in window?'deviceorientationabsolute':'deviceorientation',on)};
+ const G='qiblaMotion',btns=$('#qbtns');let started=false;
+ const listen=()=>{off();t0=Date.now();qf.classList.add('live');if('ondeviceorientationabsolute' in window)addEventListener('deviceorientationabsolute',on);addEventListener('deviceorientation',on)};
+ const begin=()=>{started=true;btns.remove();qf.removeEventListener('click',ask);listen()};
+ const prompt=()=>{if(started||!btns.isConnected)return;btns.hidden=false;hd.textContent=tt('Tap anywhere to allow the compass.','کمپاس کی اجازت کے لیے کہیں بھی ٹیپ کریں۔');qf.addEventListener('click',ask)};
+ async function ask(){if(started)return;try{if(await DeviceOrientationEvent.requestPermission()!=='granted'){try{localStorage.removeItem(G)}catch{}hd.textContent=tt('Motion permission denied. Enable it in Settings › Safari › Motion & Orientation.','موشن کی اجازت نہیں ملی۔ سیٹنگز › سفاری › موشن اور اورینٹیشن میں فعال کریں۔');return}}catch{hd.textContent=tt('Motion permission was not granted.','موشن کی اجازت نہیں ملی۔');return}
+  try{localStorage.setItem(G,'1')}catch{}begin()}
+ // auto-start: no permission API -> start now; iOS -> start if granted before (events flow), else one prompt / tap anywhere
+ if(!window.DeviceOrientationEvent){btns.remove();hd.textContent=tt('Compass not supported on this device. Use the bearing above.','اس فون پر کمپاس دستیاب نہیں۔ اوپر کا زاویہ استعمال کریں۔')}
+ else if(typeof DeviceOrientationEvent.requestPermission!=='function')begin();
+ else{let rem=false;try{rem=localStorage.getItem(G)==='1'}catch{}
+  if(rem){listen();const chk=()=>{if(target!=null){started=true;btns.remove()}else{off();qf.classList.remove('live');prompt()}};setTimeout(chk,1500)}
+  else Promise.resolve().then(()=>DeviceOrientationEvent.requestPermission()).then(r=>{if(r==='granted'&&!started){try{localStorage.setItem(G,'1')}catch{}begin()}else prompt()},prompt)}
  return off}

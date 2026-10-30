@@ -94,7 +94,9 @@ function prayer(){setTitle(S.ui==='ur'?'اوقاتِ نماز':'Prayer Times');c
  $('#city').onchange=e=>{if(e.target.value){PR.setCity(e.target.value);re()}};$('#meth').onchange=e=>{P.method=e.target.value;re()};$('#madh').onchange=e=>{P.madhab=e.target.value;re()};
  $('#adh').onchange=e=>{P.adhan=e.target.checked;re()};$('#hm').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj-1);PR.saveP();prayer()};$('#hp').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj+1);PR.saveP();prayer()};
  app.querySelectorAll('[data-al]').forEach(c=>c.onchange=()=>{P.alerts[c.dataset.al]=c.checked;re()});$('#sched').onclick=re}
-function qibla(){setTitle(S.ui==='ur'?'قبلہ فائنڈر':'Qibla Finder');QB.render(app,{P:PR.P,ur:S.ui==='ur',icon:I_,esc})}
+function qibla(){setTitle(S.ui==='ur'?'قبلہ فائنڈر':'Qibla Finder');const r=()=>QB.render(app,{P:PR.P,ur:S.ui==='ur',icon:I_,esc});let stop=r();
+ // location always from GPS: refresh silently; re-render only if it moved
+ const o=[+PR.P.lat,+PR.P.lng];PR.locate().then(()=>{if(!location.hash.startsWith('#/qibla'))return;if(Math.abs(o[0]-PR.P.lat)>0.005||Math.abs(o[1]-PR.P.lng)>0.005){stop?.();stop=r()}}).catch(()=>{})}
 
 // ---------- Reader + audio ----------
 // One persistent <audio> element (required for iOS to keep playing on auto-advance / locked screen),

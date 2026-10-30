@@ -1,0 +1,9 @@
+// Shared text-only reading controls: show/hide transliteration, Urdu, English; A-/A+ size. Stored locally.
+const K='txtView';const get=()=>{try{return Object.assign({tr:1,ur:1,en:1,sz:0},JSON.parse(localStorage.getItem(K)||'{}'))}catch{return{tr:1,ur:1,en:1,sz:0}}};
+export function bar(tt){const v=get();const b=(k,en,u)=>`<button type="button" class="tv-t${v[k]?' on':''}" data-tv="${k}" aria-pressed="${!!v[k]}">${tt(en,u)}</button>`;
+ return `<div class="card tv-bar" role="toolbar">${b('tr','Roman','رومن')}${b('ur','Urdu','اردو')}${b('en','English','انگریزی')}<span class="tv-sp"></span><button type="button" class="tv-sz" data-sz="-1" aria-label="Smaller text">A−</button><button type="button" class="tv-sz" data-sz="1" aria-label="Larger text">A+</button></div>`}
+export function apply(root){const v=get();root.classList.toggle('tv-no-tr',!v.tr);root.classList.toggle('tv-no-ur',!v.ur);root.classList.toggle('tv-no-en',!v.en);root.style.setProperty('--tvs',String(1+v.sz*0.12));root.dataset.sz=v.sz}
+export function wire(root){apply(root);root.querySelector('.tv-bar')?.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const v=get();
+ if(t.dataset.tv){v[t.dataset.tv]=v[t.dataset.tv]?0:1;t.classList.toggle('on',!!v[t.dataset.tv]);t.setAttribute('aria-pressed',String(!!v[t.dataset.tv]))}else v.sz=Math.max(-2,Math.min(4,v.sz+ +t.dataset.sz));
+ localStorage.setItem(K,JSON.stringify(v));apply(root)})}
+export const card=(n,title,ar,tr,u,en)=>`<section class="card tv-c"><div class="tv-h"><span class="tv-n">${n}</span><b>${title}</b></div>${ar?`<p class="tv-ar" dir="rtl" lang="ar">${ar}</p>`:''}${tr?`<p class="tv-tr" dir="ltr" lang="en">${tr}</p>`:''}${u?`<hr class="tv-hr"><p class="tv-ur" dir="rtl" lang="ur">${u}</p>`:''}${en?`<p class="tv-en" dir="ltr" lang="en">${en}</p>`:''}</section>`;

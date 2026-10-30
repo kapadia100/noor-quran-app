@@ -1,4 +1,4 @@
-// v3.7.11 Namaz-e-Janazah: short method + the duas (Arabic with full harakat, Urdu, English); Arabic read by the device voice when available.
+// v3.7.11 Namaz-e-Janazah: short method + the duas (Arabic with full harakat, Urdu, English); text only (no audio).
 /** Steps: [title en, title ur, how en, how ur, arabic|null] */
 export const STEPS=[
  ['Intention & 1st takbeer','نیت اور پہلی تکبیر','Make the intention in the heart, say Allahu Akbar raising the hands, fold them, and read the Thana.','دل میں نیت کریں، ہاتھ اٹھا کر اللہ اکبر کہیں، ہاتھ باندھیں اور ثنا پڑھیں۔',
@@ -22,11 +22,14 @@ export const DUAS=[
   'اَللّٰهُمَّ اجْعَلْهَا لَنَا فَرَطًا، وَّاجْعَلْهَا لَنَا أَجْرًا وَّذُخْرًا، وَّاجْعَلْهَا لَنَا شَافِعَةً وَّمُشَفَّعَةً',
   'اے اللہ! اس (بچی) کو ہمارے لیے آگے پہنچ کر سامان کرنے والی بنا، اسے ہمارے لیے اجر اور ذخیرہ بنا، اور اسے ہمارے حق میں سفارش کرنے والی اور جس کی سفارش قبول ہو، بنا۔',
   'O Allah, make her for us one who goes ahead to prepare, make her for us a reward and a treasure, and make her for us an intercessor whose intercession is accepted.']];
+export const STEPS_TR=['Subḥānakallāhumma wa biḥamdika, wa tabārakasmuka, wa taʿālā jadduka, wa jalla thanā’uka, wa lā ilāha ghayruk', 'Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā ṣallayta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdum majīd. Allāhumma bārik ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā bārakta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdum majīd', '', 'As-salāmu ʿalaykum wa raḥmatullāh'];
+export const DUAS_TR=['Allāhummaghfir liḥayyinā wa mayyitinā, wa shāhidinā wa ghā’ibinā, wa ṣaghīrinā wa kabīrinā, wa dhakarinā wa unthānā. Allāhumma man aḥyaytahū minnā fa-aḥyihī ʿalal-islām, wa man tawaffaytahū minnā fa-tawaffahū ʿalal-īmān', 'Allāhummajʿalhu lanā faraṭan, wajʿalhu lanā ajran wa dhukhran, wajʿalhu lanā shāfiʿan wa mushaffaʿā', 'Allāhummajʿalhā lanā faraṭan, wajʿalhā lanā ajran wa dhukhran, wajʿalhā lanā shāfiʿatan wa mushaffaʿah'];
+import {bar,wire} from './textview.js';
 export function leave(){}
 export function page(C,tt,ur){
  C.setTitle(tt('Namaz-e-Janazah','نمازِ جنازہ'));const app=C.app();
- app.innerHTML=`<div class="jz" dir="${ur()?'rtl':'ltr'}"><div class="card"><p class="muted">${tt('Funeral prayer is said standing, with four takbeers, no ruku or sajda. Below is the order and what to read after each takbeer.','نمازِ جنازہ کھڑے ہو کر چار تکبیروں کے ساتھ پڑھی جاتی ہے، اس میں رکوع اور سجدہ نہیں۔ نیچے ترتیب اور ہر تکبیر کے بعد پڑھی جانے والی چیزیں ہیں۔')}</p></div>
- ${STEPS.map((s,i)=>`<section class="card jz-step" id="jzS${i}"><div class="rq-h"><b>${i+1}. ${tt(s[0],s[1])}</b></div><p>${tt(s[2],s[3])}</p>${s[4]?`<p class="ar jz-ar" dir="rtl" lang="ar">${s[4]}</p>`:''}</section>`).join('')}
+ app.innerHTML=`<div class="jz tv" dir="${ur()?'rtl':'ltr'}">${bar(tt)}<div class="card"><p class="muted">${tt('Funeral prayer is said standing, with four takbeers, no ruku or sajda. Below is the order and what to read after each takbeer.','نمازِ جنازہ کھڑے ہو کر چار تکبیروں کے ساتھ پڑھی جاتی ہے، اس میں رکوع اور سجدہ نہیں۔ نیچے ترتیب اور ہر تکبیر کے بعد پڑھی جانے والی چیزیں ہیں۔')}</p></div>
+ ${STEPS.map((s,i)=>`<section class="card tv-c jz-step" id="jzS${i}"><div class="tv-h"><span class="tv-n">${i+1}</span><b>${tt(s[0],s[1])}</b></div><p class="tv-how">${tt(s[2],s[3])}</p>${s[4]?`<p class="tv-ar jz-ar" dir="rtl" lang="ar">${s[4]}</p><p class="tv-tr" dir="ltr" lang="en">${STEPS_TR[i]}</p>`:''}</section>`).join('')}
  <h3 class="dhead jz-dh">${tt('Dua for the deceased (3rd takbeer)','میت کے لیے دعا (تیسری تکبیر)')}</h3>
- ${DUAS.map((d,i)=>`<section class="card jz-dua" id="jzD${i}"><div class="rq-h"><b>${tt(d[0],d[1])}</b></div><p class="ar jz-ar" dir="rtl" lang="ar">${d[2]}</p><p class="jz-ur" dir="rtl" lang="ur">${d[3]}</p><p class="jz-en" dir="ltr" lang="en">${d[4]}</p></section>`).join('')}</div>`;
- window.__jz=1}
+ ${DUAS.map((d,i)=>`<section class="card tv-c jz-dua" id="jzD${i}"><div class="tv-h"><span class="tv-n">${String.fromCharCode(65+i)}</span><b>${tt(d[0],d[1])}</b></div><p class="tv-ar jz-ar" dir="rtl" lang="ar">${d[2]}</p><p class="tv-tr" dir="ltr" lang="en">${DUAS_TR[i]}</p><hr class="tv-hr"><p class="tv-ur jz-ur" dir="rtl" lang="ur">${d[3]}</p><p class="tv-en jz-en" dir="ltr" lang="en">${d[4]}</p></section>`).join('')}</div>`;
+ wire(app.querySelector('.tv'));window.__jz=1}

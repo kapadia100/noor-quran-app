@@ -77,7 +77,7 @@ const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
-const MORE_EXTRA=[['#/janazah','janazah','Namaz-e-Janazah','نمازِ جنازہ'],['#/kalimas','kalimas','6 Kalimas','چھ کلمے'],['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/ruqyah','ruqyah','Ruqyah Shariah','رقیہ شرعیہ'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+const MORE_EXTRA=[['#/janazah','janazah','Namaz-e-Janazah','نمازِ جنازہ'],['#/kalimas','kalimas','Kalmas','کلمے'],['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/ruqyah','ruqyah','Ruqyah Shariah','رقیہ شرعیہ'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
 export const ruqyah=()=>import('./ruqyah.js').then(m=>m.page(C,tt,ur,I));
 export const kalimas=()=>import('./kalimas.js').then(m=>m.page(C,tt,ur));
@@ -192,8 +192,10 @@ export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get
 
 // ---------- duas & azkar ----------
 const DTABS=[['morning-dhikr','Morning','صبح'],['evening-dhikr','Evening','شام'],['dhikr-after-salah','After Salah','نماز کے بعد'],['daily-dua','Daily','روزمرہ'],['selected-dua','Selected','منتخب'],['hisn','Hisn al-Muslim','حصن المسلم']];
-export async function duas(tab='morning-dhikr',ch){C.setTitle(tt('Duas & Azkar','دعائیں و اذکار'));C.loading();
- const head=`<div class="tabs scroll">${DTABS.map(([k,e,u])=>`<a href="#/duas/${k}" class="${k===tab?'on':''}">${tt(e,u)}</a>`).join('')}</div>`;
+export async function duas(tab='morning-dhikr',ch){const pick=`<div class="dz-pick" role="tablist"><a href="#/duas" class="dz-b${tab!=='hadith'?' on':''}" role="tab" aria-selected="${tab!=='hadith'}">${I.icon('duas')}<b>${tt('Duas & Azkar','دعائیں و اذکار')}</b></a><a href="#/duas/hadith" class="dz-b${tab==='hadith'?' on':''}" role="tab" aria-selected="${tab==='hadith'}">${I.icon('hadith')}<b>${tt('In the Light of Hadith','احادیث کی روشنی میں')}</b></a></div>`;
+ if(tab==='hadith'){const m=await import('./azkar.js');m.page(C,tt,()=>ur());app().insertAdjacentHTML('afterbegin',pick);return}
+ C.setTitle(tt('Duas & Azkar','دعائیں و اذکار'));C.loading();
+ const head=pick+`<div class="tabs scroll">${DTABS.map(([k,e,u])=>`<a href="#/duas/${k}" class="${k===tab?'on':''}">${tt(e,u)}</a>`).join('')}</div>`;
  if(tab==='hisn'){const H=await X('hisn.json');
   if(!ch){app().innerHTML=head+`<input id="hf" class="inp" aria-label="Filter" placeholder="${tt('Search chapters…','باب تلاش کریں…')}"><ul class="list" id="hl">${H.map(c=>`<li data-q="${esc(c.t.toLowerCase())}"><a href="#/duas/hisn/${c.id}"><b class="num">${c.id}</b><span><b>${esc(c.t)}</b><small>${c.items.length} ${tt('duas','دعائیں')}</small></span></a></li>`).join('')}</ul>`;
    $('#hf').oninput=e=>{const q=e.target.value.toLowerCase();app().querySelectorAll('#hl li').forEach(li=>li.hidden=!li.dataset.q.includes(q))};return}
