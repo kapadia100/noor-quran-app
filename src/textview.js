@@ -1,3 +1,4 @@
+export const SHR=`<button class="shr tv-shr" aria-label="Share"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>`;
 // Shared text-only reading controls: show/hide transliteration, Urdu, English; A-/A+ size. Stored locally.
 const K='txtView';const get=()=>{try{return Object.assign({tr:1,ur:1,en:1,sz:0},JSON.parse(localStorage.getItem(K)||'{}'))}catch{return{tr:1,ur:1,en:1,sz:0}}};
 export function bar(tt){const v=get();const b=(k,en,u)=>`<button type="button" class="tv-t${v[k]?' on':''}" data-tv="${k}" aria-pressed="${!!v[k]}">${tt(en,u)}</button>`;
@@ -6,4 +7,4 @@ export function apply(root){const v=get();root.classList.toggle('tv-no-tr',!v.tr
 export function wire(root){apply(root);root.querySelector('.tv-bar')?.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const v=get();
  if(t.dataset.tv){v[t.dataset.tv]=v[t.dataset.tv]?0:1;t.classList.toggle('on',!!v[t.dataset.tv]);t.setAttribute('aria-pressed',String(!!v[t.dataset.tv]))}else v.sz=Math.max(-2,Math.min(4,v.sz+ +t.dataset.sz));
  localStorage.setItem(K,JSON.stringify(v));apply(root)})}
-export const card=(n,title,ar,tr,u,en)=>`<section class="card tv-c"><div class="tv-h"><span class="tv-n">${n}</span><b>${title}</b></div>${ar?`<p class="tv-ar" dir="rtl" lang="ar">${ar}</p>`:''}${tr?`<p class="tv-tr" dir="ltr" lang="en">${tr}</p>`:''}${u?`<hr class="tv-hr"><p class="tv-ur" dir="rtl" lang="ur">${u}</p>`:''}${en?`<p class="tv-en" dir="ltr" lang="en">${en}</p>`:''}</section>`;
+export const card=(n,title,ar,tr,u,en)=>`<section class="card tv-c"><div class="tv-h"><span class="tv-n">${n}</span><b>${title}</b>${SHR}</div>${ar?`<p class="tv-ar" dir="rtl" lang="ar">${ar}</p>`:''}${tr?`<p class="tv-tr" dir="ltr" lang="en">${tr}</p>`:''}${u?`<hr class="tv-hr"><p class="tv-ur" dir="rtl" lang="ur">${u}</p>`:''}${en?`<p class="tv-en" dir="ltr" lang="en">${en}</p>`:''}</section>`;

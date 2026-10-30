@@ -1,3 +1,4 @@
+import {brand} from './qrbrand.js';
 // t174u: 99 Names of Allah — colourful cards, swipeable detail, share images, favourites, name of the day, learn (flashcards + quiz)
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 export const hue=n=>Math.round((n*137.508+28)%360);
@@ -53,12 +54,11 @@ export async function drawCard(n,W,H){const cv=document.createElement('canvas');
  g.save();g.strokeStyle='rgba(243,217,160,.10)';g.lineWidth=2;const s=90;for(let y=-s;y<H+s;y+=s)for(let x=(y/s%2?s/2:0)-s;x<W+s;x+=s){g.save();g.translate(x,y);for(const r of[0,Math.PI/4]){g.save();g.rotate(r);g.strokeRect(-22,-22,44,44);g.restore()}g.restore()}g.restore();
  const gold=g.createLinearGradient(0,0,W,0);gold.addColorStop(0,'#C9A24E');gold.addColorStop(.5,'#F6E2A8');gold.addColorStop(1,'#B88A35');
  g.strokeStyle=gold;g.lineWidth=5;g.strokeRect(44,44,W-88,H-88);g.lineWidth=2;g.strokeRect(62,62,W-124,H-124);
- const cy=H*(H>W?.38:.40),R=W*.34;g.beginPath();g.arc(W/2,cy,R,0,7);g.lineWidth=4;g.strokeStyle=gold;g.stroke();g.beginPath();g.arc(W/2,cy,R-16,0,7);g.lineWidth=1.5;g.stroke();
+ const cy=H*(H>W?.38:.35),R=W*(H>W?.34:.23);g.beginPath();g.arc(W/2,cy,R,0,7);g.lineWidth=4;g.strokeStyle=gold;g.stroke();g.beginPath();g.arc(W/2,cy,R-16,0,7);g.lineWidth=1.5;g.stroke();
  for(let k=0;k<16;k++){const a=k*Math.PI/8;g.beginPath();g.arc(W/2+Math.cos(a)*(R+22),cy+Math.sin(a)*(R+22),k%2?4:7,0,7);g.fillStyle='#E9CF8C';g.fill()}
  g.textAlign='center';g.direction='rtl';g.fillStyle='#FFF6DD';g.shadowColor='rgba(0,0,0,.35)';g.shadowBlur=18;let fs=n.ar.length>14?110:170;g.font=`${fs}px "Amiri Quran", Amiri, serif`;while(g.measureText(n.ar).width>R*1.75&&fs>60){fs-=6;g.font=`${fs}px "Amiri Quran", Amiri, serif`}g.fillText(n.ar,W/2,cy+fs*.32);g.shadowBlur=0;
- g.direction='ltr';g.fillStyle='#F3D9A0';g.font='15px "DM Sans", sans-serif';g.font='600 34px "DM Sans", sans-serif';g.fillText(`${n.n} / 99`,W/2,cy-R-60);
- let y=cy+R+(H>W?150:110);g.fillStyle='#FFF6DD';g.font='600 64px Fraunces, Georgia, serif';g.fillText(n.tr,W/2,y);y+=70;g.fillStyle='#F3D9A0';g.font='italic 42px Fraunces, Georgia, serif';g.fillText(n.en,W/2,y);
- g.direction='rtl';g.font='40px "Noto Nastaliq Urdu", serif';g.fillStyle='rgba(255,246,221,.92)';y+=H>W?110:85;g.fillText(n.ur,W/2,y);
+ 
+ let y=cy+R+(H>W?150:90);g.fillStyle='#FFF6DD';g.font='600 64px Fraunces, Georgia, serif';g.fillText(n.tr,W/2,y);y+=H>W?70:60;g.fillStyle='#F3D9A0';g.font='italic 42px Fraunces, Georgia, serif';g.fillText(n.en,W/2,y);
+ g.direction='rtl';g.font='40px "Noto Nastaliq Urdu", serif';g.fillStyle='rgba(255,246,221,.92)';y+=H>W?110:70;g.fillText(n.ur,W/2,y);
  if(H>W&&n.enD){g.direction='ltr';g.font='34px "DM Sans", sans-serif';g.fillStyle='rgba(255,246,221,.82)';const words=n.enD.split(' ');let line='',ly=y+110;for(const w of words){if(g.measureText(line+w).width>W-240){g.fillText(line.trim(),W/2,ly);ly+=50;line=''}line+=w+' '}g.fillText(line.trim(),W/2,ly)}
- g.direction='ltr';g.font='600 34px Fraunces, Georgia, serif';g.fillStyle='#F3D9A0';g.fillText('Quran Safar',W/2,H-110);g.font='24px "DM Sans", sans-serif';g.fillStyle='rgba(255,246,221,.7)';g.fillText(tt0('99 Names of Allah'),W/2,H-76);return cv}
-const tt0=s=>s;
+ brand(g,W,H,{cell:H>W?4:3,bottom:H>W?90:78});return cv}

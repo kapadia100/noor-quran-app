@@ -1,4 +1,5 @@
 import * as NM from './names99.js';
+import {brand,INSTALL_URL} from './qrbrand.js';
 import{view as mushafView}from'./mushaf.js';
 // v2 feature screens. Everything stays in the same visual system (cards, lists, .btn) and supports EN/UR + dark mode.
 import * as L from './lib.js';
@@ -146,11 +147,12 @@ export async function ayahCard(s,a){const [AR,tr,list]=await Promise.all([C.arab
  try{await Promise.all([document.fonts.load('48px "Amiri Quran"'),document.fonts.load('32px "Noto Nastaliq Urdu"')])}catch{}
  const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#0f766e');gr.addColorStop(1,'#064e3b');g.fillStyle=gr;g.fillRect(0,0,W,H);
  g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=4;g.strokeRect(40,40,W-80,H-80);g.fillStyle='#fff';g.textAlign='center';
- const arT=L.ayahText(s,a,AR[s-1][a-1]);let fs=64;g.direction='rtl';let lines;do{g.font=`${fs}px "Amiri Quran", serif`;lines=L.wrapText(arT,W-200,x=>g.measureText(x).width);fs-=4}while(lines.length*fs*1.9>620&&fs>28);
- let y=170;lines.forEach(l=>{g.fillText(l,W/2,y+=fs*1.9)});
- const trT=tr.texts[a-1]||'',isRtl=tr.edition.direction==='rtl';g.direction=isRtl?'rtl':'ltr';let fs2=38,l2;do{g.font=`${fs2}px ${isRtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(trT,W-200,x=>g.measureText(x).width);fs2-=2}while(l2.length*fs2*1.6>H-y-260&&fs2>18);
- g.fillStyle='rgba(255,255,255,.92)';y+=50;l2.forEach(l=>g.fillText(l,W/2,y+=fs2*(isRtl?2:1.5)));
- g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(`${list[s-1].englishName} ${s}:${a}`,W/2,H-140);g.font='28px Inter, sans-serif';g.fillStyle='rgba(255,255,255,.7)';g.fillText('Quran Safar',W/2,H-90);
+ const arT=L.ayahText(s,a,AR[s-1][a-1]),avail=H-330-100;let fs=64;g.direction='rtl';let lines;do{g.font=`${fs}px "Amiri Quran", serif`;lines=L.wrapText(arT,W-200,x=>g.measureText(x).width);fs-=4}while(lines.length*fs*1.9>avail*.6&&fs>28);fs+=4;
+ const trT=tr.texts[a-1]||'',isRtl=tr.edition.direction==='rtl';let fs2=38,l2;do{g.font=`${fs2}px ${isRtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(trT,W-200,x=>g.measureText(x).width);fs2-=2}while(l2.length*fs2*1.6>avail-lines.length*fs*1.9-150&&fs2>18);fs2+=2;
+ const lh2=fs2*(isRtl?2:1.5),tot=lines.length*fs*1.9+50+l2.length*lh2+90;let y=100+Math.max(0,(avail-tot)/2);
+ g.direction='rtl';g.font=`${fs}px "Amiri Quran", serif`;g.fillStyle='#fff';lines.forEach(l=>{g.fillText(l,W/2,y+=fs*1.9)});
+ g.direction=isRtl?'rtl':'ltr';g.font=`${fs2}px ${isRtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;g.fillStyle='rgba(255,255,255,.92)';y+=50;l2.forEach(l=>g.fillText(l,W/2,y+=lh2));
+ g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(`${list[s-1].englishName} ${s}:${a}`,W/2,y+=90);brand(g,W,H,{gold:'#fde68a'});
  return cv}
 export async function shareAyah(s,a){GC.event('share-ayah-image');const cv=await ayahCard(s,a);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const file=new File([blob],`ayah-${s}-${a}.png`,{type:'image/png'});
  if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:`Quran ${s}:${a}`});return 'shared'}catch(e){if(e.name==='AbortError')return 'cancelled'}}
@@ -158,14 +160,17 @@ export async function shareAyah(s,a){GC.event('share-ayah-image');const cv=await
 
 // ---------- universal share (hadith, duas, 99 names) ----------
 const SH=[];export const shareBtn=item=>{SH.push(item);return `<button class="shr" data-shr="${SH.length-1}" aria-label="${tt('Share','شیئر')}">${I_('share')}</button>`};
-export const shareText=it=>[it.ar,it.tr,`— ${it.ref}`,'via Quran Safar',it.url].filter(Boolean).join('\n\n');
+export const shareText=it=>[it.ar,it.tr,`— ${it.ref}`,'via Quran Safar',it.url,`${tt('Get the app','ایپ حاصل کریں')}: ${INSTALL_URL}`].filter(Boolean).join('\n\n');
 async function nativeShare(o){try{const {Capacitor}=await import('@capacitor/core');if(Capacitor.isNativePlatform()){const {Share}=await import('@capacitor/share');await Share.share(o);return true}}catch{}return false}
 export async function textCard(it){const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
  try{await Promise.all([document.fonts.load('48px "Amiri Quran"'),document.fonts.load('32px "Noto Nastaliq Urdu"')])}catch{}
  const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#1d6b47');gr.addColorStop(1,'#0b2e22');g.fillStyle=gr;g.fillRect(0,0,W,H);g.strokeStyle='rgba(217,178,95,.7)';g.lineWidth=4;g.strokeRect(40,40,W-80,H-80);g.textAlign='center';g.fillStyle='#fff';
- let y=120,fs=it.ar.length>400?40:58,lines;g.direction='rtl';do{g.font=`${fs}px "Amiri Quran", serif`;lines=L.wrapText(it.ar,W-200,x=>g.measureText(x).width);fs-=3}while(lines.length*fs*1.8>(it.tr?560:900)&&fs>22);lines.forEach(l=>g.fillText(l,W/2,y+=fs*1.8));
- if(it.tr){const rtl=/[\u0600-\u06ff]/.test(it.tr.slice(0,40));g.direction=rtl?'rtl':'ltr';let f2=36,l2;do{g.font=`${f2}px ${rtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(it.tr,W-200,x=>g.measureText(x).width);f2-=2}while(l2.length*f2*(rtl?2:1.5)>H-y-280&&f2>16);g.fillStyle='rgba(255,255,255,.92)';y+=40;l2.forEach(l=>g.fillText(l,W/2,y+=f2*(rtl?2:1.5)))}
- g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(it.ref,W/2,H-140);g.font='28px Inter, sans-serif';g.fillStyle='rgba(255,255,255,.7)';g.fillText('Quran Safar',W/2,H-90);return cv}
+ const avail=H-330-100;let fs=it.ar.length>400?40:62,lines,l2=[],f2=38,rtl=false;g.direction='rtl';do{g.font=`${fs}px "Amiri Quran", serif`;lines=it.ar?L.wrapText(it.ar,W-200,x=>g.measureText(x).width):[];fs-=3}while(lines.length*fs*1.8>(it.tr?avail*.6:avail)&&fs>22);fs+=3;
+ if(it.tr){rtl=/[\u0600-\u06ff]/.test(it.tr.slice(0,40));g.direction=rtl?'rtl':'ltr';do{g.font=`${f2}px ${rtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(it.tr,W-200,x=>g.measureText(x).width);f2-=2}while(l2.length*f2*(rtl?2:1.5)>avail-lines.length*fs*1.8-60&&f2>16);f2+=2}
+ const lh2=f2*(rtl?2:1.5),tot=lines.length*fs*1.8+(l2.length?40+l2.length*lh2:0)+(it.ref?90:0);let y=100+Math.max(0,(avail-tot)/2);
+ g.direction='rtl';g.font=`${fs}px "Amiri Quran", serif`;g.fillStyle='#fff';lines.forEach(l=>g.fillText(l,W/2,y+=fs*1.8));
+ if(l2.length){g.direction=rtl?'rtl':'ltr';g.font=`${f2}px ${rtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;g.fillStyle='rgba(255,255,255,.92)';y+=40;l2.forEach(l=>g.fillText(l,W/2,y+=lh2))}
+ if(it.ref){g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(it.ref,W/2,y+=90)}brand(g,W,H,{gold:'#fde68a'});return cv}
 export function openShare(it){const txt=shareText(it);$('#sheet').hidden=false;
  $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share','شیئر کریں')}</h2><pre class="shtxt" id="shTxt">${esc(txt)}</pre>
  <div class="shgrid"><button class="btn" id="shText">${I_('share')} ${tt('Share text','متن شیئر')}</button><a class="btn wa" id="shWa" onclick="window.__gcShare&&window.__gcShare('share-whatsapp')" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${I_('whatsapp')} WhatsApp</a>
@@ -395,3 +400,6 @@ export async function hifzTest(pre){C.setTitle(tt('Hifz Test','حفظ ٹیسٹ')
  if(pre)app().querySelector(`.hz-s[data-s="${+pre}"]`)?.scrollIntoView({block:'center'});
  $$('#zGo').onclick=()=>{let s,f,t;const juz=+$$('#zJu').value;let next=[];if(by==='juz'){const rs=L.juzRanges(juz);[s,f,t]=rs[0];next=rs.slice(1)}else{s=+$$('#zSu').value;const n=cnt(s);f=Math.max(1,Math.min(n,+$$('#zF').value||1));t=Math.max(f,Math.min(n,+$$('#zT').value||n))}
   const cfg={by,s,from:f,to:t,juz,showTr:$$('#zTr').checked,auto:$$('#zAu').checked};LS.set('qsHzCfg',cfg);C.startHifzTest({...cfg,next})}}
+window.__cards={ayahCard,textCard,nameCard:NM.drawCard};
+document.addEventListener('click',e=>{const b=e.target.closest?.('.tv-shr');if(!b)return;const c=b.closest('.tv-c'),q=x=>c.querySelector(x)?.textContent.trim()||'';const u=document.documentElement.lang==='ur';
+ openShare({ar:q('.tv-ar'),tr:(u?q('.tv-ur'):q('.tv-en'))||q('.tv-en')||q('.tv-ur'),ref:q('.tv-h b')||tt('Adhkar','اذکار')+' '+q('.tv-n'),url:siteUrl(location.hash)})});

@@ -4,7 +4,7 @@ test('Kalmas card on Home opens all six with Arabic, Urdu, English; no Play; tra
  await expect(page.locator('#homeBig a[href="#/tracker"]')).toHaveCount(0);await expect(page.locator('#homeBig a[href="#/kalimas"] b')).toHaveText('Kalmas');await page.click('#homeBig a[href="#/kalimas"]');await expect(page.locator('#title')).toHaveText('Kalmas');
  await expect(page.locator('.kl-k')).toHaveCount(6);await expect(page.locator('#kl0 .tv-ar')).toContainText('مُحَمَّدٌ رَّسُوْلُ اللّٰهِ');await expect(page.locator('#kl5 .tv-ar')).toContainText('وَالْبُهْتَانِ');
  for(let i=0;i<6;i++){await expect(page.locator(`#kl${i} .tv-ur`)).not.toBeEmpty();await expect(page.locator(`#kl${i} .tv-en`)).not.toBeEmpty()}
- await expect(page.locator('.kl .kl-k button')).toHaveCount(0);await page.goto('./#/more');await expect(page.locator('a[href="#/tracker"]').first()).toBeAttached()});
+ await expect(page.locator('.kl .kl-k button:not(.tv-shr)')).toHaveCount(0);await page.goto('./#/more');await expect(page.locator('a[href="#/tracker"]').first()).toBeAttached()});
 test('Tasbeeh: tap anywhere counts, buttons do not, focus mode counts and exits',async({page})=>{
  await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./#/tasbeeh');await page.click('[data-tg="33"]');await page.click('#tReset');
  await page.click('#tap');await page.click('.tb-hint');await page.click('#tbz h2');await expect(page.locator('#cnt')).toHaveText('3');

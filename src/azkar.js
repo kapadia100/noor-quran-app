@@ -1,5 +1,5 @@
 // "In the Light of Hadith": Sunnah morning & evening adhkar from authentic hadith. Text only (no audio).
-import {bar,wire} from './textview.js';
+import {SHR,bar,wire} from './textview.js';
 const BK={'بخاری':'Bukhari','مسلم':'Muslim','جامع ترمذی':'Tirmidhi','سنن ابی داؤد':'Abu Dawud','سنن ابن ماجہ':'Ibn Majah','مسند احمد':'Musnad Ahmad','السنن الکبریٰ للنسائی':'Nasa’i, al-Kubra','المستدرک للحاکم':'Mustadrak al-Hakim','مجمع الزوائد للہیثمی':'Majma‘ al-Zawa’id','آل عمران':'Al ‘Imran','الرعد':'Ar-Ra‘d'};
 export const refEn=r=>r.split('، ').map(x=>{const [b,n]=x.split(': ');return (BK[b]||b)+(n?' '+n:'')}).join(', ');
 /** Opening: ayat + hadith on the virtue of dhikr */
@@ -77,7 +77,7 @@ export function page(C,tt,ur){C.setTitle(tt('In the Light of Hadith','احادی
  const cnt=c=>c?`<span class="az-c">${tt(c[1],c[0])}</span>`:'';
  const note=(n)=>`<div class="az-note"><b>${tt('Note','نوٹ')}:</b> ${V(n[0],n[1])}${R(n[2])}</div>`;
  const it=x=>x.intro?`<div class="card az-intro" id="azI">${V(x.intro[0],x.intro[1])}<div class="az-row">${cnt(x.c)}<small class="muted">${tt(x.eve[1],x.eve[0])}</small></div></div>`:
-  `<section class="card tv-c az-i" id="az${x.n}"><div class="tv-h"><span class="tv-n">${x.n}</span>${x.hd?`<b class="az-hd">${tt('Sahih Hadith','صحیح حدیث')}</b>`:''}${cnt(x.c)}</div>${x.v?V(x.v[0],x.v[1]):''}
+  `<section class="card tv-c az-i" id="az${x.n}"><div class="tv-h"><span class="tv-n">${x.n}</span>${x.hd?`<b class="az-hd">${tt('Sahih Hadith','صحیح حدیث')}</b>`:''}${cnt(x.c)}${SHR}</div>${x.v?V(x.v[0],x.v[1]):''}
   ${(x.ar||[]).map(l=>`<p class="tv-ar" dir="rtl" lang="ar">${l}</p>`).join('')}
   ${x.four?`<ul class="az-four">${x.four.map(f=>`<li><span class="tv-ar" dir="rtl" lang="ar">${f[0]}</span>${L(f[1],f[2])}</li>`).join('')}</ul>`:''}
   ${x.mur?`<hr class="tv-hr">${L(x.mur,x.men)}`:''}${x.link?`<a class="btn az-open" href="${x.link}">${tt('Open in Quran','قرآن میں کھولیں')}</a>`:''}${R(x.ref)}${(x.notes||[]).map(note).join('')}</section>`;
