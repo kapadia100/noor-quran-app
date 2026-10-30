@@ -1,0 +1,13 @@
+import{test,expect}from'@playwright/test';
+const open=async page=>{await page.goto('./#/tasbeeh');await page.click('#tFocus');await expect(page.locator('#tbF')).toBeVisible()};
+test('focus: visible Exit pill below safe area, −1 undo, neither counts',async({page})=>{await open(page);
+ const x=page.locator('#tbX');await expect(x).toBeVisible();await expect(x).toContainText('Exit');const b=await x.boundingBox(),v=page.viewportSize();
+ expect(b.y).toBeGreaterThanOrEqual(8);expect(b.height).toBeGreaterThanOrEqual(44);expect(b.x+b.width).toBeLessThanOrEqual(v.width);
+ const css=await page.evaluate(()=>[...document.styleSheets].flatMap(s=>{try{return[...s.cssRules]}catch{return[]}}).map(r=>r.cssText).find(t=>t.startsWith('.tb-exit')));expect(css).toContain('safe-area-inset-top');
+ const c0=+(await page.locator('#cntF').textContent());await page.mouse.click(v.width/2,v.height/2);await page.mouse.click(v.width/2,v.height/2);
+ await expect(page.locator('#cntF')).toHaveText(String(c0+2));await page.click('#tbU');await expect(page.locator('#cntF')).toHaveText(String(c0+1));
+ await x.click();await expect(page.locator('#tbF')).toBeHidden();await expect(page.locator('#cnt')).toHaveText(String(c0+1));await expect(page).toHaveURL(/#\/tasbeeh/)});
+test('focus: long-press exits without counting',async({page})=>{await open(page);const c0=await page.locator('#cntF').textContent();const v=page.viewportSize();
+ await page.mouse.move(v.width/2,v.height/2+60);await page.mouse.down();await page.waitForTimeout(900);await page.mouse.up();
+ await expect(page.locator('#tbF')).toBeHidden();await expect(page.locator('#cnt')).toHaveText(c0);await page.locator('#tap').click();await expect(page.locator('#cnt')).toHaveText(String(+c0+1))});
+test('focus: back gesture exits focus and stays on Tasbeeh',async({page})=>{await open(page);await page.goBack();await expect(page.locator('#tbF')).toBeHidden();await expect(page).toHaveURL(/#\/tasbeeh/);await expect(page.locator('#tap')).toBeVisible()});

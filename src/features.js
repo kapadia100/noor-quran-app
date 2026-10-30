@@ -161,7 +161,10 @@ const DHIKR=[['سُبْحَانَ ٱللَّٰهِ','SubhanAllah'],['ٱلْحَ�
 let tbWL=null,tbAC=null;
 const tbWake=async on=>{try{if(on&&!tbWL&&navigator.wakeLock){tbWL=await navigator.wakeLock.request('screen');tbWL.addEventListener?.('release',()=>{tbWL=null})}else if(!on&&tbWL){await tbWL.release();tbWL=null}}catch{/* not supported */}};
 const tbClick=strong=>{try{tbAC=tbAC||new (window.AudioContext||window.webkitAudioContext)();const o=tbAC.createOscillator(),g=tbAC.createGain(),t=tbAC.currentTime;o.frequency.value=strong?880:1600;g.gain.setValueAtTime(strong?.18:.07,t);g.gain.exponentialRampToValueAtTime(.0001,t+(strong?.25:.04));o.connect(g).connect(tbAC.destination);o.start(t);o.stop(t+(strong?.26:.05))}catch{/* no audio */}};
-export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get('tasbeeh',{i:0,count:0,target:33,custom:[],hist:[]});const all=[...DHIKR,...st.custom.map(c=>[c,c])];if(st.i>=all.length)st.i=0;let focus=false;
+export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get('tasbeeh',{i:0,count:0,target:33,custom:[],hist:[]});const all=[...DHIKR,...st.custom.map(c=>[c,c])];if(st.i>=all.length)st.i=0;let focus=false,lp=false;
+ const hideF=()=>{focus=false;const f=$('#tbF');if(f)f.hidden=true;document.body.classList.remove('tb-focus-on')};
+ const exitF=()=>{if(!focus)return;if(history.state&&history.state.tbf)history.back();else hideF()};
+ addEventListener('popstate',function pp(){if(!$('#tbz')){removeEventListener('popstate',pp);return}if(focus)hideF()});
  const round=()=>Math.floor(st.count/st.target)+(st.count%st.target?1:0)||1;
  const draw=()=>{const [arT]=all[st.i];app().innerHTML=`<div class="tb" id="tbz"><div class="bar"><select id="dk" aria-label="Dhikr">${all.map((d,i)=>`<option value="${i}" ${i===st.i?'selected':''}>${esc(d[1])}</option>`).join('')}</select><button class="btn" id="dkAdd">＋</button></div>
  <div class="bar">${[33,34,100,0].map(n=>`<button class="btn ${st.target===n||(n===0&&![33,34,100].includes(st.target))?'on':''}" data-tg="${n}">${n||tt('Custom','اپنی')}</button>`).join('')}</div>
@@ -170,12 +173,16 @@ export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get
  <div class="bar c"><button class="btn" id="tFocus">⛶ ${tt('Focus mode','فوکس موڈ')}</button><button class="btn ${st.snd?'on':''}" id="tSnd" aria-pressed="${!!st.snd}">${st.snd?'🔊':'🔈'} ${tt('Click sound','کلک آواز')}</button></div>
  <div class="bar c"><button class="btn" id="tReset">↺ ${tt('Save & reset','محفوظ کر کے صفر')}</button><button class="btn" id="tUndo">−1</button></div>
  <h2 class="h3">${tt('History','تاریخچہ')}</h2><ul class="list">${st.hist.slice(0,30).map(h=>`<li class="row"><span class="grow"><b>${esc(h.d)}</b><small>${esc(h.ts?DT.stampText(h.ts,ur()?'ur':'en'):h.date)}</small></span><b>${h.n}</b></li>`).join('')||`<li class="muted">${C.t('none')}</li>`}</ul>
- <div class="tb-focus" id="tbF" ${focus?'':'hidden'}><button class="tb-x" id="tbX" aria-label="${tt('Exit focus','فوکس بند')}">✕</button><span class="ar">${esc(arT)}</span><b id="cntF">${st.count}</b><small id="tRoundF">/ ${st.target} · ${tt('round','چکر')} ${round()}</small></div></div>`;
+ <div class="tb-focus" id="tbF" ${focus?'':'hidden'}><button class="tb-exit" id="tbX" aria-label="${tt('Exit focus','فوکس بند')}">✕ ${tt('Exit','باہر')}</button><span class="ar">${esc(arT)}</span><b id="cntF">${st.count}</b><small id="tRoundF">/ ${st.target} · ${tt('round','چکر')} ${round()}</small><button class="tb-undo" id="tbU" aria-label="${tt('Undo one','ایک کم کریں')}">−1</button><small class="tb-lph">${tt('Long-press to exit','باہر جانے کیلئے دیر تک دبائیں')}</small></div></div>`;
   $('#dk').onchange=e=>{commit();st.i=+e.target.value;save();draw()};
   $('#dkAdd').onclick=()=>{const v=prompt(tt('New dhikr text','نیا ذکر'));if(v?.trim()){st.custom.push(v.trim());all.push([v.trim(),v.trim()]);st.i=all.length-1;st.count=0;save();draw()}};
   app().querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>{let n=+b.dataset.tg;if(!n){n=parseInt(prompt(tt('Target count','ہدف'),'99'));if(!(n>0))return}st.target=n;save();draw()});
-  $('#tFocus').onclick=()=>{focus=true;$('#tbF').hidden=false;document.body.classList.add('tb-focus-on');tbWake(true)};
-  $('#tbX').onclick=()=>{focus=false;$('#tbF').hidden=true;document.body.classList.remove('tb-focus-on')};
+  $('#tFocus').onclick=()=>{focus=true;$('#tbF').hidden=false;document.body.classList.add('tb-focus-on');tbWake(true);try{history.pushState({tbf:1},'')}catch{}};
+  $('#tbX').onclick=()=>exitF();
+  $('#tbU').onclick=()=>{st.count=Math.max(0,st.count-1);save();const txt=`/ ${st.target} · ${tt('round','چکر')} ${round()}`;for(const id of ['#cnt','#cntF'])$(id).textContent=st.count;for(const id of ['#tRound','#tRoundF'])$(id).textContent=txt;vib(15)};
+  {const f=$('#tbF');let t=0,x=0,y=0;const cl=()=>{clearTimeout(t);t=0};
+   f.onpointerdown=e=>{if(e.target.closest('button'))return;x=e.clientX;y=e.clientY;cl();t=setTimeout(()=>{t=0;lp=true;addEventListener('pointerup',()=>setTimeout(()=>{lp=false},60),{once:true});vib(40);exitF()},700)};
+   f.onpointerup=cl;f.onpointercancel=cl;f.onpointerleave=cl;f.onpointermove=e=>{if(Math.hypot(e.clientX-x,e.clientY-y)>12)cl()};f.oncontextmenu=e=>e.preventDefault()}
   $('#tSnd').onclick=()=>{st.snd=!st.snd;save();draw()};
   $('#tUndo').onclick=()=>{st.count=Math.max(0,st.count-1);save();draw()};$('#tReset').onclick=()=>{commit();st.count=0;save();draw()}};
  const ripple=(e,host)=>{const r=document.createElement('i');r.className='tb-rip';const b=host.getBoundingClientRect();r.style.left=((e.clientX??b.x+b.width/2)-b.x)+'px';r.style.top=((e.clientY??b.y+b.height/2)-b.y)+'px';host.appendChild(r);setTimeout(()=>r.remove(),500)};
@@ -183,7 +190,7 @@ export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get
   for(const id of ['#cnt','#cntF'])$(id).textContent=st.count;for(const id of ['#tRound','#tRoundF'])$(id).textContent=txt;
   ripple(e,focus?$('#tbF'):$('#tap'));if(st.snd)tbClick(done);
   if(done){vib([80,60,80]);C.toast(tt(`${st.target} completed · next round`,`${st.target} مکمل · اگلا چکر`));const t=focus?$('#tbF'):$('#tap');t.classList.remove('tb-done');void t.offsetWidth;t.classList.add('tb-done')}else vib(15)};
- const onTap=e=>{if(!$('#tbz'))return;if(e.target.closest('button,select,input,textarea,a,label,option,.list'))return;count(e)};
+ const onTap=e=>{if(!$('#tbz'))return;if(lp){lp=false;return}if(e.target.closest('button,select,input,textarea,a,label,option,.list'))return;count(e)};
  const host=app();host.onclick=onTap;host.onkeydown=e=>{if(e.target.id==='tap'&&(e.key===' '||e.key==='Enter')){e.preventDefault();count(e)}};
  const vis=()=>{if(!$('#tbz')){document.removeEventListener('visibilitychange',vis);tbWake(false);host.onclick=null;host.onkeydown=null;document.body.classList.remove('tb-focus-on');return}if(document.visibilityState==='visible'&&st.count)tbWake(true)};document.addEventListener('visibilitychange',vis);
  addEventListener('hashchange',function h(){removeEventListener('hashchange',h);tbWake(false);host.onclick=null;host.onkeydown=null;document.body.classList.remove('tb-focus-on')});
