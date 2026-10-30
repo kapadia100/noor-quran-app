@@ -27,9 +27,9 @@ export const readStreak=()=>L.streak(LS.get('readDays',[]));
 const TILES=[['#/quran','quran','Quran','قرآن','L'],['#/mushaf','mushaf','Mushaf','مصحف','L'],['#/duas','duas','Duas & Azkar','دعائیں و اذکار','L'],['#/prayer','prayer','Prayer times','اوقاتِ نماز','L'],['#/tasbeeh','tasbeeh','Tasbeeh','تسبیح','L'],['#/qibla','qibla','Qibla Finder','قبلہ فائنڈر','L'],
  ['#/names','names','99 Names','اسماء الحسنیٰ'],['#/tracker','tracker','Prayer tracker','نماز ٹریکر'],['#/khatam','khatam','Khatam','ختم پلانر'],['#/hifz','hifz','Hifz','حفظ'],['#/calendar','calendar','Calendar','اسلامی کیلنڈر'],['#/ramadan','ramadan','Ramadan','رمضان'],
  ['#/zakat','zakat','Zakat','زکوٰۃ'],['#/mosques','mosques','Mosque Finder','مسجد فائنڈر'],['#/hadith','hadith','Hadith','حدیث'],['#/notes','notes','Notes','نوٹس'],['#/search','search','Search','تلاش'],['#/settings','settings','Settings','ترتیبات']];
-const SUB={janazah:['Method & duas','طریقہ اور دعائیں'],ruqyah:['Quranic ruqyah · play all','قرآنی رقیہ · پورا سنیں'],quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
+const SUB={kalimas:['Arabic · Urdu · English','عربی · اردو · انگریزی'],janazah:['Method & duas','طریقہ اور دعائیں'],ruqyah:['Quranic ruqyah · play all','قرآنی رقیہ · پورا سنیں'],quran:['114 surahs · 30 paras','114 سورتیں · 30 پارے'],mushaf:['604 pages','604 صفحات'],duas:['Morning, evening, Hisn','صبح، شام، حصن'],prayer:['Times & alerts','اوقات و الرٹس'],tasbeeh:['Counter & history','کاؤنٹر'],qibla:['Compass','کمپاس'],tracker:['5 daily prayers','پانچ نمازیں'],calendar:['Hijri dates & events','ہجری تاریخیں'],mosques:['Within 2 km · directions','2 کلومیٹر · راستہ']};
 // v3.7.8 Home layout: big cards (last one full width so the odd count stays balanced), then a 3-up utility row, then Ramadan at the bottom
-const HOME_BIG=['#/mosques','#/qibla','#/janazah','#/duas','#/tasbeeh','#/tracker','#/calendar','#/ruqyah'],HOME_SM=['#/search','#/notes','#/dict'];
+const HOME_BIG=['#/mosques','#/qibla','#/janazah','#/duas','#/tasbeeh','#/kalimas','#/calendar','#/ruqyah'],HOME_SM=['#/search','#/notes','#/dict'];
 const T=h=>TILES.find(t=>t[0]===h)||MORE_EXTRA.find(t=>t[0]===h);
 const homeGrid=()=>{const big=HOME_BIG.map(T),last=big.length%2?big.length-1:-1;
  return `<div class="fgrid hgrid" id="homeBig">${big.map(([h,i,e,u],k)=>`<a class="fcard${k===last?' wide':''}${k<2?' feat feat-'+i:''}" href="${h}">${I.corner}<span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><small>${SUB[i]?tt(...SUB[i]):''}</small></a>`).join('')}</div>
@@ -77,9 +77,10 @@ const MODEL_CACHE='qs-asr-model';
 const modelHave=async()=>{if(LS.get('qsCtc',0)||localStorage.getItem('qsCtc'))return true;try{return !!(window.caches&&(await caches.has(MODEL_CACHE))&&(await (await caches.open(MODEL_CACHE)).keys()).length)}catch{return false}};
 /** Two-tap confirm (no native dialogs): first tap arms the button for 4 s, second tap runs it. */
 function twoTap(btn,sure,run){const o=btn.innerHTML;btn.onclick=()=>{if(btn.dataset.arm){run();return}btn.dataset.arm='1';btn.textContent=sure;btn.classList.add('danger');setTimeout(()=>{if(!btn.isConnected)return;delete btn.dataset.arm;btn.innerHTML=o;btn.classList.remove('danger')},4000)}}
-const MORE_EXTRA=[['#/janazah','janazah','Namaz-e-Janazah','نمازِ جنازہ'],['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/ruqyah','ruqyah','Ruqyah Shariah','رقیہ شرعیہ'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
+const MORE_EXTRA=[['#/janazah','janazah','Namaz-e-Janazah','نمازِ جنازہ'],['#/kalimas','kalimas','6 Kalimas','چھ کلمے'],['#/dict','tafsir','Dictionary','قرآن ڈکشنری'],['#/ruqyah','ruqyah','Ruqyah Shariah','رقیہ شرعیہ'],['#/hifztest','hifz','Hifz Test','حفظ ٹیسٹ'],['#/bookmarks','bookmarks','Bookmarks','نشانیاں'],['#/help','help','FAQ & Help','سوالات و مدد']];
 export const progress=()=>progressPage(C,tt,ur,I);
 export const ruqyah=()=>import('./ruqyah.js').then(m=>m.page(C,tt,ur,I));
+export const kalimas=()=>import('./kalimas.js').then(m=>m.page(C,tt,ur));
 export const janazah=()=>import('./janazah.js').then(m=>m.page(C,tt,ur,I));
 export const janazahLeave=()=>import('./janazah.js').then(m=>m.leave()).catch(()=>{});
 export const ruqyahLeave=()=>import('./ruqyah.js').then(m=>m.leave()).catch(()=>{});
@@ -157,17 +158,35 @@ export const siteUrl=h=>location.origin+location.pathname+h;
 
 // ---------- tasbeeh ----------
 const DHIKR=[['سُبْحَانَ ٱللَّٰهِ','SubhanAllah'],['ٱلْحَمْدُ لِلَّٰهِ','Alhamdulillah'],['ٱللَّٰهُ أَكْبَرُ','Allahu Akbar'],['لَا إِلَٰهَ إِلَّا ٱللَّٰهُ','La ilaha illallah'],['أَسْتَغْفِرُ ٱللَّٰهَ','Astaghfirullah'],['ٱللَّٰهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ','Salawat']];
-export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get('tasbeeh',{i:0,count:0,target:33,custom:[],hist:[]});const all=[...DHIKR,...st.custom.map(c=>[c,c])];if(st.i>=all.length)st.i=0;
- const draw=()=>{const [arT]=all[st.i];app().innerHTML=`<div class="bar"><select id="dk" aria-label="Dhikr">${all.map((d,i)=>`<option value="${i}" ${i===st.i?'selected':''}>${esc(d[1])}</option>`).join('')}</select><button class="btn" id="dkAdd">＋</button></div>
+let tbWL=null,tbAC=null;
+const tbWake=async on=>{try{if(on&&!tbWL&&navigator.wakeLock){tbWL=await navigator.wakeLock.request('screen');tbWL.addEventListener?.('release',()=>{tbWL=null})}else if(!on&&tbWL){await tbWL.release();tbWL=null}}catch{/* not supported */}};
+const tbClick=strong=>{try{tbAC=tbAC||new (window.AudioContext||window.webkitAudioContext)();const o=tbAC.createOscillator(),g=tbAC.createGain(),t=tbAC.currentTime;o.frequency.value=strong?880:1600;g.gain.setValueAtTime(strong?.18:.07,t);g.gain.exponentialRampToValueAtTime(.0001,t+(strong?.25:.04));o.connect(g).connect(tbAC.destination);o.start(t);o.stop(t+(strong?.26:.05))}catch{/* no audio */}};
+export function tasbeeh(){C.setTitle(tt('Tasbeeh','تسبیح'));const st=LS.get('tasbeeh',{i:0,count:0,target:33,custom:[],hist:[]});const all=[...DHIKR,...st.custom.map(c=>[c,c])];if(st.i>=all.length)st.i=0;let focus=false;
+ const round=()=>Math.floor(st.count/st.target)+(st.count%st.target?1:0)||1;
+ const draw=()=>{const [arT]=all[st.i];app().innerHTML=`<div class="tb" id="tbz"><div class="bar"><select id="dk" aria-label="Dhikr">${all.map((d,i)=>`<option value="${i}" ${i===st.i?'selected':''}>${esc(d[1])}</option>`).join('')}</select><button class="btn" id="dkAdd">＋</button></div>
  <div class="bar">${[33,34,100,0].map(n=>`<button class="btn ${st.target===n||(n===0&&![33,34,100].includes(st.target))?'on':''}" data-tg="${n}">${n||tt('Custom','اپنی')}</button>`).join('')}</div>
- <button id="tap" class="tap"><span class="ar">${esc(arT)}</span><b id="cnt">${st.count}</b><small>/ ${st.target} · ${tt('round','چکر')} ${Math.floor(st.count/st.target)+ (st.count%st.target?1:0)||1}</small></button>
+ <div id="tap" class="tap" role="button" tabindex="0" aria-label="${tt('Count','گنیں')}"><span class="ar">${esc(arT)}</span><b id="cnt">${st.count}</b><small id="tRound">/ ${st.target} · ${tt('round','چکر')} ${round()}</small></div>
+ <p class="muted tb-hint">${tt('Tap anywhere on this screen to count.','گننے کے لیے اسکرین پر کہیں بھی ٹیپ کریں۔')}</p>
+ <div class="bar c"><button class="btn" id="tFocus">⛶ ${tt('Focus mode','فوکس موڈ')}</button><button class="btn ${st.snd?'on':''}" id="tSnd" aria-pressed="${!!st.snd}">${st.snd?'🔊':'🔈'} ${tt('Click sound','کلک آواز')}</button></div>
  <div class="bar c"><button class="btn" id="tReset">↺ ${tt('Save & reset','محفوظ کر کے صفر')}</button><button class="btn" id="tUndo">−1</button></div>
- <h2 class="h3">${tt('History','تاریخچہ')}</h2><ul class="list">${st.hist.slice(0,30).map(h=>`<li class="row"><span class="grow"><b>${esc(h.d)}</b><small>${esc(h.ts?DT.stampText(h.ts,ur()?'ur':'en'):h.date)}</small></span><b>${h.n}</b></li>`).join('')||`<li class="muted">${C.t('none')}</li>`}</ul>`;
+ <h2 class="h3">${tt('History','تاریخچہ')}</h2><ul class="list">${st.hist.slice(0,30).map(h=>`<li class="row"><span class="grow"><b>${esc(h.d)}</b><small>${esc(h.ts?DT.stampText(h.ts,ur()?'ur':'en'):h.date)}</small></span><b>${h.n}</b></li>`).join('')||`<li class="muted">${C.t('none')}</li>`}</ul>
+ <div class="tb-focus" id="tbF" ${focus?'':'hidden'}><button class="tb-x" id="tbX" aria-label="${tt('Exit focus','فوکس بند')}">✕</button><span class="ar">${esc(arT)}</span><b id="cntF">${st.count}</b><small id="tRoundF">/ ${st.target} · ${tt('round','چکر')} ${round()}</small></div></div>`;
   $('#dk').onchange=e=>{commit();st.i=+e.target.value;save();draw()};
   $('#dkAdd').onclick=()=>{const v=prompt(tt('New dhikr text','نیا ذکر'));if(v?.trim()){st.custom.push(v.trim());all.push([v.trim(),v.trim()]);st.i=all.length-1;st.count=0;save();draw()}};
   app().querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>{let n=+b.dataset.tg;if(!n){n=parseInt(prompt(tt('Target count','ہدف'),'99'));if(!(n>0))return}st.target=n;save();draw()});
-  $('#tap').onclick=()=>{st.count++;save();$('#cnt').textContent=st.count;if(st.count%st.target===0){vib([80,60,80]);C.toast(tt(`${st.target} completed`,`${st.target} مکمل`));draw()}else vib(15)};
+  $('#tFocus').onclick=()=>{focus=true;$('#tbF').hidden=false;document.body.classList.add('tb-focus-on');tbWake(true)};
+  $('#tbX').onclick=()=>{focus=false;$('#tbF').hidden=true;document.body.classList.remove('tb-focus-on')};
+  $('#tSnd').onclick=()=>{st.snd=!st.snd;save();draw()};
   $('#tUndo').onclick=()=>{st.count=Math.max(0,st.count-1);save();draw()};$('#tReset').onclick=()=>{commit();st.count=0;save();draw()}};
+ const ripple=(e,host)=>{const r=document.createElement('i');r.className='tb-rip';const b=host.getBoundingClientRect();r.style.left=((e.clientX??b.x+b.width/2)-b.x)+'px';r.style.top=((e.clientY??b.y+b.height/2)-b.y)+'px';host.appendChild(r);setTimeout(()=>r.remove(),500)};
+ const count=e=>{st.count++;save();tbWake(true);const done=st.count%st.target===0,txt=`/ ${st.target} · ${tt('round','چکر')} ${round()}`;
+  for(const id of ['#cnt','#cntF'])$(id).textContent=st.count;for(const id of ['#tRound','#tRoundF'])$(id).textContent=txt;
+  ripple(e,focus?$('#tbF'):$('#tap'));if(st.snd)tbClick(done);
+  if(done){vib([80,60,80]);C.toast(tt(`${st.target} completed · next round`,`${st.target} مکمل · اگلا چکر`));const t=focus?$('#tbF'):$('#tap');t.classList.remove('tb-done');void t.offsetWidth;t.classList.add('tb-done')}else vib(15)};
+ const onTap=e=>{if(!$('#tbz'))return;if(e.target.closest('button,select,input,textarea,a,label,option,.list'))return;count(e)};
+ const host=app();host.onclick=onTap;host.onkeydown=e=>{if(e.target.id==='tap'&&(e.key===' '||e.key==='Enter')){e.preventDefault();count(e)}};
+ const vis=()=>{if(!$('#tbz')){document.removeEventListener('visibilitychange',vis);tbWake(false);host.onclick=null;host.onkeydown=null;document.body.classList.remove('tb-focus-on');return}if(document.visibilityState==='visible'&&st.count)tbWake(true)};document.addEventListener('visibilitychange',vis);
+ addEventListener('hashchange',function h(){removeEventListener('hashchange',h);tbWake(false);host.onclick=null;host.onkeydown=null;document.body.classList.remove('tb-focus-on')});
  const commit=()=>{if(st.count>0)st.hist.unshift({d:all[st.i][1],n:st.count,ts:Date.now(),date:DT.stampText(Date.now(),ur()?'ur':'en')});st.hist=st.hist.slice(0,200)};
  const save=()=>LS.set('tasbeeh',st);draw()}
 

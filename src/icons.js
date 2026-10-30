@@ -1,6 +1,7 @@
 // Original outline icon set (24×24, stroke = currentColor). Drawn for Noor Quran.
 import {D} from './icons-duo.js';
 const P={
+ kalimas:'<path d="M5 3.5h11l3 3V20.5H5z"/><path d="M16 3.5v3h3"/><path d="M8 10h8M8 13.5h8M8 17h5"/>',
  janazah:'<circle cx="12" cy="4.2" r="2.2"/><path d="M9.2 8.6h5.6l.9 6.4h-2.2L13 21.5M10.8 15l-.5 6.5"/><path d="M8.9 11.2l3.1 1.6 3.1-1.6"/><path d="M5 21.5h14"/>',
  ruqyah:'<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M13.8 9a3 3 0 1 0 0 5 3.6 3.6 0 1 1 0-5z"/>',
  quran:'<path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z"/><path d="M12 6v13.5"/><path d="M7 9.5h2.5M14.5 9.5H17M7 12.5h2.5M14.5 12.5H17"/>',

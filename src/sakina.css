@@ -337,3 +337,16 @@ nav button{height:52px;min-height:52px}
 .pc-mkn{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;color:#fff7e8}.pc-mkn>b{font-size:clamp(17px,4.8vw,21px);flex:1 1 100%;line-height:1.2}
 .pc-mkn>small{opacity:.9}.pc-mkn .pc-cdw{margin-inline-start:auto}.pc-mkn .cd{font-size:20px;font-weight:700}
 .pcard.pc-mk .pc-bar i{background:#ffd89a!important}
+/* v3.7.12 Tasbeeh: tap anywhere + focus mode */
+.tb{min-height:calc(100dvh - 170px);touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.tb .tap{position:relative;overflow:hidden;cursor:pointer}.tb-hint{text-align:center;font-size:.82em;margin:6px 0 0}
+.tb-rip{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:color-mix(in srgb,var(--brand) 35%,transparent);pointer-events:none;animation:tbr .5s ease-out forwards}
+@keyframes tbr{to{transform:scale(14);opacity:0}}
+.tb-done{animation:tbd .7s ease-out}@keyframes tbd{0%{box-shadow:0 0 0 0 var(--qg,#c9a43c)}100%{box-shadow:0 0 0 26px transparent}}
+.tb-focus{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);overflow:hidden;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.tb-focus[hidden]{display:none}.tb-focus .ar{font-size:clamp(26px,8vw,40px);text-align:center;padding:0 18px}.tb-focus b{font-size:clamp(72px,26vw,140px);line-height:1;color:var(--brand)}
+.tb-x{position:absolute;top:calc(env(safe-area-inset-top) + 12px);inset-inline-end:14px;width:40px;height:40px;border-radius:50%;border:0;background:color-mix(in srgb,var(--fg,#000) 10%,transparent);color:inherit;font-size:18px}
+body.tb-focus-on{overflow:hidden}
+.kl-ar{font-size:clamp(22px,6.4vw,28px);line-height:2.1;margin:8px 0}.kl-ur{line-height:2;margin:6px 0}.kl-en{line-height:1.55;opacity:.85;margin:4px 0}
+body.tb-focus-on>header,body.tb-focus-on>nav,body.tb-focus-on .tabbar,body.tb-focus-on #tabs{visibility:hidden}.tb-focus{z-index:2147483000}
+body.tb-focus-on #back{visibility:hidden!important}
