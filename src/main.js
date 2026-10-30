@@ -5,7 +5,7 @@ import*as HA from './hadith-audio.js';
 import*as PK from './pickers.js';
 import * as PR from './prayer.js';
 import * as QB from './qibla.js';
-import {hifzNext,surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRanges,nextPos,clampAdj,highlight,AYAH_COUNTS,TRANS_AUDIO,AUDIO_MODES,ayahClips,ymd} from './lib.js';
+import {hifzNext,surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRanges,nextPos,clampAdj,highlight,AYAH_COUNTS,TRANS_AUDIO,AUDIO_MODES,ayahClips} from './lib.js';
 const API='https://api.alquran.cloud/v1', HAD='https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1';
 const $=s=>document.querySelector(s);let app=$('#app');
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
@@ -94,13 +94,13 @@ async function reverseGeo(){const P=PR.P,key=`${P.lat},${P.lng}`;if(P.src!=='gps
 function prayer(){const ur=S.ui==='ur',T=(e,u)=>ur?u:e;setTitle(T('Prayer Times','اوقاتِ نماز'));const P=PR.P,now=new Date(),pt=PR.times(),nx=PR.next(),hs=PR.headerState(pt,now,nx);
  P.adj=P.adj||{fajr:0,sunrise:0,dhuhr:0,asr:0,maghrib:0,isha:0};
  const FIVE=['fajr','dhuhr','asr','maghrib','isha'];const prev=(()=>{let f=null;for(const k of FIVE)if(pt[k]<=now)f=pt[k];if(!f){const y=PR.times(new Date(+now-864e5));f=y.isha}return f})();
- const tk=LS.get('ptrack',{days:{},qaza:{}}),day=(tk.days||{})[ymd(now)]||{};
- const curK=hs?.mode==='current'?hs.key:(now>=pt.sunrise&&now<pt.dhuhr)?null:(()=>{let c=null;for(const k of FIVE)if(pt[k]<=now)c=k;return c})();
+ // t170u: current = most recent passed of the 6 (before Fajr → Isha); next = next upcoming of the 6 (after Isha → Fajr)
+ const curK=(()=>{let c='isha';for(const k of PR.PRAYERS)if(pt[k]<=now)c=k;return c})(),nextK=PR.PRAYERS.find(k=>pt[k]>now)||'fajr';
  const mk={sunrise:[pt.sunrise,new Date(+pt.sunrise+PR.MAKROOH.afterSunrise*6e4)],dhuhr:[new Date(+pt.dhuhr-PR.MAKROOH.beforeDhuhr*6e4),pt.dhuhr],maghrib:[new Date(+pt.maghrib-PR.MAKROOH.beforeMaghrib*6e4),pt.maghrib]};
  const AR={fajr:'الفجر',sunrise:'الشروق',dhuhr:'الظهر',asr:'العصر',maghrib:'المغرب',isha:'العشاء'};
  const isMk=hs?.mode==='makrooh',heroAt=isMk?hs.until:nx?.time,heroFrom=isMk?hs.from:prev;
- const row=k=>{const info=k==='sunrise',past=pt[k]<=now&&k!==curK,m=mk[k];
-  return `<li class="ph-row${info?' info':''}${k===curK?' on cur':''}${past?' past':''}" data-k="${k}">${picon(k)}<span class="ph-n"><b>${pn(k)}</b><small lang="ar">${ur?PR.PNAME[k][0]:AR[k]}</small>${m?`<em class="ph-mk">${T('Makrooh','مکروہ')} <bdi dir="ltr">${PR.fmt12(m[0]).replace(/ [AP]M$/,'')}–${PR.fmt12(m[1])}</bdi></em>`:''}</span><span class="t"><bdi dir="ltr">${PR.fmt12(pt[k])}</bdi></span>${info?'<span class="ph-c"></span><span class="ph-c"></span>':`<label class="ph-c ph-done" title="${T('Prayed','پڑھ لی')}"><input type="checkbox" data-done="${k}" ${day[k]==='done'?'checked':''} aria-label="${pn(k)} ${T('prayed','پڑھ لی')}"><i>${I_('check')}</i></label><label class="ph-c sw" title="${T('Alert','الرٹ')}"><input type="checkbox" data-al="${k}" ${P.alerts[k]?'checked':''} aria-label="${pn(k)} ${T('alert','الرٹ')}">${I_('bell')}</label>`}</li>`};
+ const row=k=>{const info=k==='sunrise',past=pt[k]<=now&&k!==curK,m=mk[k],pill=k===curK?`<span class="ph-pill now">${T('Right now','ابھی')}</span>`:k===nextK?`<span class="ph-pill nxt">${T('Next','اگلی')}</span>`:'';
+  return `<li class="ph-row${info?' info':''}${k===curK?' on cur':''}${k===nextK?' nextp':''}${past?' past':''}" data-k="${k}">${picon(k)}<span class="ph-n"><span class="ph-l1"><b>${pn(k)}</b>${pill}</span><small><span lang="ar">${ur?PR.PNAME[k][0]:AR[k]}</span>${m?` · <em class="ph-mk">${T('Makrooh','مکروہ')} <bdi dir="ltr">${PR.fmt12(m[0]).replace(/ [AP]M$/,'')}–${PR.fmt12(m[1])}</bdi></em>`:''}</small></span><span class="t"><bdi dir="ltr">${PR.fmt12(pt[k])}</bdi></span>${info?'<span class="ph-c"></span>':`<label class="ph-c sw" title="${T('Alert','الرٹ')}"><input type="checkbox" data-al="${k}" ${P.alerts[k]?'checked':''} aria-label="${pn(k)} ${T('alert','الرٹ')}">${I_('bell')}</label>`}</li>`};
  const adjRow=k=>`<div class="ph-adj"><span>${pn(k)}</span><button class="btn ghost" data-adj="${k}" data-d="-1" aria-label="${pn(k)} −1">−</button><b>${P.adj[k]>0?'+':''}${P.adj[k]||0}</b><button class="btn ghost" data-adj="${k}" data-d="1" aria-label="${pn(k)} +1">+</button></div>`;
  const tt=()=>{const n=phView==='week'?7:30,rows=[];for(let i=0;i<n;i++){const d=new Date(+now+i*864e5),t=PR.times(d);rows.push(`<tr class="${i?'':'on'}"><th>${gregText(d,ur?'ur':'en',{weekday:'short',day:true})}</th>${PR.PRAYERS.map(k=>`<td>${PR.fmt(t[k])}</td>`).join('')}</tr>`)}
   return `<div class="card ph-tt"><table><thead><tr><th></th>${PR.PRAYERS.map(k=>`<th>${pn(k)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`};
@@ -108,11 +108,11 @@ function prayer(){const ur=S.ui==='ur',T=(e,u)=>ur?u:e;setTitle(T('Prayer Times'
  ${heroAt?`<small class="ph-lbl">${isMk?T('Makrooh time — avoid salah until','مکروہ وقت — نماز سے پرہیز، تک'):hs?.mode==='current'?T('Fajr ends at sunrise','فجر کا وقت طلوع تک'):T('Next prayer','اگلی نماز')}</small>
  <div class="ph-next"><b>${isMk?`<bdi dir="ltr">${PR.fmt12(hs.until)}</bdi>`:pn(nx.key)}</b>${isMk?'':`<span dir="ltr">${PR.fmt12(nx.time)}</span>`}</div><div class="cd ph-cd" data-at="${+heroAt}"></div>
  <div class="ph-bar" data-from="${+heroFrom}" data-at="${+heroAt}"><i style="--w:${Math.max(0,Math.min(100,100*(now-heroFrom)/(heroAt-heroFrom))).toFixed(1)}%"></i></div>`:''}</section>
- <div class="card ph-loc"><span class="ph-pin">${I_('pin')}</span><span class="grow"><b id="pPlace">${esc(placeName())}</b><small id="gmsg" class="muted">${esc(P.tz)}</small></span>
+ <div class="card ph-loc"><span class="ph-pin">${I_('pin')}</span><span class="grow"><b id="pPlace">${esc(placeName())}</b><small id="gmsg" class="muted"></small></span>
  <button class="icon-btn mq-loc" id="gps" aria-label="${T('Refresh my location','لوکیشن دوبارہ لیں')}" title="${T('Refresh my location','لوکیشن دوبارہ لیں')}">${I_('gps')}</button>
  <label class="ph-chip">${T('Choose city','شہر')}<select id="city" aria-label="City"><option value="">${T('Choose city…','شہر منتخب کریں')}</option>${PR.CITIES.map(c=>`<option ${P.src!=='gps'&&c[0]===P.city?'selected':''}>${c[0]}</option>`).join('')}</select></label></div>
+ ${phView==='today'?`<div class="card ph-list"><div class="ph-head"><span></span><span></span><span class="t">${T('Time','وقت')}</span><span class="ph-c">${I_('bell')}</span></div><ul class="list ptimes">${PR.PRAYERS.map(row).join('')}</ul></div>`:tt()}
  <div class="ph-seg" role="tablist">${[['today',T('Today','آج')],['week',T('Week','ہفتہ')],['month',T('Month','مہینہ')]].map(([v,l])=>`<button role="tab" data-v="${v}" class="${phView===v?'on':''}" aria-selected="${phView===v}">${l}</button>`).join('')}</div>
- ${phView==='today'?`<div class="card ph-list"><div class="ph-head"><span></span><span></span><span class="t">${T('Time','وقت')}</span><span class="ph-c">${I_('check')}</span><span class="ph-c">${I_('bell')}</span></div><ul class="list ptimes">${PR.PRAYERS.map(row).join('')}</ul></div>`:tt()}
  <details class="card ph-set" id="pSet"${LS.get('phSetOpen',false)?' open':''}><summary>${I_('settings')} ${T('Settings','سیٹنگز')}<small class="muted">${esc(PR.METHODS[P.method]||P.method)} · ${P.madhab==='Hanafi'?'Hanafi':"Shafi'i"}</small></summary><div class="form">
  <label>${T('Calculation method','طریقۂ حساب')}<select id="meth">${Object.entries(PR.METHODS).map(([k,v])=>`<option value="${k}" ${k===P.method?'selected':''}>${v}</option>`).join('')}</select></label>
  <label>${T('Asr juristic method','عصر (فقہ)')}<select id="madh"><option value="Hanafi">Hanafi (later Asr)</option><option value="Shafi" ${P.madhab==='Shafi'?'selected':''}>Shafi'i / Maliki / Hanbali</option></select></label>
@@ -124,7 +124,7 @@ function prayer(){const ur=S.ui==='ur',T=(e,u)=>ur?u:e;setTitle(T('Prayer Times'
  const re=async()=>{PR.saveP();prayer();const r=await PR.schedule().catch(e=>({ok:false,reason:e.message}));const m=$('#smsg');if(m)m.textContent=r.ok?`✓ ${r.count} alerts scheduled (${r.mode})`:'Alerts: '+r.reason};
  const msg=(h)=>{const g=$('#gmsg');if(g)g.innerHTML=h};
  const relocate=async(manual)=>{const g=$('#gps');if(!g||g.disabled)return;g.disabled=true;g.classList.add('spin');msg(`<span class="mq-locating">${T('Locating…','لوکیشن معلوم کی جا رہی ہے…')}</span>`);const o=`${P.lat},${P.lng},${P.src}`;
-  try{await PR.locate();P.manual=false;P.method=P.method||'Karachi';const changed=o!==`${P.lat},${P.lng},${P.src}`;const named=await reverseGeo();if(!location.hash.startsWith('#/prayer'))return;if(changed||manual)re();else if(named){const e=$('#pPlace');if(e)e.textContent=placeName();msg(esc(P.tz))}else msg(esc(P.tz))}
+  try{await PR.locate();P.manual=false;P.method=P.method||'Karachi';const changed=o!==`${P.lat},${P.lng},${P.src}`;const named=await reverseGeo();if(!location.hash.startsWith('#/prayer'))return;if(changed||manual)re();else if(named){const e=$('#pPlace');if(e)e.textContent=placeName();msg('')}else msg('')}
   catch(e){if(!$('#gps'))return;const d=/denied/i.test(e.message);msg(`<span class="mq-warn">${d?T('Location permission is off — allow it in your phone/browser settings, or choose a city.','لوکیشن کی اجازت بند ہے — سیٹنگ میں اجازت دیں یا شہر منتخب کریں۔'):T('Could not get your location — showing your saved place.','لوکیشن نہیں مل سکی — محفوظ جگہ کے اوقات۔')}</span> <button class="btn ghost mq-retry" id="pRetry">${T('Retry','دوبارہ کوشش')}</button>`);$('#pRetry').onclick=()=>relocate(true)}
   finally{const b=$('#gps');if(b){b.disabled=false;b.classList.remove('spin')}}};
  $('#gps').onclick=()=>relocate(true);
@@ -133,7 +133,6 @@ function prayer(){const ur=S.ui==='ur',T=(e,u)=>ur?u:e;setTitle(T('Prayer Times'
  $('#pSet').ontoggle=e=>LS.set('phSetOpen',e.target.open);
  app.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>{const k=b.dataset.adj;P.adj[k]=Math.max(-30,Math.min(30,(+P.adj[k]||0)+ +b.dataset.d));re()});
  app.querySelectorAll('.ph-seg button').forEach(b=>b.onclick=()=>{phView=b.dataset.v;prayer()});
- app.querySelectorAll('[data-done]').forEach(c=>c.onchange=()=>{const t=LS.get('ptrack',{days:{},qaza:{fajr:0,dhuhr:0,asr:0,maghrib:0,isha:0,witr:0}});t.days=t.days||{};const d=t.days[ymd(new Date())]||(t.days[ymd(new Date())]={});if(c.checked)d[c.dataset.done]='done';else delete d[c.dataset.done];LS.set('ptrack',t)});
  app.querySelectorAll('[data-al]').forEach(c=>c.onchange=()=>{P.alerts[c.dataset.al]=c.checked;re()});$('#sched').onclick=re;
  if(!window.__phLoc&&!P.manual){window.__phLoc=true;relocate(false).finally(()=>{setTimeout(()=>{window.__phLoc=false},30000)})}else if(P.src==='gps')reverseGeo().then(n=>{if(n){const e=$('#pPlace');if(e)e.textContent=placeName()}})}
 
