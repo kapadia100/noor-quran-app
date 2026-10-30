@@ -327,3 +327,7 @@ nav button{height:52px;min-height:52px}
 .pcard .pc-arch .ic{width:clamp(18px,5vw,21px)!important;height:clamp(18px,5vw,21px)!important}.pcard .pc-arch .ar{font-size:clamp(11px,3.2vw,13px)!important;line-height:1.15!important}
 .pc-row{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important}
 @media(max-width:380px){.pcard .pc-nx b{font-size:26px!important}.pcard .pc-nx .cd{font-size:20px!important}}
+/* v3.7.12 Qibla: one rotating SVG dial (ticks, numerals, letters, Kaaba) */
+.qf-dial{transition:none!important;transform:none!important}
+.qkb{fill:#141414;stroke:var(--qg);stroke-width:2}.qki{fill:none;stroke:var(--qg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.qf.ok .qkb{filter:drop-shadow(0 0 8px var(--qg))}
