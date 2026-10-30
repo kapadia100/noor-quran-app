@@ -28,7 +28,7 @@ export function leave(){H.stop();off.forEach(f=>f());off=[]}
  * Renders the Audio page into `root`.
  * deps: {j, HAD, BASE, esc, ui, L2, names(code,ui,short)}
  */
-export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){
+export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){H.loadIndex();
  const {j,HAD,BASE,esc,ui,L2,names}=deps,t=TX[ui]||TX.en,P=pref();
  root.innerHTML=`<p class="muted c">${t.loading}</p>`;
  let eds,info;try{[eds,info]=await Promise.all([j(HAD+'/editions.json'),j(HAD+'/info.json')])}catch{root.innerHTML=`<p class="card">${t.err}</p>`;return}

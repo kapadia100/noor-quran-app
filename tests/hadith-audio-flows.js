@@ -2,7 +2,7 @@
 import{mockHadith,mockSpeech,MOCK_VOICES,LANGS,BOOKS,txt}from'./hadith-listen-flows.js';
 export function hadithAudioFlows(test,expect){
  test.use({serviceWorkers:'block'});
- test.beforeEach(async({page})=>{
+ test.beforeEach(async({page})=>{await page.addInitScript(()=>{if(localStorage.getItem('qsHadithAudioBase')===null)localStorage.setItem('qsHadithAudioBase','')});
   await page.route('https://gc.zgo.at/count.js',r=>r.fulfill({contentType:'text/javascript',body:'window.goatcounter.count=function(o){}'}));
   await page.route('**/quransafar.goatcounter.com/**',r=>r.fulfill({status:204}));
   await page.addInitScript(()=>{localStorage.setItem('instBanner','1')});await mockHadith(page);
@@ -82,11 +82,16 @@ export function hadithAudioFlows(test,expect){
   await lang(page,'eng').click();await expect(page.locator('#haMsg')).toBeHidden();await expect(page.locator('#haPlay')).toBeEnabled()});
 
  test('recorded Urdu audio: with an audio base set, Urdu plays the per-hadith file even with no Urdu voice on the device',async({page})=>{
-  const asked=[];await page.route('https://audio.example/urd/**',r=>{asked.push(r.request().url());return r.fulfill({status:404,body:''})});
+  const asked=[];await page.route('https://audio.example/urd/**',r=>{const u=r.request().url();if(u.endsWith('.m4a'))asked.push(u);return r.fulfill({status:404,body:''})});
   await page.addInitScript(()=>{localStorage.setItem('qsHadithAudioBase','https://audio.example/urd/')});
   await mockSpeech(page,{voices:MOCK_VOICES.filter(v=>v.lang!=='ur-PK')});await open(page);
   await lang(page,'urd').click();await expect(page.locator('#haPlay')).toBeEnabled();await expect(page.locator('#haMsg')).toBeHidden();
   await page.click('#haPlay');await expect.poll(()=>asked.length).toBeGreaterThan(0);expect(asked[0]).toMatch(/^https:\/\/audio\.example\/urd\/bukhari\/[\d_.]+\.m4a$/)});
+ test('recorded Urdu audio: a hadith not uploaded yet is never requested; the device voice reads it',async({page})=>{
+  const asked=[];await page.route('https://audio.example/urd/**',r=>{const u=r.request().url();if(u.endsWith('index.json'))return r.fulfill({status:200,contentType:'application/json',body:'{"bukhari":[]}'});asked.push(u);return r.fulfill({status:404,body:''})});
+  await page.addInitScript(()=>{localStorage.setItem('qsHadithAudioBase','https://audio.example/urd')});
+  await mockSpeech(page);await open(page);await lang(page,'urd').click();await page.waitForTimeout(500);await page.click('#haPlay');
+  await expect.poll(async()=>(await spoken(page)).length).toBeGreaterThan(0);expect(asked.length).toBe(0)});
  test('a device that never speaks shows the silent message instead of pretending',async({page})=>{
   await mockSpeech(page,{silent:true});await open(page);await page.click('#haPlay');await expect(page.locator('#haMsg')).toContainText('Nothing played')});
 
