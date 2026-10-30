@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';import fs from 'fs';import jsQR from 'jsqr';import {PNG} from 'pngjs';
 const URL_='https://kapadia100.github.io/noor-quran-app/install/';
 const dec=d=>{const p=PNG.sync.read(Buffer.from(d.split(',')[1],'base64'));return jsQR(new Uint8ClampedArray(p.data),p.width,p.height)?.data};
-const save=(n,d)=>{if(process.env.SHOTS){fs.mkdirSync(`/shots394`,{recursive:true});fs.writeFileSync(`/shots394/${n}.png`,Buffer.from(d.split(',')[1],'base64'))}};
+const save=(n,d)=>{if(process.env.SHOTS){fs.mkdirSync(`${process.env.CI?'/tmp':'/workspace'}/shots394`,{recursive:true});fs.writeFileSync(`${process.env.CI?'/tmp':'/workspace'}/shots394/${n}.png`,Buffer.from(d.split(',')[1],'base64'))}};
 for(const ui of ['en','ur'])test(`share images carry a scannable install QR (${ui})`,async({page})=>{
  if(ui==='ur')await page.addInitScript(()=>localStorage.setItem('ui','ur'));
  await page.goto('./#/names');await page.waitForFunction(()=>window.__cards);if(ui==='ur')await page.evaluate(()=>{document.documentElement.lang='ur'});

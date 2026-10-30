@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-const shot=(p,n)=>process.env.SHOTS&&p.screenshot({path:`/shots392/${n}.png`});
+const shot=(p,n)=>process.env.SHOTS&&p.screenshot({path:`${process.env.CI?'/tmp':'/workspace'}/shots392/${n}.png`});
 test('ibadat starts empty with instructions, even for old users',async({page})=>{await page.addInitScript(()=>localStorage.setItem('ibadatOld','1'));await page.goto('./#/ibadat');
  await expect(page.locator('#ibEmpty')).toContainText('Tap Customize');await expect(page.locator('.ib-tile')).toHaveCount(0);await expect(page.locator('#ibEdit')).toBeVisible();await shot(page,'empty-en')});
 test('picker lists all features, selection shows as 3-per-row tiles, persists',async({page})=>{await page.goto('./#/ibadat');await page.click('#ibAdd');
