@@ -1,3 +1,4 @@
+import * as NM from './names99.js';
 import{view as mushafView}from'./mushaf.js';
 // v2 feature screens. Everything stays in the same visual system (cards, lists, .btn) and supports EN/UR + dark mode.
 import * as L from './lib.js';
@@ -237,10 +238,8 @@ function items(head,list,chAudio){const k='azkar_'+ymd(new Date());const prog=LS
   if(b.dataset.au)C.playUrl(b.dataset.au,tt('Dua','دعا'))}}
 
 // ---------- 99 names ----------
-export async function names(){C.setTitle(tt('99 Names of Allah','اسماء الحسنیٰ'));const N=await X('names.json');
- app().innerHTML=`<input id="nf" class="inp" aria-label="Filter" placeholder="${tt('Search names…','نام تلاش کریں…')}"><div class="names" id="nl">${N.map(n=>`<button class="name" data-n="${n.n}" data-q="${esc((n.tr+' '+n.en+' '+n.ur+' '+n.ar).toLowerCase())}"><small>${n.n}</small><span class="ar">${esc(n.ar)}</span><b>${esc(n.tr)}</b><small>${esc(ur()?n.ur:n.en)}</small></button>`).join('')}</div>`;
- $('#nf').oninput=e=>{const q=e.target.value.toLowerCase();const nz=x=>x.replace(/[-'`’ ]/g,'').replace(/(.)\1+/g,'$1');app().querySelectorAll('.name').forEach(b=>b.hidden=!nz(b.dataset.q).includes(nz(q)))};
- app().onclick=e=>{const b=e.target.closest('.name');if(!b)return;const n=N[+b.dataset.n-1];$('#sheet').hidden=false;$('#sheetBody').innerHTML=`<div class="c"><div class="ar big">${esc(n.ar)}</div><h2 class="h3">${n.n}. ${esc(n.tr)}</h2><p><b>${esc(n.en)}</b></p><p class="ur" dir="rtl"><b>${esc(n.ur)}</b></p></div><p>${esc(n.enD||'')}</p><p class="ur" dir="rtl">${esc(n.urD||'')}</p><div class="c">${shareBtn({ar:n.ar,tr:`${n.tr} — ${ur()?n.ur:n.en}${(ur()?n.urD:n.enD)?'\n'+(ur()?n.urD:n.enD):''}`,ref:`${tt('99 Names of Allah','اسماء الحسنیٰ')} · ${n.n}. ${n.tr}`,url:siteUrl('#/names')})}</div>`}}
+export async function names(start){C.setTitle(tt('99 Names of Allah','اسماء الحسنیٰ'));const N=await X('names.json');const M=NM;
+ M.mount({app,tt,esc,ur,I_,shareBtn,siteUrl,N,start:+start||0})}
 
 // ---------- prayer tracker + qaza ----------
 const FIVE=['fajr','dhuhr','asr','maghrib','isha'];
