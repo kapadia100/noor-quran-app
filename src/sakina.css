@@ -377,3 +377,11 @@ body.tb-focus-on #back{visibility:hidden!important}
 .tb-exit{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);left:50%;transform:translateX(-50%);z-index:2;display:inline-flex;align-items:center;gap:6px;padding:10px 22px;min-height:44px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--brand) 60%,transparent);background:var(--brand);color:var(--bg);font:700 16px/1 var(--f-ui);box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .tb-undo{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);left:50%;transform:translateX(-50%);z-index:2;min-width:72px;min-height:44px;padding:10px 18px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--fg,#fff) 35%,transparent);background:color-mix(in srgb,var(--fg,#fff) 12%,var(--bg));color:var(--fg,inherit);font:700 17px/1 var(--f-ui)}
 .tb-lph{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);left:0;right:0;text-align:center;opacity:.6;font-size:12px}
+/* mushaf page: top-aligned, roomy Uthmani lines, justified, width-fitted */
+.mushaf{justify-content:flex-start}
+.mushaf .mt{flex:0 0 auto;display:block;font-size:clamp(19px,calc((100vw - 64px)/14.5),30px);line-height:2.45;text-align:justify;text-align-last:right;text-justify:inter-word;word-spacing:.04em;padding:6px 2px 10px;overflow:visible;margin:0}
+.mushaf .mt .mv{display:inline;padding:0;line-height:inherit}
+.mushaf .mt .end{white-space:nowrap;font-size:.85em}
+.mushaf .mt .sh{display:block;margin:6px 0 4px;line-height:1.9;text-align:center;text-align-last:center}
+.mushaf .mt .bism{display:block;text-align:center;text-align-last:center;line-height:2.2;margin:2px 0 6px}
+.mushaf .mf{margin-top:auto;padding-top:8px}
