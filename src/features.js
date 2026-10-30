@@ -1,5 +1,6 @@
 import * as NM from './names99.js';
-import {brand,INSTALL_URL} from './qrbrand.js';
+import {INSTALL_URL} from './qrbrand.js';
+import * as SC from './sharecards.js';
 import{view as mushafView}from'./mushaf.js';
 // v2 feature screens. Everything stays in the same visual system (cards, lists, .btn) and supports EN/UR + dark mode.
 import * as L from './lib.js';
@@ -142,44 +143,58 @@ export function help(){C.setTitle(tt('FAQ & Help','سوالات و مدد'));con
  <li>Hadith collections: fawazahmed0/hadith-api; reference numbers cross-checked with sunnah.com</li><li>Duas: fitrahive/dua-dhikr (MIT), Hisn al-Muslim JSON (MIT); Hisn al-Muslim audio: hisnmuslim.com</li><li>99 Names: AlAdhan API</li>
  <li>Prayer times: Adhan library (MIT) · Nearby mosques: © OpenStreetMap contributors (ODbL), via the Overpass API, with Photon (Komoot) and Nominatim search as fallbacks and a built-in Karachi list (OSM extract, 29 Oct 2026)</li><li>Anonymous usage counts: GoatCounter (no cookies)</li><li>Tajweed rule colours: quran-tajweed by Ahmed Fairuz (CC BY 4.0), based on Tanzil data</li><li>Qaida letter and vowel recordings: Marked Hijaiyah Letters’ Pronunciation Dataset, Telkom University (Adiwijaya, Wisesty, Mubarok, 2021), CC0</li><li>Recite & Learn speech model: Abdou/quran-asr-tiny (MIT), int8 ONNX; runs on-device via ONNX Runtime Web (MIT)</li><li>Quran Dictionary: word forms, roots and grammar from the Quranic Arabic Corpus (Kais Dukes, University of Leeds; GNU GPL); word meanings and word audio (also used for the Qaida word lessons) from the Quran.com word-by-word data; example translations: Sahih International and Fateh Muhammad Jalandhry</li><li>Fonts: Amiri Quran, Scheherazade New, Noto Nastaliq Urdu, Inter (SIL OFL)</li></ul></section>`}
 
-// ---------- share ayah as image ----------
-export async function ayahCard(s,a){const [AR,tr,list]=await Promise.all([C.arabic([s]),C.transFor(s),C.surahs()]);const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
- try{await Promise.all([document.fonts.load('48px "Amiri Quran"'),document.fonts.load('32px "Noto Nastaliq Urdu"')])}catch{}
- const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#0f766e');gr.addColorStop(1,'#064e3b');g.fillStyle=gr;g.fillRect(0,0,W,H);
- g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=4;g.strokeRect(40,40,W-80,H-80);g.fillStyle='#fff';g.textAlign='center';
- const arT=L.ayahText(s,a,AR[s-1][a-1]),avail=H-330-100;let fs=64;g.direction='rtl';let lines;do{g.font=`${fs}px "Amiri Quran", serif`;lines=L.wrapText(arT,W-200,x=>g.measureText(x).width);fs-=4}while(lines.length*fs*1.9>avail*.6&&fs>28);fs+=4;
- const trT=tr.texts[a-1]||'',isRtl=tr.edition.direction==='rtl';let fs2=38,l2;do{g.font=`${fs2}px ${isRtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(trT,W-200,x=>g.measureText(x).width);fs2-=2}while(l2.length*fs2*1.6>avail-lines.length*fs*1.9-150&&fs2>18);fs2+=2;
- const lh2=fs2*(isRtl?2:1.5),tot=lines.length*fs*1.9+50+l2.length*lh2+90;let y=100+Math.max(0,(avail-tot)/2);
- g.direction='rtl';g.font=`${fs}px "Amiri Quran", serif`;g.fillStyle='#fff';lines.forEach(l=>{g.fillText(l,W/2,y+=fs*1.9)});
- g.direction=isRtl?'rtl':'ltr';g.font=`${fs2}px ${isRtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;g.fillStyle='rgba(255,255,255,.92)';y+=50;l2.forEach(l=>g.fillText(l,W/2,y+=lh2));
- g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(`${list[s-1].englishName} ${s}:${a}`,W/2,y+=90);brand(g,W,H,{gold:'#fde68a'});
- return cv}
-export async function shareAyah(s,a){GC.event('share-ayah-image');const cv=await ayahCard(s,a);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const file=new File([blob],`ayah-${s}-${a}.png`,{type:'image/png'});
- if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:`Quran ${s}:${a}`});return 'shared'}catch(e){if(e.name==='AbortError')return 'cancelled'}}
- const u=URL.createObjectURL(blob);const sh=$('#sheet');sh.hidden=false;$('#sheetBody').innerHTML=`<h2 class="h3">${tt('Ayah image','آیت کی تصویر')}</h2><img id="cardImg" src="${u}" alt="Ayah ${s}:${a}" style="width:100%;border-radius:12px"><p><a class="btn" download="ayah-${s}-${a}.png" href="${u}">⬇ ${tt('Download','ڈاؤن لوڈ')}</a></p>`;return 'download'}
+// ---------- Quran sharing (t181): ayah / ruku / whole surah, always whole ayahs ----------
+let RUK=null;const rukus=async()=>RUK||(RUK=await fetch(import.meta.env.BASE_URL+'offline/rukus.json').then(r=>r.json()));
+/** ruku [from,to] containing s:a */
+export async function rukuOf(s,a){const R=await rukus();const i=R.findIndex(([rs,ra],k)=>{const n=R[k+1];return (rs<s||rs===s&&ra<=a)&&(!n||n[0]>s||n[0]===s&&n[1]>a)});const [rs,ra]=R[i];const n=R[i+1];const cnt=(await C.surahs())[s-1].numberOfAyahs;return {no:R.slice(0,i+1).filter(x=>x[0]===s).length,from:rs===s?ra:1,to:n&&n[0]===s?n[1]-1:cnt}}
+export async function rukusIn(s){const R=await rukus(),cnt=(await C.surahs())[s-1].numberOfAyahs;const st=R.filter(x=>x[0]===s).map(x=>x[1]);return st.map((f,i)=>({no:i+1,from:f,to:(st[i+1]||cnt+1)-1}))}
+async function qData(s){const [AR,tr,list]=await Promise.all([C.arabic([s]),C.transFor(s),C.surahs()]);return {AR:AR[s-1],tr,meta:list[s-1]}}
+const arn=n=>n.toLocaleString('ar-EG');
+const rng=(m,s,f,t)=>`${m.englishName} ${s}:${f}${t>f?`–${t}`:''}`;
+export async function quranBlocks(s,f,t){const {AR,tr,meta}=await qData(s);const out=[];for(let a=f;a<=t;a++)out.push({ar:`${L.ayahText(s,a,AR[a-1])} ﴿${arn(a)}﴾`,tr:(tr.texts[a-1]||'')+(t>f?` (${a})`:''),ref:''});out[out.length-1].ref=rng(meta,s,f,t);return out}
+export async function quranText(s,f,t){const {AR,tr,meta}=await qData(s);const body=[];for(let a=f;a<=t;a++)body.push(`${L.ayahText(s,a,AR[a-1])} ﴿${arn(a)}﴾\n${tr.texts[a-1]||''}${t>f?` (${a})`:''}`);
+ return [body.join('\n\n'),`— ${rng(meta,s,f,t)}`,'via Quran Safar',siteUrl(`#/surah/${s}/${f}`),`${tt('Get the app','ایپ حاصل کریں')}: ${INSTALL_URL}`].join('\n\n')}
+export const hueOf=s=>(150+s*37)%360;
+export async function ayahCard(s,a){return (await SC.render(await quranBlocks(s,a,a),{hue:hueOf(s)}))[0]}
+export async function quranCards(s,f,t){return SC.render(await quranBlocks(s,f,t),{hue:hueOf(s)})}
+async function shareFiles(cvs,base,title,out){const files=await SC.toFiles(cvs,base);
+ if(navigator.canShare?.({files})){try{await navigator.share({files,title});return 'shared'}catch(e){if(e.name==='AbortError')return 'cancelled'}}
+ const urls=files.map(f=>URL.createObjectURL(f));out.innerHTML=`<div class="sh-imgs">${urls.map((u,i)=>`<figure><img class="cardImg" ${i?'':'id="cardImg"'} src="${u}" alt="${esc(title)} ${i+1}/${urls.length}"><a class="btn ghost" download="${files[i].name}" href="${u}">⬇ ${urls.length>1?`${i+1}/${urls.length}`:tt('Download','ڈاؤن لوڈ')}</a></figure>`).join('')}</div>`;return 'download'}
+async function shareTxt(title,txt){if(await nativeShare({title,text:txt}))return;if(navigator.share){try{await navigator.share({title,text:txt});return}catch{/* cancelled */}}try{await navigator.clipboard.writeText(txt)}catch{/* no clipboard */}C.toast(tt('Copied','کاپی ہو گیا'))}
+const MAXIMG=10;
+/** Share sheet for an ayah: this ayah, its ruku, or the whole surah. */
+export async function shareAyah(s,a){GC.event('share-ayah');const {meta}=await qData(s);const rk=await rukuOf(s,a),all=await rukusIn(s);$('#sheet').hidden=false;
+ const opt=(k,l)=>`<button class="seg-b" data-scope="${k}">${l}</button>`;
+ $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share','شیئر کریں')} · ${esc(meta.englishName)} ${s}:${a}</h2>
+ <div class="seg sh-scope">${opt('ayah',tt('This ayah','یہ آیت'))}${opt('ruku',tt(`Ruku ${rk.no}`,`رکوع ${rk.no}`))}${opt('surah',tt('Whole surah','پوری سورت'))}</div>
+ <p class="muted" id="shInfo"></p><div class="shgrid"><button class="btn" id="shImg">${I_('image')} <span>${tt('Share image','تصویر شیئر')}</span></button><button class="btn ghost" id="shText">${I_('share')} ${tt('Share text','متن شیئر')}</button><a class="btn wa" id="shWa" target="_blank" rel="noopener">${I_('whatsapp')} WhatsApp</a><button class="btn ghost" id="shCopy">${I_('copy')} ${tt('Copy','کاپی')}</button></div>
+ <div id="shRk" hidden><label class="muted">${tt('Long surah: images are shared one ruku at a time','لمبی سورت: تصاویر ایک رکوع کے حساب سے')} <select id="shRkSel">${all.map(r=>`<option value="${r.from}-${r.to}">${tt('Ruku','رکوع')} ${r.no} · ${r.from}–${r.to}</option>`).join('')}</select></label></div><div id="shOut"></div>`;
+ let scope='ayah',txt='';const range=()=>scope==='ayah'?[a,a]:scope==='ruku'?[rk.from,rk.to]:[1,meta.numberOfAyahs];
+ const set=async k=>{scope=k;document.querySelectorAll('.sh-scope [data-scope]').forEach(b=>b.classList.toggle('on',b.dataset.scope===k));$('#shOut').innerHTML='';const [f,t]=range();txt=await quranText(s,f,t);
+  const big=k==='surah'&&meta.numberOfAyahs>40;$('#shRk').hidden=!big;$('#shRkSel').value=`${rk.from}-${rk.to}`;
+  $('#shInfo').textContent=`${rng(meta,s,f,t)} · ${t-f+1} ${tt(t>f?'ayahs':'ayah','آیات')}`;const wa=$('#shWa');wa.hidden=txt.length>6000;wa.href=`https://wa.me/?text=${encodeURIComponent(txt)}`};
+ document.querySelectorAll('.sh-scope [data-scope]').forEach(b=>b.onclick=()=>set(b.dataset.scope));await set('ayah');
+ $('#shText').onclick=()=>{GC.event('share-text-'+scope);const [f,t]=range();shareTxt(rng(meta,s,f,t),txt)};
+ $('#shCopy').onclick=async()=>{try{await navigator.clipboard.writeText(txt)}catch{/* no clipboard */}C.toast(tt('Copied','کاپی ہو گیا'))};
+ $('#shImg').onclick=async()=>{GC.event('share-image-'+scope);let [f,t]=range();if(scope==='surah'&&!$('#shRk').hidden)[f,t]=$('#shRkSel').value.split('-').map(Number);
+  $('#shOut').innerHTML=`<p class="muted">${tt('Preparing…','تیار ہو رہا ہے…')}</p>`;let cvs=await quranCards(s,f,t);
+  if(cvs.length>MAXIMG){cvs=cvs.slice(0,MAXIMG);C.toast(tt(`First ${MAXIMG} images — share the rest by ruku or as text`,`پہلی ${MAXIMG} تصاویر`))}
+  window.__shareCvs=cvs;return shareFiles(cvs,`quran-${s}-${f}${t>f?`-${t}`:''}`,rng(meta,s,f,t),$('#shOut'))};
+ return 'sheet'}
 
 // ---------- universal share (hadith, duas, 99 names) ----------
 const SH=[];export const shareBtn=item=>{SH.push(item);return `<button class="shr" data-shr="${SH.length-1}" aria-label="${tt('Share','شیئر')}">${I_('share')}</button>`};
 export const shareText=it=>[it.ar,it.tr,`— ${it.ref}`,'via Quran Safar',it.url,`${tt('Get the app','ایپ حاصل کریں')}: ${INSTALL_URL}`].filter(Boolean).join('\n\n');
 async function nativeShare(o){try{const {Capacitor}=await import('@capacitor/core');if(Capacitor.isNativePlatform()){const {Share}=await import('@capacitor/share');await Share.share(o);return true}}catch{}return false}
-export async function textCard(it){const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
- try{await Promise.all([document.fonts.load('48px "Amiri Quran"'),document.fonts.load('32px "Noto Nastaliq Urdu"')])}catch{}
- const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#1d6b47');gr.addColorStop(1,'#0b2e22');g.fillStyle=gr;g.fillRect(0,0,W,H);g.strokeStyle='rgba(217,178,95,.7)';g.lineWidth=4;g.strokeRect(40,40,W-80,H-80);g.textAlign='center';g.fillStyle='#fff';
- const avail=H-330-100;let fs=it.ar.length>400?40:62,lines,l2=[],f2=38,rtl=false;g.direction='rtl';do{g.font=`${fs}px "Amiri Quran", serif`;lines=it.ar?L.wrapText(it.ar,W-200,x=>g.measureText(x).width):[];fs-=3}while(lines.length*fs*1.8>(it.tr?avail*.6:avail)&&fs>22);fs+=3;
- if(it.tr){rtl=/[\u0600-\u06ff]/.test(it.tr.slice(0,40));g.direction=rtl?'rtl':'ltr';do{g.font=`${f2}px ${rtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;l2=L.wrapText(it.tr,W-200,x=>g.measureText(x).width);f2-=2}while(l2.length*f2*(rtl?2:1.5)>avail-lines.length*fs*1.8-60&&f2>16);f2+=2}
- const lh2=f2*(rtl?2:1.5),tot=lines.length*fs*1.8+(l2.length?40+l2.length*lh2:0)+(it.ref?90:0);let y=100+Math.max(0,(avail-tot)/2);
- g.direction='rtl';g.font=`${fs}px "Amiri Quran", serif`;g.fillStyle='#fff';lines.forEach(l=>g.fillText(l,W/2,y+=fs*1.8));
- if(l2.length){g.direction=rtl?'rtl':'ltr';g.font=`${f2}px ${rtl?'"Noto Nastaliq Urdu"':'Inter, sans-serif'}`;g.fillStyle='rgba(255,255,255,.92)';y+=40;l2.forEach(l=>g.fillText(l,W/2,y+=lh2))}
- if(it.ref){g.direction='ltr';g.font='600 34px Inter, sans-serif';g.fillStyle='#fde68a';g.fillText(it.ref,W/2,y+=90)}brand(g,W,H,{gold:'#fde68a'});return cv}
+export async function textCards(it){return SC.render([{ar:it.ar,tr:it.tr,ref:it.ref}],{hue:it.hue??150})}
+export async function textCard(it){return (await textCards(it))[0]}
 export function openShare(it){const txt=shareText(it);$('#sheet').hidden=false;
  $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share','شیئر کریں')}</h2><pre class="shtxt" id="shTxt">${esc(txt)}</pre>
  <div class="shgrid"><button class="btn" id="shText">${I_('share')} ${tt('Share text','متن شیئر')}</button><a class="btn wa" id="shWa" onclick="window.__gcShare&&window.__gcShare('share-whatsapp')" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${I_('whatsapp')} WhatsApp</a>
  <button class="btn ghost" id="shCopy">${I_('copy')} ${tt('Copy','کاپی')}</button><button class="btn ghost" id="shImg">${I_('image')} ${tt('Share image','تصویر شیئر')}</button></div><div id="shOut"></div>`;
  $('#shText').onclick=async()=>{GC.event('share-text');if(await nativeShare({title:it.ref,text:txt}))return;if(navigator.share){try{await navigator.share({title:it.ref,text:txt})}catch{}}else copy()};
  const copy=async()=>{GC.event('share-copy');try{await navigator.clipboard.writeText(txt)}catch{const t=document.createElement('textarea');t.value=txt;document.body.append(t);t.select();document.execCommand('copy');t.remove()}C.toast(tt('Copied','کاپی ہو گیا'))};$('#shCopy').onclick=copy;
- $('#shImg').onclick=async()=>{GC.event('share-image');const cv=await textCard(it);const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const name=it.ref.replace(/\W+/g,'-')+'.png';const file=new File([blob],name,{type:'image/png'});
-  if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:it.ref});return}catch(e){if(e.name==='AbortError')return}}
-  const u=URL.createObjectURL(blob);$('#shOut').innerHTML=`<img id="cardImg" src="${u}" alt="${esc(it.ref)}" style="width:100%;border-radius:14px;margin-top:10px"><p><a class="btn" download="${name}" href="${u}">${tt('Download','ڈاؤن لوڈ')}</a></p>`}}
+ $('#shImg').onclick=async()=>{GC.event('share-image');const cvs=await textCards(it);window.__shareCvs=cvs;await shareFiles(cvs,it.ref.replace(/\W+/g,'-')||'share',it.ref,$('#shOut'))}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-shr]');if(b){e.stopPropagation();openShare(SH[+b.dataset.shr])}},true);
 window.__gcShare=n=>GC.event(n);
 export const siteUrl=h=>location.origin+location.pathname+h;
@@ -400,6 +415,6 @@ export async function hifzTest(pre){C.setTitle(tt('Hifz Test','حفظ ٹیسٹ')
  if(pre)app().querySelector(`.hz-s[data-s="${+pre}"]`)?.scrollIntoView({block:'center'});
  $$('#zGo').onclick=()=>{let s,f,t;const juz=+$$('#zJu').value;let next=[];if(by==='juz'){const rs=L.juzRanges(juz);[s,f,t]=rs[0];next=rs.slice(1)}else{s=+$$('#zSu').value;const n=cnt(s);f=Math.max(1,Math.min(n,+$$('#zF').value||1));t=Math.max(f,Math.min(n,+$$('#zT').value||n))}
   const cfg={by,s,from:f,to:t,juz,showTr:$$('#zTr').checked,auto:$$('#zAu').checked};LS.set('qsHzCfg',cfg);C.startHifzTest({...cfg,next})}}
-window.__cards={ayahCard,textCard,nameCard:NM.drawCard};
+window.__cards={ayahCard,textCard,textCards,quranCards,nameCard:NM.drawCard,paginate:SC.paginate,quranBlocks};
 document.addEventListener('click',e=>{const b=e.target.closest?.('.tv-shr');if(!b)return;const c=b.closest('.tv-c'),q=x=>c.querySelector(x)?.textContent.trim()||'';const u=document.documentElement.lang==='ur';
  openShare({ar:q('.tv-ar'),tr:(u?q('.tv-ur'):q('.tv-en'))||q('.tv-en')||q('.tv-ur'),ref:q('.tv-h b')||tt('Adhkar','اذکار')+' '+q('.tv-n'),url:siteUrl(location.hash)})});

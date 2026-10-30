@@ -705,3 +705,6 @@ article.hd.hd-on{outline:2px solid var(--pri);outline-offset:2px}
 .nm-done .ar{font-family:'Amiri Quran',serif;font-size:40px}
 :root{--pat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23F3D9A0' stroke-opacity='.16' stroke-width='1'%3E%3Crect x='16' y='16' width='24' height='24'/%3E%3Crect x='16' y='16' width='24' height='24' transform='rotate(45 28 28)'/%3E%3Ccircle cx='28' cy='28' r='5'/%3E%3Cpath d='M0 28h8M48 28h8M28 0v8M28 48v8'/%3E%3C/g%3E%3C/svg%3E")}
 .tv-h .tv-shr{margin-inline-start:auto;min-width:40px;min-height:40px}.tv-h .tv-shr svg{width:20px;height:20px}
+/* t181 share sheet */
+.sh-scope{margin:6px 0 4px}.sh-scope .seg-b{flex:1;padding:9px 6px;border-radius:12px;border:1px solid var(--line,#8884);background:transparent;color:inherit;font:inherit;font-weight:600}.sh-scope .seg-b.on{background:var(--accent,#0f766e);color:#fff;border-color:transparent}
+.sh-imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:10px}.sh-imgs figure{margin:0;text-align:center}.sh-imgs img{width:100%;border-radius:10px;box-shadow:0 4px 14px #0004}.sh-imgs .btn{margin-top:6px;width:100%}#shRk{margin:8px 0}#shRk select{margin-inline-start:6px}

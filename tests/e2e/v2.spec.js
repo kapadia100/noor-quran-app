@@ -4,7 +4,7 @@ test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>{if(!/Failed to
 test.afterEach(async({page})=>{expect(errors).toEqual([]);const ov=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);expect(ov).toBeLessThanOrEqual(1)});
 
 test('dashboard: ayah of the day, tiles, streak, share image',async({page})=>{await page.goto('./');await expect(page.locator('.aotd .ar')).not.toBeEmpty();await expect(page.locator('.fcard,.ccard')).toHaveCount(11);await expect(page.locator('#streak')).toContainText('0');
- await page.click('#aShare');await expect(page.locator('#cardImg')).toBeVisible();const w=await page.locator('#cardImg').evaluate(i=>i.naturalWidth);expect(w).toBe(1080)});
+ await page.click('#aShare');await page.click('#shImg');await expect(page.locator('#cardImg')).toBeVisible();const w=await page.locator('#cardImg').evaluate(i=>i.naturalWidth);expect(w).toBe(1080)});
 test('streak increments after reading',async({page})=>{await page.goto('./#/surah/1');await page.waitForSelector('.ayah');await page.goto('./#/');await expect(page.locator('#streak b')).toContainText('1')});
 test('tasbeeh: count, preset, target vibration toast, history, custom',async({page})=>{await page.goto('./#/tasbeeh');await page.click('[data-tg="33"]');for(let i=0;i<33;i++)await page.click('#tap');await expect(page.locator('#toast')).toContainText('33');await expect(page.locator('#cnt')).toHaveText('33');
  await page.click('[data-tg="100"]');await expect(page.locator('#tap small')).toContainText('100');await page.click('#tUndo');await expect(page.locator('#cnt')).toHaveText('32');await page.click('#tReset');await expect(page.locator('#cnt')).toHaveText('0');await expect(page.locator('.list li').first()).toContainText('32');

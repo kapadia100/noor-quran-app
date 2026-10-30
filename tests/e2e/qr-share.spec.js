@@ -17,6 +17,6 @@ for(const [k,url,btn,box] of FLOWS)test(`share flow ${k}: link in text, image ha
  const ar=box&&box!=='x'?await b.evaluate((e,bx)=>e.closest(bx).querySelector('.tv-ar')?.textContent.trim(),box):null;
  await page.evaluate(()=>{window.__shareFile=null;navigator.canShare=()=>false});await b.click();
  let d;if(box){await expect(page.locator('#shTxt')).toContainText(URL_);if(ar)expect(await page.locator('#shTxt').textContent()).toContain(ar);await page.click('#shImg');await page.locator('#cardImg').waitFor()}
- else await page.locator('#cardImg').waitFor({timeout:30000});
+ else {await page.click('#shImg');await page.locator('#cardImg').waitFor({timeout:30000})}
  d=await page.locator('#cardImg').evaluate(async i=>{const r=await fetch(i.src);const bl=await r.blob();return await new Promise(o=>{const f=new FileReader();f.onload=()=>o(f.result);f.readAsDataURL(bl)})});
  expect(dec(d)).toBe(URL_);save(`flow-${k}`,d)});
