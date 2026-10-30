@@ -300,8 +300,8 @@ export function zakat(){C.setTitle(tt('Zakat calculator','زکوٰۃ کیلکو�
 // v3.7.6: fixed 2 km radius; saved results for this place render instantly, then a raced refresh; follows the user when they move (GPS mode)
 let mqWatch=null;
 export async function mosques(){C.setTitle(tt('Mosque Finder','مسجد فائنڈر'));const M=await import('./mosques-core.js');const rad=M.RAD;let seq=0;
- app().innerHTML=`<div class="bar mq-bar"><button class="btn" id="mGps">${I_('gps')} ${tt('Use my location','میری لوکیشن')}</button><small class="muted mq-rad">${tt('Within 2 km','2 کلومیٹر کے اندر')}</small></div>
- <small class="muted" id="mWhere">${I_('pin')} ${esc(PR.P.city)}</small><p class="muted" id="mNote" hidden></p><ul class="list" id="ml" aria-live="polite"><li class="muted">${C.t('loading')}</li></ul>`;
+ app().innerHTML=`<div class="bar mq-bar"><button class="icon-btn mq-loc" id="mGps" aria-label="${tt('Refresh my location','لوکیشن دوبارہ لیں')}" title="${tt('Refresh my location','لوکیشن دوبارہ لیں')}">${I_('gps')}</button><small class="muted mq-rad">${tt('Within 2 km','2 کلومیٹر کے اندر')}</small></div>
+ <small class="muted" id="mWhere">${I_('pin')} ${esc(PR.P.city)}</small><p class="muted mq-warn" id="mLoc" hidden></p><p class="muted" id="mNote" hidden></p><ul class="list" id="ml" aria-live="polite"><li class="muted">${C.t('loading')}</li></ul>`;
  const note=(s,cls)=>{const n=$('#mNote');if(!n)return;n.textContent=s||'';n.hidden=!s;n.className='muted '+(cls||'')};
  const nm=m=>m.named?(ur()&&m.alt.ur)||m.name:tt('Mosque','مسجد');
  const render=(r,refreshing)=>{const ml=$('#ml');if(!ml)return;const ua=navigator.userAgent||'';const cnt=r.list.length;
@@ -317,8 +317,18 @@ export async function mosques(){C.setTitle(tt('Mosque Finder','مسجد فائن
   mqWatch=navigator.geolocation.watchPosition(p=>{if(!location.hash.startsWith('#/mosques')){navigator.geolocation.clearWatch(mqWatch);mqWatch=null;return}
    const la=+p.coords.latitude.toFixed(4),ln=+p.coords.longitude.toFixed(4);if(M.hav(la,ln,PR.P.lat,PR.P.lng)<M.MOVE||Date.now()-last<60000)return;last=Date.now();
    PR.P.lat=la;PR.P.lng=ln;PR.P.city='GPS '+la+', '+ln;PR.saveP();run()},()=>{},{enableHighAccuracy:false,maximumAge:60000,timeout:20000})};
- $('#mGps').onclick=async()=>{$('#mGps').disabled=true;try{await PR.locate();note('')}catch(e){const denied=/denied/i.test(e.message);note(denied?tt('Location permission was denied. Allow location for this app in your browser/phone settings, or set your city in Settings → Prayer. Showing results for your saved city.','لوکیشن کی اجازت نہیں ملی۔ فون/براؤزر کی سیٹنگ میں اجازت دیں یا سیٹنگ میں شہر منتخب کریں۔ محفوظ شدہ شہر کے نتائج دکھائے جا رہے ہیں۔'):tt('Could not get your location. Showing results for your saved city.','لوکیشن نہیں مل سکی۔ محفوظ شدہ شہر کے نتائج دکھائے جا رہے ہیں۔'),'mq-warn')}finally{$('#mGps').disabled=false}const w=$('#mNote').textContent;await run();if(w)note(w,'mq-warn');follow()};
- run();follow()}
+ // t168u: auto-locate on open — saved position renders instantly, then live GPS refines; small relocate icon; denied → message + retry
+ const where=()=>{const w=$('#mWhere');if(w)w.innerHTML=`${I_('pin')} ${esc(PR.P.city)}`};
+ const locate=async()=>{const g=$('#mGps');if(!g||g.disabled)return;g.disabled=true;g.classList.add('spin');const w=$('#mWhere');if(w)w.innerHTML=`${I_('gps')} <span class="mq-locating">${tt('Locating…','لوکیشن معلوم کی جا رہی ہے…')}</span>`;
+  const o={lat:PR.P.lat,lng:PR.P.lng};let warn='';
+  try{await PR.locate()}catch(e){const denied=/denied/i.test(e.message);warn=denied?tt('Location permission is off. Allow location for this app in your phone/browser settings, then tap Retry. Showing results for your saved place.','لوکیشن کی اجازت بند ہے۔ فون/براؤزر کی سیٹنگ میں اجازت دیں، پھر دوبارہ کوشش دبائیں۔ محفوظ جگہ کے نتائج دکھائے جا رہے ہیں۔'):tt('Could not get your live location. Showing results for your saved place.','لائیو لوکیشن نہیں مل سکی۔ محفوظ جگہ کے نتائج دکھائے جا رہے ہیں۔')}
+  finally{const g2=$('#mGps');if(g2){g2.disabled=false;g2.classList.remove('spin')}}
+  if(!$('#ml'))return;where();
+  const L=$('#mLoc');if(L){L.hidden=!warn;L.textContent=warn}
+  if(warn){const n=L;if(n){n.insertAdjacentHTML('beforeend',` <button class="btn ghost mq-retry" id="mLocRetry">${I_('gps')} ${tt('Retry','دوبارہ کوشش')}</button>`);$('#mLocRetry').onclick=locate}return}
+  if(o.lat!==PR.P.lat||o.lng!==PR.P.lng||!M.cached(PR.P.lat,PR.P.lng,rad))await run();follow()};
+ $('#mGps').onclick=locate;
+ run();locate()}
 
 // ---------- hifz setup ----------
 export async function hifz(){C.setTitle(tt('Hifz mode','حفظ موڈ'));const list=await C.surahs();const H=LS.get('hifzCfg',{s:LS.get('lastRead',{}).s||1,from:1,to:5,each:3,range:2,hide:false});const prog=LS.get('hifzDone',{});

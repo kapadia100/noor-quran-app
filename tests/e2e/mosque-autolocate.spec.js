@@ -1,0 +1,15 @@
+import{test,expect}from'@playwright/test';
+const MQ=[{type:'node',id:2,lat:24.8615,lon:67.0011,tags:{name:'Masjid Near',religion:'muslim'}},{type:'node',id:5,lat:24.9010,lon:67.0505,tags:{name:'Masjid Gulshan',religion:'muslim'}}];
+test('mosques: auto-locates on open (no tap), shows Locating…, small relocate icon',async({page,context})=>{await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:24.9005,longitude:67.0500});
+ await page.route(/overpass|interpreter|photon|nominatim|mosques-khi/,r=>r.fulfill({json:{elements:MQ}}));
+ await page.addInitScript(()=>{const g=navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);navigator.geolocation.getCurrentPosition=(a,b,c)=>setTimeout(()=>g(a,b,c),700)});
+ await page.goto('./#/mosques');await expect(page.locator('.mq-locating')).toBeVisible();await expect(page.locator('#mGps')).toHaveClass(/mq-loc/);
+ expect(await page.locator('#app').innerText()).not.toMatch(/Use my location/);const bb=await page.locator('#mGps').boundingBox();expect(bb.width).toBeLessThan(50);
+ await expect(page.locator('#mWhere')).toContainText('GPS 24.9005');await expect(page.locator('#ml .mq-item').first()).toContainText('Masjid Gulshan');await expect(page.locator('.mq-locating')).toHaveCount(0)});
+test('mosques: cached last position shows results instantly before GPS answers',async({page,context})=>{await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:24.9005,longitude:67.0500});
+ await page.route(/overpass|interpreter|photon|nominatim|mosques-khi/,r=>r.fulfill({json:{elements:MQ}}));await page.goto('./#/mosques');await expect(page.locator('#ml .mq-item').first()).toBeVisible({timeout:15000});
+ await page.addInitScript(()=>{navigator.geolocation.getCurrentPosition=()=>{}});await page.goto('./#/more');await page.reload();const t=Date.now();await page.goto('./#/mosques');
+ await expect(page.locator('#ml .mq-item').first()).toBeVisible();expect(Date.now()-t).toBeLessThan(2500);await expect(page.locator('.mq-locating')).toBeVisible()});
+test('mosques: denied shows clear message + retry that re-asks',async({page})=>{await page.route(/overpass|interpreter|photon|nominatim|mosques-khi/,r=>r.fulfill({json:{elements:MQ}}));
+ await page.addInitScript(()=>{window.__n=0;navigator.geolocation.getCurrentPosition=(ok,err)=>{window.__n++;err({code:1,message:'denied'})}});await page.goto('./#/mosques');
+ await expect(page.locator('#mLoc')).toContainText(/permission is off/i);await page.click('#mLocRetry');await expect.poll(()=>page.evaluate(()=>window.__n)).toBe(2);await expect(page.locator('#mLocRetry')).toBeVisible();await expect(page.locator('#ml .mq-item').first()).toBeVisible()});
