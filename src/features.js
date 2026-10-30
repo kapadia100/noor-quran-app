@@ -42,12 +42,17 @@ function nowPrayer(){const n=new Date(),pt=PR.times(n);let cur='isha';for(const 
 const PAR={fajr:'الفجر',sunrise:'الشروق',dhuhr:'الظهر',asr:'العصر',maghrib:'المغرب',isha:'العشاء'};
 const PIC={fajr:'p-fajr',sunrise:'p-sunrise',dhuhr:'p-dhuhr',asr:'p-asr',maghrib:'p-maghrib',isha:'p-isha'};
 /** Home prayer-times card: next prayer + countdown + progress, and a 6-prayer row with the current one emphasised. */
-function pcard(nx){const n=new Date(),pt=PR.times(n),cur=nowPrayer(),y=PR.times(new Date(n.getTime()-864e5));
- const from=pt[cur]<=n?pt[cur]:y[cur],pct=nx?Math.max(0,Math.min(100,100*(n-from)/(nx.time-from))):0;
- const cell=k=>{const[t,ap]=PR.fmt12(pt[k]).split(' ');const st=k===cur?'cur':(nx&&nx.key===k?'nx':(pt[k]<n&&k!==cur?'past':''));return `<div class="pc-i ${st}"><span class="pc-ic">${I.icon(PIC[k])}</span><b>${C.pn(k)}</b><span class="pc-t">${t}<small>${ap||''}</small></span></div>`};
- return `<a class="pcard" href="#/prayer" id="homePrayer" aria-label="${tt('Prayer times','اوقاتِ نماز')}">${I.mosqueArt}
-  <div class="pc-top"><span class="pc-badge"><i></i>${nx?tt('Next prayer','اگلی نماز'):tt('Now','اب')+' · '+C.pn(cur)}</span><span class="pc-loc">${I.icon('pin')}${esc(PR.P.city||'')}</span></div>
-  ${nx?`<div class="pc-main"><div class="pc-nx"><b>${C.pn(nx.key)}</b><bdi dir="ltr" class="pc-at">${PR.fmt12(nx.time)}</bdi><span class="pc-cdw"><bdi dir="ltr" class="cd" data-at="${+nx.time}"></bdi><small>${tt('left','باقی')}</small></span><span class="pc-arch" aria-hidden="true">${I.icon(PIC[nx.key])}<span class="ar" lang="ar" dir="rtl">${PAR[nx.key]}</span></span></div></div>
+function pcard(nx0){const n=new Date(),pt=PR.times(n),cur=nowPrayer(),y=PR.times(new Date(n.getTime()-864e5)),hs=PR.headerState(pt,n,nx0);
+ const mk=hs&&hs.mode==='makrooh',fj=hs&&hs.mode==='current',nx=hs&&!mk?{key:hs.key,time:hs.time}:null;
+ const from=fj?hs.from:(pt[cur]<=n?pt[cur]:y[cur]),pct=nx?Math.max(0,Math.min(100,100*(n-from)/(nx.time-from))):0;
+ const hl=fj?'fajr':mk?(hs.kind==='sunrise'?'sunrise':null):cur;
+ const cell=k=>{const[t,ap]=PR.fmt12(pt[k]).split(' ');const st=k===hl?'cur':(nx&&!fj&&nx.key===k?'nx':(pt[k]<n&&k!==hl?'past':''));return `<div class="pc-i ${st}"><span class="pc-ic">${I.icon(PIC[k])}</span><b>${C.pn(k)}</b><span class="pc-t">${t}<small>${ap||''}</small></span></div>`};
+ const MKN={sunrise:['After sunrise','طلوعِ آفتاب'],zawal:['Zawal','زوال'],sunset:['Before sunset','غروبِ آفتاب']};
+ return `<a class="pcard${mk?' pc-mk':''}" href="#/prayer" id="homePrayer" aria-label="${tt('Prayer times','اوقاتِ نماز')}">${I.mosqueArt}
+  <div class="pc-top"><span class="pc-badge"><i></i>${mk?tt('Makrooh time','مکروہ وقت'):fj?tt('Current prayer','موجودہ نماز'):nx?tt('Next prayer','اگلی نماز'):tt('Now','اب')+' · '+C.pn(cur)}</span><span class="pc-loc">${I.icon('pin')}${esc(PR.P.city||'')}</span></div>
+  ${mk?`<div class="pc-main"><div class="pc-mkn" role="status"><b>${tt('Makrooh time — no sajda','مکروہ وقت — سجدہ منع ہے')}</b><small>${tt(MKN[hs.kind][0],MKN[hs.kind][1])} · ${tt('ends','ختم')} <bdi dir="ltr">${PR.fmt12(hs.until)}</bdi></small><span class="pc-cdw"><bdi dir="ltr" class="cd" data-at="${+hs.until}"></bdi><small>${tt('left','باقی')}</small></span></div></div>
+  <div class="pc-bar" data-from="${+hs.from}" data-at="${+hs.until}"><i style="--w:${Math.max(0,Math.min(100,100*(n-hs.from)/(hs.until-hs.from))).toFixed(1)}%"></i></div>`:''}
+  ${nx?`<div class="pc-main"><div class="pc-nx"><b>${C.pn(nx.key)}</b><bdi dir="ltr" class="pc-at">${PR.fmt12(fj?hs.from:nx.time)}</bdi><span class="pc-cdw"><bdi dir="ltr" class="cd" data-at="${+nx.time}"></bdi><small>${fj?tt('left · until sunrise','باقی · طلوع تک'):tt('left','باقی')}</small></span><span class="pc-arch" aria-hidden="true">${I.icon(PIC[nx.key])}<span class="ar" lang="ar" dir="rtl">${PAR[nx.key]}</span></span></div></div>
   <div class="pc-bar" data-from="${+from}" data-at="${+nx.time}"><i style="--w:${pct.toFixed(1)}%"></i></div>`:''}
   <div class="pc-row">${PR.PRAYERS.map(cell).join('')}</div></a>`}
 export async function dashboard(){C.setTitle(tt('Quran Safar','قرآن سفر'));document.body.classList.add('is-home');const [AR,tr,list]=await Promise.all([C.arabic([L.ayahOfDay().s]),C.transFor(L.ayahOfDay().s),C.surahs()]);

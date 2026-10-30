@@ -48,3 +48,12 @@ export async function setReminders(group,items){const now=new Date();items=items
  webRem[group]=items.filter(x=>x.at-now<2**31-1).map(x=>setTimeout(()=>new Notification(x.title,{body:x.body,icon:import.meta.env.BASE_URL+'icon-192.png'}),x.at-now));return {ok:true,count:webRem[group].length,mode:'web (while app is open)'}}
 /** Daily times at HH:MM for the next n days. */
 export function dailyAt(hhmm,n=7,from=new Date()){const [h,m]=hhmm.split(':').map(Number);const out=[];for(let i=0;i<=n;i++){const d=new Date(from.getFullYear(),from.getMonth(),from.getDate()+i,h,m);if(d>from)out.push(d)}return out.slice(0,n)}
+// Home header state. Makrooh windows (minutes) are constants.
+export const MAKROOH={afterSunrise:20,beforeDhuhr:10,beforeMaghrib:15};
+// pt: today's times; nx: next prayer {key,time}. Returns {mode:'makrooh',kind,from,until} | {mode:'current',key:'fajr',from,time} | {mode:'next',key,time}
+export function headerState(pt,now,nx){const m=6e4,t=+now;
+ if(t>=+pt.sunrise&&t<+pt.sunrise+MAKROOH.afterSunrise*m)return{mode:'makrooh',kind:'sunrise',from:pt.sunrise,until:new Date(+pt.sunrise+MAKROOH.afterSunrise*m)};
+ if(t>=+pt.dhuhr-MAKROOH.beforeDhuhr*m&&t<+pt.dhuhr)return{mode:'makrooh',kind:'zawal',from:new Date(+pt.dhuhr-MAKROOH.beforeDhuhr*m),until:pt.dhuhr};
+ if(t>=+pt.maghrib-MAKROOH.beforeMaghrib*m&&t<+pt.maghrib)return{mode:'makrooh',kind:'sunset',from:new Date(+pt.maghrib-MAKROOH.beforeMaghrib*m),until:pt.maghrib};
+ if(t>=+pt.fajr&&t<+pt.sunrise)return{mode:'current',key:'fajr',from:pt.fajr,time:pt.sunrise};
+ return nx?{mode:'next',key:nx.key,time:nx.time}:null}
