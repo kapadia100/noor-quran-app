@@ -81,6 +81,12 @@ export function hadithAudioFlows(test,expect){
   await expect(page.locator('#haPlay')).toBeDisabled();expect((await spoken(page)).length).toBe(0);
   await lang(page,'eng').click();await expect(page.locator('#haMsg')).toBeHidden();await expect(page.locator('#haPlay')).toBeEnabled()});
 
+ test('recorded Urdu audio: with an audio base set, Urdu plays the per-hadith file even with no Urdu voice on the device',async({page})=>{
+  const asked=[];await page.route('https://audio.example/urd/**',r=>{asked.push(r.request().url());return r.fulfill({status:404,body:''})});
+  await page.addInitScript(()=>{localStorage.setItem('qsHadithAudioBase','https://audio.example/urd/')});
+  await mockSpeech(page,{voices:MOCK_VOICES.filter(v=>v.lang!=='ur-PK')});await open(page);
+  await lang(page,'urd').click();await expect(page.locator('#haPlay')).toBeEnabled();await expect(page.locator('#haMsg')).toBeHidden();
+  await page.click('#haPlay');await expect.poll(()=>asked.length).toBeGreaterThan(0);expect(asked[0]).toMatch(/^https:\/\/audio\.example\/urd\/bukhari\/[\d_.]+\.m4a$/)});
  test('a device that never speaks shows the silent message instead of pretending',async({page})=>{
   await mockSpeech(page,{silent:true});await open(page);await page.click('#haPlay');await expect(page.locator('#haMsg')).toContainText('Nothing played')});
 

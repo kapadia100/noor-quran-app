@@ -29,6 +29,23 @@ export function splitText(text,max=180){
   if(p.length>max){push(cur);cur='';let w='';for(const word of p.split(/\s+/)){if((w+' '+word).length>max){push(w);w=word}else w=w?w+' '+word:word}push(w);continue}
   if((cur+p).length>max){push(cur);cur=p}else cur+=p}
  push(cur);return out}
+// ---- recorded Urdu audio (one file per hadith, hosted outside the app) ----
+/** Base URL of pre-recorded Urdu hadith audio: <base>/<book>/<hadithnumber>.m4a. Empty = off (device voice only). localStorage 'qsHadithAudioBase' overrides for testing. */
+export const URD_AUDIO_BASE='';
+export function audioBase(){try{const o=localStorage.getItem('qsHadithAudioBase');if(o!==null)return o.replace(/\/+$/,'')}catch{/* ignore */}return URD_AUDIO_BASE.replace(/\/+$/,'')}
+export function audioUrl(book,n,lang='urd'){const b=audioBase();if(!b||codeOf(lang)!==codeOf('urd')||n===undefined||n===null||n==='')return '';return `${b}/${encodeURIComponent(book)}/${String(n).replace(/\//g,'_')}.m4a`}
+let el=null;const A=()=>{if(!el&&globalThis.Audio){el=new Audio();el.preload='auto'}return el};
+function playFile(my,c){const a=A();if(!a){fallback(my,c);return}
+ c.state='starting';emit();
+ a.onplaying=()=>{if(my!==gen)return;c.state='playing';emit()};
+ a.onended=()=>{if(my!==gen)return;const d=c.onEnd;cur=null;emit();d?.()};
+ a.onerror=()=>{if(my!==gen)return;fallback(my,c)};
+ try{a.playbackRate=c.rate||1}catch{/* ignore */}
+ if(a.dataset?.src!==c.url||!c.pos){a.src=c.url;if(a.dataset)a.dataset.src=c.url}
+ const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(my!==gen)return;if(e&&e.name==='NotAllowedError'){fail(my,'error');return}fallback(my,c)})}
+// File missing or offline: speak with the device voice if there is one.
+function fallback(my,c){if(my!==gen)return;c.url='';if(c.voice&&supported())say();else fail(my,'error')}
+const stopFile=()=>{if(el){try{el.pause()}catch{/* ignore */}}};
 // ---- one player ----
 let cur=null,gen=0,wd=null,listeners=new Set();
 const emit=()=>{for(const f of listeners)try{f(info())}catch{/* ignore */}};
@@ -49,13 +66,13 @@ function fail(my,why){if(my!==gen)return;gen++;clearTimeout(wd);try{SS()?.cancel
 const errL=new Set();const errEmit=(w,id)=>{for(const f of errL)try{f(w,id)}catch{/* ignore */}};
 export const onError=f=>{errL.add(f);return()=>errL.delete(f)};
 /** Starts speaking. `id` names what is playing (a card id); `onEnd` runs when the whole text finished. State becomes 'playing' only after the device actually starts. */
-export function play({id,text,lang,voice,rate=1,onEnd}){
- stop();if(!supported()||!voice)return false;const chunks=splitText(text);if(!chunks.length)return false;
- gen++;cur={id,chunks,i:0,voice,lang,rate,onEnd,state:'starting'};
+export function play({id,text,lang,voice,rate=1,onEnd,url=''}){
+ stop();if(!url&&(!supported()||!voice))return false;const chunks=splitText(text);if(!chunks.length&&!url)return false;
+ gen++;cur={id,chunks,i:0,voice,lang,rate,onEnd,url,state:'starting'};
  try{dispatchEvent(new CustomEvent('qs:audio',{detail:'hadith'}))}catch{/* ignore */}
- say();return true}
-export function pause(){if(!cur||cur.state==='paused')return;gen++;clearTimeout(wd);try{SS().cancel()}catch{/* ignore */}cur.state='paused';emit()}
-export function resume(){if(!cur||cur.state!=='paused')return;gen++;try{dispatchEvent(new CustomEvent('qs:audio',{detail:'hadith'}))}catch{/* ignore */}say()}
-export function stop(){gen++;clearTimeout(wd);const had=!!cur;cur=null;try{SS()?.cancel()}catch{/* ignore */}if(had)emit()}
-export function setRate(r){if(cur)cur.rate=r}
+ if(url){if(el){el.removeAttribute('src');if(el.dataset)delete el.dataset.src}playFile(gen,cur)}else say();return true}
+export function pause(){if(!cur||cur.state==='paused')return;gen++;clearTimeout(wd);if(cur.url){stopFile();cur.pos=1}else{try{SS().cancel()}catch{/* ignore */}}cur.state='paused';emit()}
+export function resume(){if(!cur||cur.state!=='paused')return;gen++;try{dispatchEvent(new CustomEvent('qs:audio',{detail:'hadith'}))}catch{/* ignore */}if(cur.url)playFile(gen,cur);else say()}
+export function stop(){gen++;clearTimeout(wd);stopFile();const had=!!cur;cur=null;try{SS()?.cancel()}catch{/* ignore */}if(had)emit()}
+export function setRate(r){if(cur)cur.rate=r;if(el&&cur?.url)try{el.playbackRate=r}catch{/* ignore */}}
 if(typeof window!=='undefined'){addEventListener('qs:audio',e=>{if(e.detail!=='hadith')stop()});addEventListener('pagehide',()=>stop())}
