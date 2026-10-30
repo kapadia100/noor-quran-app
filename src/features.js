@@ -1,3 +1,4 @@
+import{view as mushafView}from'./mushaf.js';
 // v2 feature screens. Everything stays in the same visual system (cards, lists, .btn) and supports EN/UR + dark mode.
 import * as L from './lib.js';
 import * as DT from './dates.js';
@@ -250,20 +251,8 @@ export async function khatam(){C.setTitle(tt('Khatam planner','ختم پلانر
  $('#kDel').onclick=()=>{if(confirm(tt('Reset khatam plan?','منصوبہ ختم کریں؟'))){localStorage.removeItem('khatam');PR.setReminders('khatam',[]);khatam()}};
  async function remind(){if(!K.time)return PR.setReminders('khatam',[]);const pp=L.khatamPlan({current:K.page,end:K.end});return PR.setReminders('khatam',PR.dailyAt(K.time,7).map(at=>({at,title:tt('Khatam reminder','ختم کی یاددہانی'),body:tt(`Today's target: ${pp.perDay} pages (from page ${K.page+1})`,`آج کا ہدف: ${pp.perDay} صفحات`)}))).catch(e=>({ok:false,reason:e.message}))}}
 
-// ---------- mushaf page view ----------
-export async function mushaf(p){p=Math.max(1,Math.min(604,+p||LS.get('mushafPage',1)));C.loading();C.setTitle(`${tt('Page','صفحہ')} ${p}`);LS.set('mushafPage',p);markRead();
- const pages=await X('pages.json');const ays=L.pageAyahs(pages,p);const [AR,list]=await Promise.all([C.arabic(ays.map(x=>x[0])),C.surahs()]);let indo=null;
- if(S().script==='indopak'){try{const d=await C.j(`https://api.quran.com/api/v4/quran/verses/indopak?page_number=${p}`);indo=Object.fromEntries((d.verses||[]).map(v=>[v.verse_key,v.text_indopak]))}catch{C.toast(tt('Indo-Pak script needs internet the first time; showing Uthmani.','انڈو پاک رسم الخط کے لیے انٹرنیٹ درکار؛ عثمانی دکھایا جا رہا ہے۔'))}}
- const juz=L.JUZ.filter(([s,a])=>s*1000+a<=ays[0][0]*1000+ays[0][1]).length;
- let h='',cur=0;for(const [s,a] of ays){if(s!==cur&&a===1){h+=`<div class="sh"><span class="ar">${esc(list[s-1].name)}</span></div>${s!==1&&s!==9?'<div class="ar bism c">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>':''}`}cur=s;
-  const txt=indo?.[`${s}:${a}`]?.replace(/[\u200f\u06DD]|[٠-٩۰-۹]+\s*$/g,'').trim()||L.ayahText(s,a,AR[s-1][a-1]);h+=`<span class="mv" data-r="${s}:${a}">${esc(txt)} <span class="end">﴿${ar(a)}﴾</span></span> `}
- app().innerHTML=`<div class="bar"><select id="msc" aria-label="Script"><option value="uthmani">${tt('Uthmani','عثمانی')}</option><option value="indopak" ${S().script==='indopak'?'selected':''}>${tt('Indo-Pak','انڈو پاک')}</option></select><input type="number" id="mpg" min="1" max="604" value="${p}" aria-label="Page"><button class="btn" id="mgo">${tt('Go','جائیں')}</button></div>
- <div class="mushaf ${indo?'indopak':''}" dir="rtl" lang="ar"><div class="mh"><span>${esc(list[ays[0][0]-1].englishName)}</span><span>${tt('Juz','پارہ')} ${juz}</span></div><div class="mt">${h}</div><div class="mf">${ar(p)}</div></div>
- <div class="pager"><a class="btn" href="#/mushaf/${Math.min(604,p+1)}" ${p>=604?'style="visibility:hidden"':''}>‹ ${p+1}</a><a class="btn" href="#/mushaf/${Math.max(1,p-1)}" ${p<=1?'style="visibility:hidden"':''}>${p-1} ›</a></div>`;
- $('#msc').onchange=e=>{S().script=e.target.value;C.save();mushaf(p)};$('#mgo').onclick=()=>location.hash='#/mushaf/'+$('#mpg').value;
- app().onclick=e=>{const v=e.target.closest('.mv');if(v)location.hash='#/surah/'+v.dataset.r.replace(':','/')};
- // swipe (RTL book: swipe right = next page)
- let x0=null;const m=app().querySelector('.mushaf');m.ontouchstart=e=>x0=e.touches[0].clientX;m.ontouchend=e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>70)location.hash='#/mushaf/'+Math.max(1,Math.min(604,p+(dx>0?1:-1)));x0=null};document.getElementById('app').scrollTo(0,0)}
+// ---------- mushaf page view (self-contained reader in mushaf.js) ----------
+export async function mushaf(p){return mushafView({C,L,X,ar,esc,tt,markRead,app},p)}
 
 // ---------- notes ----------
 export const getNotes=()=>LS.get('notes',{});

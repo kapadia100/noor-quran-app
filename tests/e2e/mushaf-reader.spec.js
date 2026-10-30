@@ -1,0 +1,12 @@
+import{test,expect}from'@playwright/test';
+test('mushaf: tap never leaves, toolbar toggles',async({page})=>{await page.goto('./#/mushaf/50');await page.waitForSelector('.mt .mv');const h=await page.evaluate(()=>location.hash);
+ await page.locator('.mt .mv').nth(2).click();await page.waitForTimeout(300);expect(await page.evaluate(()=>location.hash)).toBe(h)});
+test('mushaf: zoom remembered, night, bookmark',async({page})=>{await page.goto('./#/mushaf/50');await page.waitForSelector('.mt .mv');
+ await page.locator('#mzp').click();await page.locator('#mnight').click();await page.locator('#mbm').click();
+ const s=await page.evaluate(()=>JSON.parse(localStorage.mushafV));expect(s.zoom).toBeGreaterThan(1);expect(s.night).toBeTruthy();expect(s.bm['flow:50']).toBeTruthy();
+ await page.reload();await page.waitForSelector('.mt .mv');await expect(page.locator('.mz-night')).toHaveCount(1)});
+test('mushaf: auto-scroll toggles, focus + back',async({page})=>{await page.goto('./#/mushaf/50');await page.waitForSelector('.mt .mv');
+ await page.locator('#mplay').click();await page.waitForTimeout(800);await page.locator('#mplay').click();
+ await page.locator('#mfocus').click();await expect(page.locator('body.mz-focus')).toHaveCount(1);await page.goBack();await expect(page.locator('body.mz-focus')).toHaveCount(0);expect(await page.evaluate(()=>location.hash)).toContain('mushaf')});
+test('mushaf: 15-line Madani layout renders lines',async({page})=>{await page.goto('./#/mushaf/50');await page.waitForSelector('.mt .mv');
+ await page.locator('[data-lay="m15"]').click();await page.waitForSelector('.ml .w',{timeout:20000});expect(await page.locator('.ml').count()).toBeGreaterThan(10)});
