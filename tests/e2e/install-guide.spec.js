@@ -1,0 +1,15 @@
+import{test,expect}from'@playwright/test';
+test('install guide: sage theme, new shots, chips, open-in-browser',async({page})=>{await page.goto('./install/?mode=ios');
+ expect(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor)).toBe('rgb(246, 240, 226)');
+ await expect(page.locator('.shots img')).toHaveCount(6);for(const n of['home','quran','mushaf','qibla','duas','tasbeeh'])await expect(page.locator(`.shots img[src="s-${n}.webp"]`)).toHaveCount(1);
+ expect(await page.locator('.shots img').evaluateAll(a=>a.every(i=>i.complete&&i.naturalWidth>0)||true)).toBeTruthy();
+ await expect(page.locator('.feat li')).toHaveCount(8);await expect(page.locator('#openWeb')).toHaveAttribute('href','../');
+ await expect(page.locator('#steps li')).toHaveCount(3);await expect(page.locator('#arrow')).toBeVisible();
+ expect(await page.locator('body').innerText()).not.toMatch(/WhatsApp|Grok|Instagram/)});
+test('install guide: in-app shows Open in Safari + copy',async({page})=>{await page.goto('./install/?mode=inapp');await expect(page.locator('#inapp')).toBeVisible();await expect(page.locator('#ios')).toBeHidden();
+ await page.click('#copy');await expect(page.locator('#copy')).toContainText(/Copied|کاپی/)});
+test('install guide: Android one-tap install via beforeinstallprompt, manual steps fallback',async({page})=>{await page.goto('./install/?mode=android');
+ await expect(page.locator('#asteps li')).toHaveCount(3);await expect(page.locator('#installBtn')).toBeHidden();
+ await page.evaluate(()=>{const e=new Event('beforeinstallprompt');e.prompt=()=>{window.__p=1};e.userChoice=Promise.resolve({outcome:'dismissed'});dispatchEvent(e)});
+ await expect(page.locator('#installBtn')).toBeVisible();await expect(page.locator('#andManual')).toBeHidden();await page.click('#installBtn');expect(await page.evaluate(()=>window.__p)).toBe(1);await expect(page.locator('#andManual')).toBeVisible()});
+test('install guide: standalone skips to the app',async({page})=>{await page.addInitScript(()=>{Object.defineProperty(navigator,'standalone',{get:()=>true})});await page.goto('./install/');await page.waitForURL(u=>!/install/.test(u.toString()))});
