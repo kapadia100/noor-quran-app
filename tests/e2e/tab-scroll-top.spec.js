@@ -1,0 +1,10 @@
+import{test,expect}from'@playwright/test';
+const top=p=>p.evaluate(()=>Math.max(document.getElementById('app').scrollTop,window.scrollY));
+test('bottom nav: switching tabs always opens at the top',async({page})=>{await page.goto('./#/quran');await page.waitForSelector('#app .list li');
+ await page.evaluate(()=>document.getElementById('app').scrollTop=400);expect(await top(page)).toBeGreaterThan(300);
+ const tops=[];await page.exposeFunction('rec',v=>tops.push(v));
+ await page.evaluate(()=>{new MutationObserver(()=>window.rec(document.getElementById('app').scrollTop)).observe(document.getElementById('app'),{childList:true})});
+ await page.click('nav button[data-r="#/"]');await expect(page).toHaveURL(/#\/$/);await page.waitForTimeout(400);
+ expect(await top(page)).toBe(0);expect(tops.every(v=>v===0)).toBeTruthy();
+ for(const r of['#/ibadat','#/more','#/hadith','#/quran']){await page.evaluate(()=>document.getElementById('app').scrollTop=300);await page.click(`nav button[data-r="${r}"]`);await page.waitForTimeout(300);expect(await top(page)).toBe(0)}});
+test('surah resume position is still restored',async({page})=>{await page.goto('./#/surah/2/40');await page.waitForSelector('#a40');await page.waitForTimeout(700);expect(await top(page)).toBeGreaterThan(300)});

@@ -36,7 +36,9 @@ function applyUI(){document.documentElement.dataset.theme=S.dark?'dark':'light';
 const thIc=()=>{$('#theme').innerHTML=icon(S.dark?'sun':'moon')};$('#theme').onclick=()=>{S.dark=!S.dark;save();applyUI();thIc()};thIc();
 $('#tutor').onclick=()=>{location.hash='#/recite'};$('#lang').onclick=()=>{S.ui=S.ui==='en'?'ur':'en';save();applyUI();route()};
 $('#back').onclick=()=>history.back();
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>location.hash=b.dataset.r);
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{window.__navTop=true;toTop();if(location.hash===b.dataset.r||(!location.hash.replace(/^#\/?/,'')&&b.dataset.r==='#/'))route();else location.hash=b.dataset.r});
+// t167u: tab switches always start at the top (scroller is main#app; window too for safety)
+function toTop(){const a=document.getElementById('app');if(a)a.scrollTop=0;window.scrollTo(0,0)}let PREV_SEC=null;
 $('#sheetClose').onclick=()=>$('#sheet').hidden=true;
 $('#sheet').onclick=e=>{if(e.target.id==='sheet')$('#sheet').hidden=true};
 const setTitle=s=>$('#title').textContent=s;
@@ -325,13 +327,13 @@ async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Pro
 // Each navigation renders into a fresh container, so a slow, stale render (e.g. a surah still loading) can never overwrite the newer screen.
 async function route(){HL.leave();HA.leave();if(window.__rq)F.ruqyahLeave();if(window.__jz)F.janazahLeave();$('#sheet').hidden=true;try{GC.route(location.hash.replace(/^#\/?/,'').split('/'))}catch{/* analytics never breaks the app */}document.body.classList.remove('is-home');const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
  $('#back').style.visibility=p[0]?'visible':'hidden';
- const sec={hsearch:'hadith',haudio:'hadith',surah:'quran',juz:'quran',mushaf:'quran',search:'quran',bookmarks:'quran',notes:'quran',khatam:'quran',hifz:'quran',hifztest:'more',recite:'quran',progress:'more',qaida:'more',dict:'more',ruqyah:'more',kalimas:'more',janazah:'more',prayer:'ibadat',qibla:'ibadat',tracker:'ibadat',ramadan:'ibadat',calendar:'ibadat',tasbeeh:'ibadat',duas:'ibadat',zakat:'ibadat',mosques:'ibadat',names:'ibadat'}[p[0]]??p[0];document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
+ const sec={hsearch:'hadith',haudio:'hadith',surah:'quran',juz:'quran',mushaf:'quran',search:'quran',bookmarks:'quran',notes:'quran',khatam:'quran',hifz:'quran',hifztest:'more',recite:'quran',progress:'more',qaida:'more',dict:'more',ruqyah:'more',kalimas:'more',janazah:'more',prayer:'ibadat',qibla:'ibadat',tracker:'ibadat',ramadan:'ibadat',calendar:'ibadat',tasbeeh:'ibadat',duas:'ibadat',zakat:'ibadat',mosques:'ibadat',names:'ibadat'}[p[0]]??p[0];if(sec!==PREV_SEC||window.__navTop)toTop();window.__navTop=false;PREV_SEC=sec;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
  const FR={kalimas:F.kalimas,janazah:F.janazah,qaida:()=>F.qaida(p[1],p[2]),quran:()=>home(),more:F.more,ibadat:F.ibadat,help:F.help,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:F.names,tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz,hifztest:()=>F.hifzTest(p[1]),progress:F.progress,dict:()=>F.dict(p[1],p[2]),ruqyah:F.ruqyah};
  try{document.body.classList.remove('enter');void document.body.offsetWidth;document.body.classList.add('enter');if(FR[p[0]])await FR[p[0]]();else if(p[0]==='recite')p[1]==='review'?await weakPage():p[1]?(AUTOT=true,await reader(+p[1],p[2])):await tutorPage();else if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='haudio')await hadithAudio(p[1],p[2],p[3]);else if(p[0]==='hsearch')await hadithSearch(p[1]||'bukhari',p[2]||'');else if(p[0]==='hadith')p[2]==='n'?await hadithNo(p[1],p[3]):p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
   else if(p[0]==='search')await search(p[1]||'');else if(p[0]==='bookmarks')bookmarks();else if(p[0]==='prayer')prayer();else if(p[0]==='qibla')qibla();else if(p[0]==='juz')p[1]?await juzReader(+p[1]):await home('juz');else if(p[0]==='settings'){await settings();app.insertAdjacentHTML('beforeend',`<p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`)}else await F.dashboard()}
  catch(e){if(v!==app)return;console.error(e);v.innerHTML=`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}}
 F.init({app:()=>app,S,save,t,setTitle,loading,toast,weakDrill,resetModel:()=>RC?.resetModel?.(),j,arabic,transFor,surahs,dateCard,tick,pn,playUrl,startHifz,startHifzTest});
-addEventListener('hashchange',route);applyUI();route();
+if('scrollRestoration' in history)history.scrollRestoration='manual';addEventListener('hashchange',route);applyUI();route();
 // v3.6.2 dates: refresh on app resume and at local midnight so the shown date is always today's (device clock + timezone).
 let shownDay=dateKey(),midT=null;
 function refreshDates(){const k=dateKey(),changed=k!==shownDay;shownDay=k;const now=new Date();
