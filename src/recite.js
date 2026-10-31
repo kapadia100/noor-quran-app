@@ -35,7 +35,7 @@ function getWorker(){if(!worker){worker=new Worker((import.meta.env.BASE_URL||'/
 function onMsg(e){const m=e.data;
  if(m.type==='progress'&&st){const p=m.total?Math.min(99,Math.round(100*m.loaded/m.total)):0;$('#rcBar').style.width=p+'%';chip('load',L(`Downloading tutor… ${p}%`,`ٹیوٹر ڈاؤن لوڈ ہو رہا ہے… ${p}%`))}
  if(m.type==='ready'){ready=true;localStorage.setItem('qsCtc','1');if(st){$('#rcDl').hidden=true;$('#rcBar').parentNode.hidden=true;$('#rcMic').disabled=false;chip('ready',readyMsg())}}
- if(m.type==='error'){window.__reciteErr=m.message;if(st){if(!ready){$('#rcDl').disabled=false;$('#rcDl').hidden=false;$('#rcBar').parentNode.hidden=true}chip('warn',L('Could not load the tutor. Check your connection and try again.','ٹیوٹر لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔'))}}
+ if(m.type==='error'){window.__reciteErr=m.message;window.__reciteErrInfo=m;if(!ready)console.error('[Recite & Learn] tutor load failed at stage "'+(m.stage||'?')+'":',m.name||'',m.message,m.env||'',m.stack||'');if(st){if(!ready){$('#rcDl').disabled=false;$('#rcDl').hidden=false;$('#rcBar').parentNode.hidden=true}chip('warn',L('Could not load the tutor. Check your connection and try again.','ٹیوٹر لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔'))}}
  if(m.type==='run'&&finalWait.has(m.id)){const f=finalWait.get(m.id);finalWait.delete(m.id);f(m);return}
  if(m.type==='run'&&st){st.busy=false;const job=st.job;st.job=null;st.decMs=st.decMs?st.decMs*0.7+m.ms*0.3:m.ms;if(job&&job.gen===st.gen)result(job,m.words,m.ms,m.lp?{lp:m.lp,T:m.T,off:job?job.off:0}:null)}}
 const readyMsg=()=>st?.drill?L('Ready — tap the mic. You will hear each word, then repeat it.','تیار — مائیک دبائیں۔ ہر لفظ سنیں، پھر دہرائیں۔'):L('Ready — tap the mic and recite','تیار — مائیک دبائیں اور پڑھیں');
