@@ -106,4 +106,6 @@ export const globalAyah=(s,a)=>{let g=a;for(let k=0;k<s-1;k++)g+=AYAH_COUNTS[k];
 /** Ordered clips for ayah (s, a 1-based): [{u, alt?}] by mode. */
 export function ayahClips(mode,arUrl,taId,s,a){const v=TRANS_AUDIO.find(x=>x.id===taId)||TRANS_AUDIO[0];const g=globalAyah(s,a);
  const tr={u:v.url(s,a,g),alt:v.alt?.(s,a,g),tr:true};const ar={u:arUrl};
- return mode==='tr'?[tr]:mode==='both'?(arUrl?[ar,tr]:[tr]):[ar]}
+ const out=mode==='tr'?[tr]:mode==='both'?(arUrl?[ar,tr]:[tr]):[ar];const b=mode==='tr'?null:basmalaClip(arUrl,s,a);return b?[b,...out]:out}
+/** The reciter's own Bismillah (their recording of 1:1, unaltered) before ayah 1 of every surah except 1 (it is ayah 1) and 9. Per-ayah clips start without it. */
+export function basmalaClip(arUrl,s,a){if(a!==1||s===1||s===9||!arUrl||!/\/\d+\.mp3$/.test(arUrl))return null;return {u:arUrl.replace(/\/\d+\.mp3$/,'/1.mp3'),bas:true}}

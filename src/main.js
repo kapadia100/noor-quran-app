@@ -24,6 +24,7 @@ import {weakLoad,weakSave,weakAll,dueItems} from './coach.js';
 const I_=icon;
 document.querySelectorAll('[data-i]').forEach(b=>b.insertAdjacentHTML('afterbegin',icon(b.dataset.i)));
 import * as L2 from './lib.js';
+import * as PH from './play-hl.js';
 const mem={};
 async function j(url){if(mem[url])return mem[url];const r=await fetch(url);if(!r.ok)throw new Error(r.status);const d=await r.json();return mem[url]=d.data??d}
 const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(API+'/surah'));
@@ -155,17 +156,21 @@ const surahUrl=(s,br)=>`https://cdn.islamic.network/quran/audio-surah/${br}/${S.
 async function surahName(s){try{return (await surahs())[s-1].englishName}catch{return 'Surah '+s}}
 function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;$('#pPlay').textContent=audio.paused?'▶':'⏸';$('#pPlay').setAttribute('aria-label',audio.paused?'Play':'Pause');
  $('#pInfo').textContent=cur.clip?cur.name:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`+(hifzCfg&&hifzPos?` · 🔁 ${hifzPos.c+1}/${hifzCfg.each}${hifzCfg.range>1?' · R'+(hifzPos.r+1)+'/'+hifzCfg.range:''}`:'');markPlaying()}
-function markPlaying(){document.querySelectorAll('.ayah.playing').forEach(e=>e.classList.remove('playing'));if(!cur||cur.whole)return;
+function markPlaying(){document.querySelectorAll('.ayah.playing').forEach(e=>e.classList.remove('playing'));PH.clearWords();if(!cur||cur.whole)return;
  if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;window.__ensureAyah?.(cur.i+1);const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)el.scrollIntoView({block:'center',behavior:'smooth'})}}
 function media(){if(!('mediaSession' in navigator)||!cur)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`,artist:S.reciterName||S.reciter,album:'Quran Safar',artwork:[{src:import.meta.env.BASE_URL+'icon-512.png',sizes:'512x512',type:'image/png'}]})}catch{}}
 function msHandlers(){if(!('mediaSession' in navigator))return;const ms=navigator.mediaSession,h=(a,f)=>{try{ms.setActionHandler(a,f)}catch{}};
  h('play',()=>{audio.play().catch(()=>{});playerUI()});h('pause',()=>{audio.pause();playerUI()});h('nexttrack',()=>advance(true));h('previoustrack',()=>prev())}
 msHandlers();
+// Word-by-word follow (only where timing data matches the clip: Arabic per-ayah, not the Bismillah, not translation).
+PH.follow(()=>{if(!cur||cur.whole||!cur.urls||!cur.segs)return null;const c=cur.urls[cur.i]?.[cur.part];if(!c||c.tr||c.bas||cur.altOn)return null;
+ if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return null;const el=document.getElementById('a'+(cur.i+1));if(!el)return null;
+ const segs=cur.segs[cur.i+1];if(!segs)return null;if(el._ws?.[0]?.isConnected!==true)el._ws=PH.wordEls(el);const ws=el._ws;if(!ws||ws.length!==Math.max(...segs.map(x=>x[0])))return null;return {audio,segs,ws}});
 // One sound at a time across the app: the Qaida player (qaida-play.js) and this player tell each other when they start.
 addEventListener('qs:audio',e=>{if((e.detail==='qaida'||e.detail==='hadith'||e.detail==='ruqyah'||e.detail==='janazah')&&!audio.paused)audio.pause()});addEventListener('qs:media-restore',msHandlers);
 async function playPos(s,i,whole=S.surahAudio){whole=isWhole(whole);if(!validSurah(s))return stop();const name=await surahName(s);errs=whole?errs:0;
  if(whole){cur={s,i:0,name,whole:true,br:cur?.br||128};audio.src=surahUrl(s,cur.br)}
- else{let urls;try{urls=await urlsFor(s)}catch{toast(t('err'));return stop()}if(!urls[i])return stop();cur={s,i,name,urls,part:0};setClip();
+ else{let urls;try{urls=await urlsFor(s)}catch{toast(t('err'));return stop()}if(!urls[i])return stop();if(hifzCfg&&hifzCfg.s===s)urls=urls.map(c=>c.filter(x=>!x.bas));cur={s,i,name,urls,part:0};setClip();{const c=cur;PH.segmentsFor(S.reciter,s).then(m=>{c.segs=m}).catch(()=>{})}
   const n=nextPos(s,i);if(n&&n.s===s)pre.src=urls[n.i][0].u;else if(n&&S.autoNext)urlsFor(n.s).then(u=>pre.src=u[0][0].u).catch(()=>{})}
  try{await audio.play()}catch(e){if(e.name==='NotAllowedError'){toast('Tap ▶ to start audio')}}playerUI();media()}
 function advance(manual){if(!cur)return;

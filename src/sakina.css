@@ -462,3 +462,11 @@ body.mz-focus #app{padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 body.q-floating #app>div{padding-bottom:120px}
 html[data-theme=dark] #rqMini .rq-mstop{color:#F3EBD6!important}html #rqMini .rq-mp{color:#2B220C!important}html:not([data-theme=dark]) #rqMini .rq-mstop{color:#3a3020!important}
 html[data-theme=dark] #rqMini .rq-mstop svg rect{fill:#F3EBD6}html:not([data-theme=dark]) #rqMini .rq-mstop svg rect{fill:#3a3020}
+/* v79 recitation highlight */
+@keyframes qsGlow{0%,100%{box-shadow:0 0 0 2px color-mix(in srgb,var(--acc,#C9A54A) 55%,transparent),0 6px 22px color-mix(in srgb,var(--acc,#C9A54A) 22%,transparent)}50%{box-shadow:0 0 0 2px color-mix(in srgb,var(--acc,#C9A54A) 80%,transparent),0 8px 32px color-mix(in srgb,var(--acc,#C9A54A) 38%,transparent)}}
+.ayah.playing{background:linear-gradient(180deg,#FFF8E6,#FBEFD2)!important;border-color:#C9A54A!important;animation:qsGlow 2.6s ease-in-out infinite;transition:background .4s}
+html[data-theme=dark] .ayah.playing{background:linear-gradient(180deg,#2E2A1C,#25231A)!important}
+.ayah .pw,.ayah .w{border-radius:8px;transition:background .18s,color .18s,box-shadow .18s}
+.ayah .wplay{background:color-mix(in srgb,#C9A54A 30%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,#C9A54A 30%,transparent);color:#6B4E0E}
+html[data-theme=dark] .ayah .wplay{background:color-mix(in srgb,#E2C373 26%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,#E2C373 26%,transparent);color:#F6E2A6}
+@media (prefers-reduced-motion:reduce){.ayah.playing{animation:none}}
