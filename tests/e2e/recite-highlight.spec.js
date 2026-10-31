@@ -28,7 +28,7 @@ test('playing ayah glows gold and each word is highlighted in sync (light + dark
  await expect(page.locator('#a1 .wplay')).toHaveCount(1,{timeout:5000});const w1=await page.locator('#a1 .wplay').textContent();
  await expect.poll(()=>page.locator('#a1 .wplay').textContent(),{timeout:3000}).not.toBe(w1);
  expect(await page.locator('#a1 p.ar').textContent()).toBe(before);
- const bg=await page.locator('#a1').evaluate(e=>getComputedStyle(e).animationName);expect(bg).toBe('qsGlow');
+ await expect(page.locator('#a1')).toHaveClass(/playing/);await expect.poll(()=>page.evaluate(()=>{const g=document.getElementById('qsGlide'),a=document.getElementById('a1').getBoundingClientRect(),r=g?.getBoundingClientRect();return g&&+g.style.opacity>.9&&Math.abs(r.top-a.top)<8&&getComputedStyle(g).animationName==='qsBreath'})).toBe(true);
  if(process.env.SHOTS){await page.waitForTimeout(600);await page.screenshot({path:'/workspace/shots-reader/reader-playing-dark.png'});
   await page.evaluate(()=>document.documentElement.setAttribute('data-theme','light'));await page.waitForTimeout(300);await page.screenshot({path:'/workspace/shots-reader/reader-playing-light.png'})}
  await page.locator('#a2').waitFor();await expect(page.locator('#a2.playing')).toBeVisible({timeout:8000})});

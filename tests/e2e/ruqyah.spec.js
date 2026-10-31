@@ -29,7 +29,8 @@ test('Play all plays every ruqyah ayah in order with highlight, progress, pause/
  const p=await page.evaluate(()=>window.__played);expect(p[0]).toBe('https://audio.test/1/1.mp3');await expect.poll(()=>page.evaluate(()=>window.__played.at(-1)),{timeout:15000}).toMatch(/114\/\d+\.mp3$|\/62[23]\d\.mp3$/);
  // tap an ayah to start there, then stop
  await page.locator('#rq5 .rq-a').first().click();await expect.poll(()=>page.evaluate(()=>window.__played.at(-1))).toMatch(/\/2\/285\.mp3$|\/292\.mp3$/);
- await page.click('#rqStop');await expect(page.locator('.rq-on')).toHaveCount(0)});
+ // auto-scroll keeps the page moving (Stop may be off-screen): press it directly, before the remaining ayahs finish
+ await page.evaluate(()=>{const m=document.querySelector('#rqMini');(m&&!m.hidden&&getComputedStyle(m).display!=='none'?document.querySelector('#rqMini .rq-mstop')||document.querySelector('#rqStop'):document.querySelector('#rqStop')).click()});await expect(page.locator('.rq-on')).toHaveCount(0)});
 test('v3.7.10: Play card sits in normal flow above Al-Fatiha; mini player appears only when scrolled past while playing',async({page})=>{
  await mock(page);await page.addInitScript(()=>{window.__dur=1500});await page.goto('./#/ruqyah');
  const t=await page.locator('.rq-top').boundingBox(),f=await page.locator('#rq0').boundingBox();expect(t.y+t.height).toBeLessThanOrEqual(f.y+1);
@@ -48,3 +49,14 @@ test('v79: floating player stays with the reader mid-page: Pause/Resume + Stop, 
  await page.evaluate(()=>{const a=document.getElementById('app');a.scrollTo(0,1e7);scrollTo(0,1e7)});await page.waitForTimeout(500);
  const last=await page.locator('.rq-a').last().boundingBox(),m2=await page.locator('#rqMini').boundingBox();expect(last.y+last.height).toBeLessThanOrEqual(m2.y+1);
  await page.click('#rqMStop');await expect(page.locator('#rqMini')).toBeHidden();await expect(page.locator('.rq-on')).toHaveCount(0)});
+test('Ruqyah order: displayed and Play-all ayahs follow mushaf order; Al-Baqarah 1–5,102,163–164,255,285–286; no doubled Bismillah',async({page})=>{test.setTimeout(240000);
+ await mock(page);await page.addInitScript(()=>{window.__dur=5});await page.goto('./#/ruqyah');await expect(page.locator('.rq-a')).toHaveCount(N);
+ const exp=SEC.flatMap(([s,f,t])=>Array.from({length:t-f+1},(_,k)=>`${s}:${f+k}`));
+ const shown=await page.evaluate(()=>[...document.querySelectorAll('.rq-sec:not(.rq-duas)')].flatMap(sec=>{const s=+sec.querySelector('.badge').textContent.split(/[:–]/)[0];return [...sec.querySelectorAll('.rq-n')].map(n=>`${s}:${+n.textContent.replace(/[﴿﴾]/g,'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d))}`)}));
+ expect(shown).toEqual(exp);expect(shown.filter(x=>x.startsWith('2:'))).toEqual(['2:1','2:2','2:3','2:4','2:5','2:102','2:163','2:164','2:255','2:285','2:286']);
+ for(const i of [1,12])await expect(page.locator(`#rq${i} .rq-a`).first()).not.toContainText(/^\s*بِسْمِ/);
+ await page.click('#rqPlay');await expect.poll(()=>page.evaluate(()=>(window.__played||[]).length),{timeout:200000}).toBe(N);
+ // each played clip is …/<s>/<a>.mp3 (mock) or the reciter's …/<global>.mp3; map both to s:a and compare with the displayed order
+ const len=await page.evaluate(async()=>{const o={};for(let s=1;s<=114;s++)o[s]=(await (await fetch(`offline/s/ar/${s}.json`)).json()).length;return o});
+ const sa=u=>{let m=u.match(/\/(\d+)\/(\d+)\.mp3$/);if(m&&u.includes('audio.test'))return `${m[1]}:${m[2]}`;let n=+u.match(/(\d+)\.mp3$/)[1],s=1;while(n>len[s]){n-=len[s];s++}return `${s}:${n}`};
+ expect((await page.evaluate(()=>window.__played)).map(sa)).toEqual(exp)});

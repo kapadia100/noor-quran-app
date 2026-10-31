@@ -470,3 +470,16 @@ html[data-theme=dark] .ayah.playing{background:linear-gradient(180deg,#2E2A1C,#2
 .ayah .wplay{background:color-mix(in srgb,#C9A54A 30%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,#C9A54A 30%,transparent);color:#6B4E0E}
 html[data-theme=dark] .ayah .wplay{background:color-mix(in srgb,#E2C373 26%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,#E2C373 26%,transparent);color:#F6E2A6}
 @media (prefers-reduced-motion:reduce){.ayah.playing{animation:none}}
+
+/* v82 gliding highlight: one layer that morphs between playing ayahs */
+#qsGlide{position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:3;opacity:0;will-change:transform,width,height,opacity;
+ background:radial-gradient(120% 140% at 50% 0%,rgba(233,200,110,.16),rgba(201,165,74,.06) 70%);
+ box-shadow:0 0 0 1.5px rgba(201,165,74,.75),0 0 18px 2px rgba(214,178,90,.35),inset 0 0 22px rgba(240,214,140,.18)}
+#qsGlide.on{animation:qsBreath 3.2s ease-in-out infinite}
+@keyframes qsBreath{0%,100%{box-shadow:0 0 0 1.5px rgba(201,165,74,.75),0 0 16px 1px rgba(214,178,90,.30),inset 0 0 20px rgba(240,214,140,.16)}50%{box-shadow:0 0 0 1.5px rgba(214,180,90,.9),0 0 28px 5px rgba(222,188,100,.42),inset 0 0 26px rgba(240,214,140,.24)}}
+html[data-theme=dark] #qsGlide{background:radial-gradient(120% 140% at 50% 0%,rgba(233,200,110,.12),rgba(201,165,74,.04) 70%)}
+.ayah.playing{animation:none!important;box-shadow:none!important}
+.ayah{transition:background .6s ease,border-color .6s ease}
+.rq-on{box-shadow:none;background:color-mix(in srgb,var(--gold,#C9A24A) 16%,transparent)}
+.rq-a{transition:background .6s ease}
+@media (prefers-reduced-motion:reduce){#qsGlide.on{animation:none}.ayah,.rq-a{transition:none}}

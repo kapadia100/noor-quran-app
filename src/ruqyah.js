@@ -1,6 +1,8 @@
 // v3.7.9 Ruqyah Shariah: the standard Quranic ruqyah set read from the app's own Quran text (offline/s/ar), played ayah by ayah
 // with the user's chosen reciter, then the prophetic ruqyah duas with the device's Arabic voice when one exists.
 import*as H from'./hadith-tts.js';
+import {ayahText} from'./lib.js';
+import {kick as glide} from'./glide.js';
 const API='https://api.alquran.cloud/v1';
 /** Quranic sections: [surah, fromAyah, toAyah]. */
 export const RQ=[[1,1,7],[2,1,5],[2,102,102],[2,163,164],[2,255,255],[2,285,286],[3,18,19],[7,54,56],[7,117,122],[10,81,82],[20,69,69],[23,115,118],[37,1,10],[46,29,32],[55,33,36],[59,21,24],[72,1,9],[112,1,4],[113,1,5],[114,1,6]];
@@ -15,7 +17,9 @@ export const DUAS=[
 const BISM='بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const arN=n=>(+n).toLocaleString('ar-EG');
 /** Text of ayah a of surah s from the app's text (ayah 1 of surahs other than 1 and 9 carries the basmala, shown separately). */
-export const ayahTxt=(s,a,t)=>s!==1&&s!==9&&a===1&&t.startsWith(BISM)?t.slice(BISM.length).trim():t;
+// Same display text as the reader (lib.ayahText): the Bismillah prefix of ayah 1 is matched without diacritics, because the
+// Quran file writes shadda+fatha in the other mark order than BISM, so a plain startsWith never matched and it showed twice.
+export const ayahTxt=(s,a,t)=>s===9?t:ayahText(s,a,t);
 let off=[];const au=new Audio();au.preload='auto';
 export function leave(){au.pause();H.stop();off.forEach(f=>f());off=[]}
 export async function page(C,tt,ur,I){
@@ -35,7 +39,7 @@ export async function page(C,tt,ur,I){
  const q=s=>app.querySelector(s),st={i:-1,state:'idle'},urls={};
  
  const getUrl=async s=>urls[s]??=C.j(`${API}/surah/${s}/${C.S.reciter||'ar.alafasy'}`).then(r=>r.ayahs.map(x=>x.audio));
- let paint=()=>{const on=st.state==='playing'||st.state==='loading';q('#rqPlay').innerHTML=`${I.icon(on?'pause':'play')}<span>${on?tt('Pause','وقفہ'):st.state==='paused'?tt('Resume','جاری رکھیں'):tt('Play all','پورا سنیں')}</span>`;
+ let paint=()=>{queueMicrotask(glide);const on=st.state==='playing'||st.state==='loading';q('#rqPlay').innerHTML=`${I.icon(on?'pause':'play')}<span>${on?tt('Pause','وقفہ'):st.state==='paused'?tt('Resume','جاری رکھیں'):tt('Play all','پورا سنیں')}</span>`;
   q('#rqStop').disabled=st.state==='idle';q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))/seq.length*100)}%`;
   app.querySelectorAll('.rq-on').forEach(e=>e.classList.remove('rq-on'));
   if(st.i>=0&&st.state!=='idle'){const e=app.querySelector(`[data-i="${st.i}"]`);e?.classList.add('rq-on');const x=seq[st.i];
