@@ -27,7 +27,7 @@ export function qaidaPlayFlows(test,expect){
   await open(page,'/qaida/m/m1');await page.click('[data-rate="0.75"]');await expect(page.locator('[data-rate="0.75"]')).toHaveAttribute('aria-pressed','true');
   await page.click('#qPlRep');await expect(page.locator('#qPlRep')).toHaveAttribute('aria-pressed','true');
   await page.click('#qPlPlay');await expect.poll(async()=>(await plays(page)).length,{timeout:30000}).toBeGreaterThan(40);
-  await page.click('#qPlStop',{force:true});const rates=await page.evaluate(()=>window.__qRates);expect(new Set(rates)).toEqual(new Set([0.75]));
+  await page.click('#qPlStop');const rates=await page.evaluate(()=>window.__qRates);expect(new Set(rates)).toEqual(new Set([0.75]));
   const n=await settle(page);await page.waitForTimeout(500);expect((await plays(page)).length).toBe(n);
   await page.reload();await expect(page.locator('[data-rate="0.75"]')).toHaveAttribute('aria-pressed','true');await expect(page.locator('#qPlRep')).toHaveAttribute('aria-pressed','true')});
 

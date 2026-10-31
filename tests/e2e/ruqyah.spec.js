@@ -36,3 +36,14 @@ test('v3.7.10: Play card sits in normal flow above Al-Fatiha; mini player appear
  await page.click('#rqPlay');await page.locator('#rq6').scrollIntoViewIfNeeded();await page.evaluate(()=>document.querySelector('#rq6').scrollIntoView());await expect(page.locator('#rqMini')).toBeVisible();
  await page.click('#rqMP');await expect(page.locator('#rqPlay')).toContainText(/Resume/);
  await page.evaluate(()=>document.querySelector('.rq-top').scrollIntoView());await expect(page.locator('#rqMini')).toBeHidden()});
+test('v79: floating player stays with the reader mid-page: Pause/Resume + Stop, 44px+, last ayah not covered',async({page})=>{
+ await mock(page);await page.addInitScript(()=>{window.__dur=4000});await page.goto('./#/ruqyah');await page.click('#rqPlay');
+ await page.evaluate(()=>document.querySelector('#rq8').scrollIntoView());await expect(page.locator('#rqMini')).toBeVisible();
+ const nav=await page.locator('nav').first().boundingBox(),m=await page.locator('#rqMini').boundingBox();expect(m.y+m.height).toBeLessThanOrEqual(nav.y+1);
+ for(const id of ['#rqMP','#rqMStop']){const b=await page.locator(id).boundingBox();expect(b.height).toBeGreaterThanOrEqual(44);expect(b.width).toBeGreaterThanOrEqual(44)}
+ await expect(page.locator('#rqMS')).not.toBeEmpty();
+ if(process.env.SHOTS){const fs=await import('node:fs');fs.mkdirSync('/workspace/shots-ruqyah',{recursive:true});for(const th of ['light','dark']){await page.evaluate(t=>document.documentElement.dataset.theme=t,th);await page.waitForTimeout(1200);await page.screenshot({path:`/workspace/shots-ruqyah/ruqyah-playing-${th}.png`})}}
+ await page.click('#rqMP');await expect(page.locator('#rqPlay')).toContainText(/Resume/);await expect(page.locator('#rqMini')).toBeVisible();
+ await page.evaluate(()=>{const a=document.getElementById('app');a.scrollTo(0,1e7);scrollTo(0,1e7)});await page.waitForTimeout(500);
+ const last=await page.locator('.rq-a').last().boundingBox(),m2=await page.locator('#rqMini').boundingBox();expect(last.y+last.height).toBeLessThanOrEqual(m2.y+1);
+ await page.click('#rqMStop');await expect(page.locator('#rqMini')).toBeHidden();await expect(page.locator('.rq-on')).toHaveCount(0)});

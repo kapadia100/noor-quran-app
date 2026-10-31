@@ -77,7 +77,7 @@ export function mountPlayer(env){
  const paintOpts=()=>{bar.querySelectorAll('[data-rate]').forEach(b=>{const on=+b.dataset.rate===P.rate;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
   for(const [id,k] of [['#qPlRep','repeat'],['#qPlCont','cont']]){const b=$(id);b.classList.toggle('on',P[k]);b.setAttribute('aria-pressed',P[k])}};
  const ui=s=>{state=s;$('#qPlPlay').hidden=s!=='idle';$('#qPlPause').hidden=s==='idle';$('#qPlStop').hidden=s==='idle';
-  $('#qPlPause').innerHTML=s==='paused'?`▶ ${tt('Resume','جاری رکھیں')}`:`⏸ ${tt('Pause','وقفہ')}`;bar.classList.toggle('q-playing',s!=='idle')};
+  $('#qPlPause').innerHTML=s==='paused'?`▶ ${tt('Resume','جاری رکھیں')}`:`⏸ ${tt('Pause','وقفہ')}`;bar.classList.toggle('q-playing',s!=='idle');$('.q-plb')?.classList.toggle('q-float',s!=='idle');document.body.classList.toggle('q-floating',s!=='idle')};
  const clearMarks=()=>root.querySelectorAll('.q-play').forEach(x=>x.classList.remove('q-play'));
  const say=(t,silent)=>{msg.innerHTML='';const p=document.createElement('span');p.textContent=t;msg.append(p);if(skipNote){const k=document.createElement('span');k.id='qPlSkip';k.className='q-silents';k.textContent=skipNote;msg.append(document.createElement('br'),k)}
   if(res?.off){const o=document.createElement('span');o.id='qPlOffline';o.className='q-silents';o.textContent=tt(' Some sounds are not saved for offline use yet. Connect once and play the lesson to save them.',' کچھ آوازیں ابھی آف لائن کے لیے محفوظ نہیں۔ ایک بار انٹرنیٹ سے سبق چلا کر محفوظ کریں۔');msg.append(o)}

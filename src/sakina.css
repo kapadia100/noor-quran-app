@@ -440,3 +440,25 @@ body.mz-focus #app{padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 #streak[hidden]{display:none}
 /* v78 hadith reader: leave room so the floating pager never covers the end of the hadith */
 #app:has(.hd-pager)>div{padding-bottom:110px}
+/* v79 floating player bar (Ruqyah mini player + Qaida lesson controls) — stays with the reader above the tab bar */
+.rq-mini{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nh,64px) + 10px);width:min(560px,calc(100% - 24px));margin:0;z-index:60;flex-wrap:wrap;gap:10px;padding:8px 10px 10px;border-radius:22px;
+ background:linear-gradient(160deg,#FFFDF6,#F6EEDB);border:1px solid rgba(201,162,78,.55);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 28px -10px rgba(60,45,10,.45),0 0 0 3px rgba(216,181,106,.12)}
+.rq-mini .btn{width:46px;height:46px;min-height:46px;flex:none}
+.rq-mini .rq-mp{background:linear-gradient(160deg,#F1D58C,#D8B56A 45%,#B8923A);color:#2B220C;border:1px solid #9c7a2e}
+.rq-mini .rq-mstop{background:linear-gradient(160deg,#FFFDF6,#EFE5CC);color:#3a3020;border:1px solid rgba(201,162,78,.6)}
+.rq-mini span{color:#2f2a1c;font-weight:600}
+.rq-mini .prog{height:4px;background:rgba(201,162,78,.2)}.rq-mini .prog i{background:linear-gradient(90deg,#D8B56A,#B8923A)}
+.rq-mini .btn:active{transform:scale(.94)}
+[data-theme=dark] .rq-mini{background:linear-gradient(160deg,#2A2F25,#1D211A);border-color:rgba(216,181,106,.45);box-shadow:0 10px 28px -10px rgba(0,0,0,.7),0 0 0 3px rgba(216,181,106,.10)}
+[data-theme=dark] .rq-mini span{color:#F3EBD6}
+[data-theme=dark] .rq-mini .rq-mstop{background:linear-gradient(160deg,#343A2E,#262A21);color:#F3EBD6;border-color:rgba(216,181,106,.45)}
+#app>.rq-live,#app .rq-live{padding-bottom:120px}
+.q-plb.q-float{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nh,64px) + 10px);width:min(560px,calc(100% - 24px));margin:0;z-index:60;display:flex;justify-content:center;gap:10px;padding:8px 10px;border-radius:22px;
+ background:linear-gradient(160deg,#FFFDF6,#F6EEDB);border:1px solid rgba(201,162,78,.55);box-shadow:0 10px 28px -10px rgba(60,45,10,.45)}
+.q-plb.q-float .btn{min-height:46px;flex:1}
+.q-plb.q-float #qPlPause{background:linear-gradient(160deg,#F1D58C,#D8B56A 45%,#B8923A);color:#2B220C!important;border:1px solid #9c7a2e}
+[data-theme=dark] .q-plb.q-float{background:linear-gradient(160deg,#2A2F25,#1D211A);border-color:rgba(216,181,106,.45)}
+[data-theme=dark] .q-plb.q-float #qPlStop{color:#F3EBD6!important}
+body.q-floating #app>div{padding-bottom:120px}
+html[data-theme=dark] #rqMini .rq-mstop{color:#F3EBD6!important}html #rqMini .rq-mp{color:#2B220C!important}html:not([data-theme=dark]) #rqMini .rq-mstop{color:#3a3020!important}
+html[data-theme=dark] #rqMini .rq-mstop svg rect{fill:#F3EBD6}html:not([data-theme=dark]) #rqMini .rq-mstop svg rect{fill:#3a3020}

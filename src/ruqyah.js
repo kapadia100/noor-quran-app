@@ -31,7 +31,7 @@ export async function page(C,tt,ur,I){
  const duas=`<section class="card rq-sec rq-duas" id="rqDuas"><div class="rq-h"><b>${tt('Prophetic ruqyah duas','مسنون دعائیں')}</b></div>${DUAS.map(d=>`<div class="rq-d"><p class="ar" dir="rtl" lang="ar">${d[0]}</p><small class="muted">${d[1]>1?tt(`${d[1]} times · `,`${d[1]} بار · `):''}${tt(d[2],d[3])}</small></div>`).join('')}<p class="muted rq-nov">${tt('Read these duas yourself; only the Quran ayat above are played.','یہ دعائیں خود پڑھیں؛ صرف اوپر کی آیات سنائی جاتی ہیں۔')}</p></section>`;
  app.innerHTML=`<div class="rq" dir="${ur()?'rtl':'ltr'}"><div class="card rq-top"><p class="muted">${tt('The Quranic ruqyah verses with the prophetic duas. Press Play to hear it all in Arabic; tap any ayah to start from there.','قرآنی آیاتِ رقیہ اور مسنون دعائیں۔ پوری عربی سننے کے لیے سنیں دبائیں، یا کسی بھی آیت کو چھو کر وہیں سے شروع کریں۔')}</p>
  <div class="rq-ctl"><button class="btn rq-play" id="rqPlay">${I.icon('play')}<span>${tt('Play all','پورا سنیں')}</span></button><button class="btn ghost" id="rqStop" disabled>${tt('Stop','بند')}</button></div>
- <div class="prog" aria-hidden="true"><i id="rqBar" style="width:0%"></i></div><p class="muted rq-st" id="rqSt" role="status">${tt(`${seq.length} ayahs · ${RQ.length} passages`,`${seq.length} آیات · ${RQ.length} حصے`)}</p></div>${sec}${duas}<div class="rq-mini" id="rqMini" hidden><button class="btn" id="rqMP" aria-label="play/pause"></button><span id="rqMS"></span><div class="prog"><i id="rqMB"></i></div></div></div>`;
+ <div class="prog" aria-hidden="true"><i id="rqBar" style="width:0%"></i></div><p class="muted rq-st" id="rqSt" role="status">${tt(`${seq.length} ayahs · ${RQ.length} passages`,`${seq.length} آیات · ${RQ.length} حصے`)}</p></div>${sec}${duas}<div class="rq-mini" id="rqMini" hidden><button class="btn rq-mp" id="rqMP" aria-label="${tt('Pause or resume','وقفہ یا جاری')}"></button><span id="rqMS" aria-live="polite"></span><button class="btn rq-mstop" id="rqMStop" aria-label="${tt('Stop','بند')}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor"/></svg></button><div class="prog"><i id="rqMB"></i></div></div></div>`;
  const q=s=>app.querySelector(s),st={i:-1,state:'idle'},urls={};
  
  const getUrl=async s=>urls[s]??=C.j(`${API}/surah/${s}/${C.S.reciter||'ar.alafasy'}`).then(r=>r.ayahs.map(x=>x.audio));
@@ -41,7 +41,7 @@ export async function page(C,tt,ur,I){
   if(st.i>=0&&st.state!=='idle'){const e=app.querySelector(`[data-i="${st.i}"]`);e?.classList.add('rq-on');const x=seq[st.i];
    q('#rqSt').textContent=x.k==='q'?`${list[x.s-1].name} ${arN(x.a)} · ${st.i+1} / ${seq.length}`:`${tt('Dua','دعا')} ${x.j+1} · ${st.i+1} / ${seq.length}`}};
  const top=q('.rq-top'),mini=q('#rqMini');let topVis=true;
- const mp=()=>{mini.hidden=topVis||st.state==='idle';q('#rqMP').innerHTML=I.icon(st.state==='paused'?'play':'pause');q('#rqMS').textContent=q('#rqSt').textContent;q('#rqMB').style.width=q('#rqBar').style.width};
+ const mp=()=>{mini.hidden=topVis||st.state==='idle';app.classList.toggle('rq-live',st.state!=='idle');q('#rqMP').innerHTML=I.icon(st.state==='paused'?'play':'pause');q('#rqMS').textContent=q('#rqSt').textContent;q('#rqMB').style.width=q('#rqBar').style.width};
  try{new IntersectionObserver(([e])=>{topVis=e.isIntersecting;mp()}).observe(top)}catch{/* old browsers: no mini player */}
  const end=()=>{st.state='idle';st.i=-1;paint();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
  const paint0=paint;paint=()=>{paint0();mp()};
@@ -58,7 +58,7 @@ export async function page(C,tt,ur,I){
   if(st.state==='playing'||st.state==='loading'){if(x?.k==='d')H.pause();else au.pause();st.state='paused';paint()}
   else if(st.state==='paused'){if(x?.k==='d')H.resume();else au.play().catch(()=>{});st.state='playing';paint()}
   else go(0)};
- q('#rqMP').onclick=()=>q('#rqPlay').click();
+ q('#rqMP').onclick=()=>q('#rqPlay').click();q('#rqMStop').onclick=()=>q('#rqStop').click();
  q('#rqStop').onclick=()=>{au.pause();H.stop();st.state='idle';st.i=-1;paint()};
  const pick=e=>{const el=e.target.closest('[data-i]');if(!el)return;au.pause();H.stop();go(+el.dataset.i)};
  app.addEventListener('click',e=>{if(e.target.closest('.rq-a,.rq-d'))pick(e)});
