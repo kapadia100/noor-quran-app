@@ -41,12 +41,13 @@ export function audioUrl(book,n,lang='urd'){const b=audioBase();if(!b||codeOf(la
 let el=null;const A=()=>{if(!el&&globalThis.Audio){el=new Audio();el.preload='auto';globalThis.__qsHA=el}return el};
 function playFile(my,c){const a=A();if(!a){fallback(my,c);return}
  c.state='starting';emit();
- a.onplaying=()=>{if(my!==gen)return;c.state='playing';emit()};
+ const rt=()=>{try{a.defaultPlaybackRate=c.rate||1;a.playbackRate=c.rate||1}catch{/* ignore */}};
+ a.onplaying=()=>{if(my!==gen)return;rt();c.state='playing';emit()};a.onloadedmetadata=()=>{if(my===gen)rt()};
  a.onended=()=>{if(my!==gen)return;const d=c.onEnd;cur=null;emit();d?.()};
  a.onerror=()=>{if(my!==gen)return;fallback(my,c)};
  try{a.playbackRate=c.rate||1}catch{/* ignore */}
  if(a.dataset?.src!==c.url||!c.pos){a.src=c.url;if(a.dataset)a.dataset.src=c.url}
- const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(my!==gen)return;if(e&&e.name==='NotAllowedError'){fail(my,'error');return}fallback(my,c)})}
+ rt();const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(my!==gen)return;if(e&&e.name==='NotAllowedError'){fail(my,'error');return}fallback(my,c)})}
 // File missing or offline: speak with the device voice if there is one.
 function fallback(my,c){if(my!==gen)return;c.url='';if(c.voice&&supported())say();else fail(my,'error')}
 const stopFile=()=>{if(el){try{el.pause()}catch{/* ignore */}}};
@@ -78,5 +79,5 @@ export function play({id,text,lang,voice,rate=1,onEnd,url=''}){
 export function pause(){if(!cur||cur.state==='paused')return;gen++;clearTimeout(wd);if(cur.url){stopFile();cur.pos=1}else{try{SS().cancel()}catch{/* ignore */}}cur.state='paused';emit()}
 export function resume(){if(!cur||cur.state!=='paused')return;gen++;try{dispatchEvent(new CustomEvent('qs:audio',{detail:'hadith'}))}catch{/* ignore */}if(cur.url)playFile(gen,cur);else say()}
 export function stop(){gen++;clearTimeout(wd);stopFile();const had=!!cur;cur=null;try{SS()?.cancel()}catch{/* ignore */}if(had)emit()}
-export function setRate(r){if(cur)cur.rate=r;if(el&&cur?.url)try{el.playbackRate=r}catch{/* ignore */}}
+export function setRate(r){if(cur)cur.rate=r;if(el&&cur?.url)try{el.defaultPlaybackRate=r;el.playbackRate=r}catch{/* ignore */}}
 if(typeof window!=='undefined'){addEventListener('qs:audio',e=>{if(e.detail!=='hadith')stop()});addEventListener('pagehide',()=>stop())}
