@@ -18,23 +18,25 @@ export async function mount(root,{ui='en',nextHash=''}={}){
  if(!bar||!cards.length)return;
  const sup=H.supported(),voices=sup?await H.voicesReady():[];if(!root.isConnected)return;
  const vf=l=>sup?H.pickVoice(voices,l):null;
- bar.hidden=false;bar.querySelector('#hlRow').hidden=!sup;note.textContent=sup?'':t.none;
- if(!sup)return;
+ H.loadIndex();await H.indexReady?.();if(!root.isConnected)return;
+ bar.hidden=false;const files=!!H.audioBase();bar.querySelector('#hlRow').hidden=!sup&&!files;note.textContent=sup||files?'':t.none;
+ if(!sup&&!files)return;
  const panel=(c,l=c.dataset.sel)=>c.querySelector(`.hd-t[data-l="${l}"]`);
- const canPlay=c=>{const p=panel(c);return !!(p&&!p.dataset.miss&&vf(c.dataset.sel))};
+ const urlOf=c=>{const p=panel(c);return p&&!p.dataset.miss&&!p.dataset.auto?H.audioUrl(c.dataset.bk,c.dataset.hn,c.dataset.sel):''};
+ const canPlay=c=>{const p=panel(c);return !!(p&&!p.dataset.miss&&(urlOf(c)||vf(c.dataset.sel)))};
  const idOf=i=>`${i}:${cards[i].dataset.sel}`;
  const mk=(c,i)=>{const nm=langName(c.dataset.sel,ui,true);const lab=t.pl(nm);
   c.querySelector('.hd-ctl').innerHTML=`<button type="button" class="hl-b hl-ic" data-hl="tr" data-i="${i}" aria-label="${lab}" title="${lab}">${I.play}<span class="hl-sr">${t.play}</span></button><button type="button" class="hl-b hl-x" data-hl-stop data-i="${i}" aria-label="${t.stop}" hidden>${I.stop}</button>`};
  const sync=c=>{const l=c.dataset.sel,b=c.querySelector('[data-hl]'),nv=c.querySelector('.hd-nv'),p=panel(c),miss=!p||p.dataset.miss,v=vf(l),i=+c.dataset.i,nm=langName(l,ui,true);
   const idle=!(H.info().id===idOf(i));if(idle){const lab=t.pl(nm);b.setAttribute('aria-label',lab);b.title=lab;b.querySelector('span').textContent=t.play}
-  b.disabled=!(!miss&&v);if(!miss&&!v){nv.hidden=false;nv.textContent=t.noV(nm,l==='ara')}else{nv.hidden=true;nv.textContent=''}};
+  const ok=!miss&&(v||urlOf(c));b.disabled=!ok;if(!miss&&!ok){nv.hidden=false;nv.textContent=t.noV(nm,l==='ara')}else{nv.hidden=true;nv.textContent=''}};
  cards.forEach((c,i)=>{c.dataset.i=i;mk(c,i);sync(c)});
  const rate=()=>+root.querySelector('#hlRate').value||1,cont=()=>root.querySelector('#hlCont').checked;
  root.querySelector('#hlRate').onchange=()=>{savePref({...pref(),rate:rate()});H.setRate(rate())};
  root.querySelector('#hlCont').onchange=()=>savePref({...pref(),cont:cont()});
  const start=i=>{const c=cards[i];if(!c||!canPlay(c))return false;const l=c.dataset.sel,p=panel(c),el=p.querySelector('p');if(!el)return false;
   note.textContent=p.dataset.auto?t.auto:'';
-  return H.play({id:idOf(i),text:el.textContent,lang:l,voice:vf(l),rate:rate(),onEnd:()=>{
+  return H.play({id:idOf(i),text:el.textContent,lang:l,voice:vf(l),url:urlOf(c),rate:rate(),onEnd:()=>{
    if(!cont())return;
    for(let n=i+1;n<cards.length;n++)if(start(n)){cards[n].scrollIntoView?.({block:'center',behavior:'smooth'});return}
    if(nextHash&&root.isConnected){AUTO={fresh:true};location.hash=nextHash}}})};

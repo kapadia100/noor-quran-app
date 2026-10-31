@@ -34,11 +34,11 @@ export function splitText(text,max=180){
 export const URD_AUDIO_BASE='https://huggingface.co/datasets/Kapadia100/quran-safar-hadith-audio/resolve/main';
 export function audioBase(){try{const o=localStorage.getItem('qsHadithAudioBase');if(o!==null)return o.replace(/\/+$/,'')}catch{/* ignore */}return URD_AUDIO_BASE.replace(/\/+$/,'')}
 // index.json lists the files already uploaded ({book:[numbers]}); until it loads (or if it fails) every file is tried and a miss falls back.
-let IDX=null,idxFor='';export function loadIndex(){const b=audioBase();if(!b||idxFor===b||typeof fetch!=='function')return;idxFor=b;
- fetch(`${b}/index.json`).then(r=>r.ok?r.json():null).then(d=>{if(d&&idxFor===b)IDX=Object.fromEntries(Object.entries(d).map(([k,v])=>[k,new Set(v.map(String))]))}).catch(()=>{})}
+let IDX=null,idxFor='',IDXP=Promise.resolve();export const indexReady=()=>Promise.race([IDXP,new Promise(r=>setTimeout(r,4000))]);export function loadIndex(){const b=audioBase();if(!b||idxFor===b||typeof fetch!=='function')return;idxFor=b;
+ IDXP=fetch(`${b}/index.json`).then(r=>r.ok?r.json():null).then(d=>{if(d&&idxFor===b)IDX=Object.fromEntries(Object.entries(d).map(([k,v])=>[k,new Set(v.map(String))]))}).catch(()=>{})}
 export function audioUrl(book,n,lang='urd'){const b=audioBase();if(!b||codeOf(lang)!==codeOf('urd')||n===undefined||n===null||n==='')return '';loadIndex();
  if(IDX&&idxFor===b&&!IDX[book]?.has(String(n).replace(/\//g,'_')))return '';return `${b}/${encodeURIComponent(book)}/${String(n).replace(/\//g,'_')}.m4a`}
-let el=null;const A=()=>{if(!el&&globalThis.Audio){el=new Audio();el.preload='auto'}return el};
+let el=null;const A=()=>{if(!el&&globalThis.Audio){el=new Audio();el.preload='auto';globalThis.__qsHA=el}return el};
 function playFile(my,c){const a=A();if(!a){fallback(my,c);return}
  c.state='starting';emit();
  a.onplaying=()=>{if(my!==gen)return;c.state='playing';emit()};

@@ -41,7 +41,7 @@ export async function mockSpeech(page,opts={}){
 }
 export function hadithListenFlows(test,expect){
  test.use({serviceWorkers:'block'});
- test.beforeEach(async({page})=>{
+ test.beforeEach(async({page})=>{await page.addInitScript(()=>{if(localStorage.getItem('qsHadithAudioBase')===null)localStorage.setItem('qsHadithAudioBase','')});
   await page.route('https://gc.zgo.at/count.js',r=>r.fulfill({contentType:'text/javascript',body:'window.goatcounter.count=function(o){}'}));
   await page.route('**/quransafar.goatcounter.com/**',r=>r.fulfill({status:204}));
   await page.addInitScript(()=>{localStorage.setItem('instBanner','1')});await mockHadith(page)});
@@ -125,6 +125,12 @@ export function hadithListenFlows(test,expect){
  test('a language with no device voice (Tamil): Play is disabled and the card says so plainly',async({page})=>{
   await mockSpeech(page);await setLang(page,'tam');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeDisabled({timeout:15000});await expect(page.locator('article.hd .hd-nv')).toHaveText('No Tamil voice on this device');await expect(page.locator('#hlRate')).toBeVisible();
   await page.click('[data-sl="eng"]');await expect(btn(page,0)).toBeEnabled();await expect(page.locator('article.hd .hd-nv')).toBeHidden()});
+ test('hadith card: recorded Urdu file exists -> speaker enabled and plays the file with no Urdu voice (iPhone case)',async({page})=>{
+  const asked=[];await page.route('https://audio.example/urd/**',r=>{const u=r.request().url();if(u.endsWith('index.json'))return r.fulfill({status:200,contentType:'application/json',body:'{"bukhari":[1,2,3]}'});asked.push(u);return r.fulfill({status:404,body:''})});
+  await page.addInitScript(()=>{localStorage.setItem('qsHadithAudioBase','https://audio.example/urd')});
+  await mockSpeech(page,{voices:[{name:'Samantha',lang:'en-US',localService:true,default:true}]});await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeEnabled({timeout:15000});
+  await page.click('[data-sl="urd"]');await expect(btn(page,0)).toBeEnabled();await btn(page,0).click();
+  await expect.poll(()=>asked.length).toBeGreaterThan(0);expect(asked[0]).toMatch(/\/urd\/bukhari\/1\.m4a$/)});
  test('device with only an English voice: Urdu and Arabic show Play disabled with a message, English plays',async({page})=>{
   await mockSpeech(page,{voices:[{name:'Samantha',lang:'en-US',localService:true,default:true}]});await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeEnabled({timeout:15000});
   await page.click('[data-sl="urd"]');await expect(btn(page,0)).toBeDisabled();await expect(page.locator('article.hd .hd-nv')).toContainText('No Urdu voice');

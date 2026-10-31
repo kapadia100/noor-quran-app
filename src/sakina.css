@@ -414,3 +414,4 @@ body.mz-focus #app{padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 .pcard .pc-nx>.pc-at{font-size:clamp(11px,3.2vw,13px)!important;white-space:nowrap}
 .pcard .pc-cdw .cd{font-size:clamp(18px,5.6vw,24px)!important;white-space:nowrap}
 .pcard .pc-cdw{flex:none;margin-inline-start:auto}
+.hd-ctl .hl-b[data-st=starting]{animation:hlLoad 1s ease-in-out infinite}@keyframes hlLoad{50%{opacity:.55}}
