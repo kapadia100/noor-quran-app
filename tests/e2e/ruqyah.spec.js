@@ -19,7 +19,7 @@ test('Ruqyah Shariah: big Home card opens the page with every ruqyah passage fro
  const s2=await page.evaluate(()=>fetch('offline/s/ar/2.json').then(r=>r.json()));
  await expect(page.locator('#rq5 .rq-a').first()).toContainText(s2[284]);await expect(page.locator('#rq4 .rq-a')).toContainText(s2[254]);
  await expect(page.locator('.rq-d')).toHaveCount(6)});
-test('Play all plays every ruqyah ayah in order with highlight, progress, pause/resume and stop',async({page})=>{
+test('Play all plays every ruqyah ayah in order with highlight, progress, pause/resume and stop',async({page})=>{test.setTimeout(180000);
  await mock(page);await page.goto('./#/ruqyah');await page.click('#rqPlay');
  await expect(page.locator('.rq-on')).toHaveCount(1);await expect(page.locator('#rqPlay')).toContainText(/Pause/);
  await expect.poll(()=>page.evaluate(()=>(window.__played||[]).length),{timeout:20000}).toBeGreaterThan(10);

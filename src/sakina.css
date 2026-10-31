@@ -435,3 +435,8 @@ body.mz-focus #app{padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 @media (prefers-reduced-motion:reduce){#sheet .shgrid .btn,#sheet .shgrid .btn::after{transition:none}#sheet .shgrid .btn:active{transform:none}}
 /* v77 names share sheet uses the premium shgrid */
 #sheet .shgrid.nm-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+/* v78 home header: date parts never split mid-phrase */
+.htitle small>span{white-space:nowrap}
+#streak[hidden]{display:none}
+/* v78 hadith reader: leave room so the floating pager never covers the end of the hadith */
+#app:has(.hd-pager)>div{padding-bottom:110px}

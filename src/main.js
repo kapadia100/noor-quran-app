@@ -266,11 +266,11 @@ async function tafsir(ref){$('#sheet').hidden=false;const body=$('#sheetBody');b
  try{const d=await j(`${API}/ayah/${ref}/${S.tafsir}`);$('#tfx').className='taf';$('#tfx').dir=d.edition.direction||'rtl';$('#tfx').textContent=d.text}catch{$('#tfx').textContent=t('err')}};draw()}
 
 // ---------- Hadith ----------
-async function hadithHome(){setTitle(t('hadith'));loading();const [eds,info]=await Promise.all([j(HAD+'/editions.json'),j(HAD+'/info.json')]);
+async function hadithHome(){setTitle(t('hadith'));loading();const root=app;const [eds,info]=await Promise.all([j(HAD+'/editions.json'),j(HAD+'/info.json')]);if(app!==root)return;/* a newer route already took over */
  const keep=Object.keys(L2.HCOL).filter(k=>eds[k]);const langs=orderLangs([...new Set(keep.flatMap(k=>eds[k].collection.map(c=>c.name.split('-')[0])))]);
  app.innerHTML=hsBar()+`<label class="bar">${t('lang')} <select id="hl" aria-label="Hadith language">${langs.map(l=>`<option value="${l}" ${l===S.hlang?'selected':''}>${esc(langName(l,S.ui))}</option>`).join('')}</select></label><ul class="list">${keep.map(k=>[k,eds[k]]).map(([k,b])=>{const has=b.collection.some(c=>c.name.startsWith(S.hlang+'-'));return `<li><a href="#/hadith/${k}"><span><b>${esc(b.name)}</b><small>${Object.keys(info[k]?.metadata.sections||{}).length-1} ${t('books')} · ${orderLangs(b.collection.map(c=>edLang(c.name)).filter((v,i,a)=>a.indexOf(v)===i)).map(l=>esc(langName(l,S.ui,true))).join(', ')}${has?'':' · ('+esc(langName(S.hlang,S.ui,true))+(S.ui==='ur'?' دستیاب نہیں':' not available')+')'}</small></span></a></li>`}).join('')}</ul>`;
  bindHs();$('#hl').onchange=e=>{S.hlang=e.target.value;save();hadithHome()}}
-async function hadithBook(book){if(!L2.hasBook(book)){location.replace('#/hadith');return}loading();const info=await j(HAD+'/info.json');const m=info[book].metadata;setTitle(m.name);
+async function hadithBook(book){if(!L2.hasBook(book)){location.replace('#/hadith');return}loading();const root=app;const info=await j(HAD+'/info.json');if(app!==root)return;const m=info[book].metadata;setTitle(m.name);
  app.innerHTML=`<ul class="list">${Object.entries(m.sections).filter(([k,v])=>k!=='0'&&v).map(([k,v])=>`<li><a href="#/hadith/${book}/${k}"><b class="num">${k}</b><span><b>${esc(v)}</b><small>${m.section_details?.[k]?`#${m.section_details[k].hadithnumber_first}–${m.section_details[k].hadithnumber_last}`:''}</small></span></a></li>`).join('')}</ul>`;document.getElementById('app').scrollTo(0,0)}
 const HURS={};const hurOf=book=>HURS[book]??=j(import.meta.env.BASE_URL+'offline/x/hur/'+book+'.json').catch(()=>({}));
 const autoLbl=()=>S.ui==='ur'?'انگریزی سے خودکار ترجمہ':'Auto-translated from English';
@@ -377,7 +377,7 @@ if('scrollRestoration' in history)history.scrollRestoration='manual';addEventLis
 // v3.6.2 dates: refresh on app resume and at local midnight so the shown date is always today's (device clock + timezone).
 let shownDay=dateKey(),midT=null;
 function refreshDates(){const k=dateKey(),changed=k!==shownDay;shownDay=k;const now=new Date();
- document.querySelectorAll('[data-hij]').forEach(e=>{const h=PR.hijri(now,S.ui);e.textContent=h;e.hidden=!h;const sep=e.nextElementSibling;if(sep?.hasAttribute('data-hijsep'))sep.hidden=!h});
+ document.querySelectorAll('[data-hij]').forEach(e=>{const h=PR.hijri(now,S.ui);e.textContent=h;e.hidden=!h;const sep=e.nextElementSibling;if(sep?.hasAttribute('data-hijsep'))sep.hidden=!h||!!sep.nextElementSibling?.hidden});
  document.querySelectorAll('[data-greg]').forEach(e=>{e.textContent=e.dataset.greg==='short'?gregText(now,S.ui,{weekday:'short',day:true,month:'short',year:true}):PR.greg(now,S.ui)});
  if(changed&&!document.getElementById('recite')&&/^#?\/?(calendar(\/-?\d+)?|ramadan|prayer|tracker)?\/?$/.test(location.hash))route()}
 function armMidnight(){clearTimeout(midT);midT=setTimeout(()=>{refreshDates();armMidnight()},msToMidnight()+500)}

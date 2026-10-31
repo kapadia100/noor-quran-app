@@ -50,7 +50,7 @@ export async function page(C,tt,ur,I){
   try{dispatchEvent(new CustomEvent('qs:audio',{detail:'ruqyah'}))}catch{/* ignore */}
   if(x.k==='q'){let u;try{u=(await getUrl(x.s))[x.a-1]}catch{u=null}if(st.i!==i||st.state!=='loading')return;
    if(!u){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔');return}
-   au.src=u;au.play().then(()=>{if(st.i===i){st.state='playing';paint()}}).catch(()=>{if(st.i===i){st.state='paused';paint()}})}
+   au.src=u;au.play().then(()=>{if(st.i===i&&st.state==='loading'){st.state='playing';paint()}else if(st.i!==i||st.state!=='playing')au.pause()}).catch(()=>{if(st.i===i&&st.state==='loading'){st.state='paused';paint()}})}
 };
  au.onended=()=>{if(app.isConnected&&st.state==='playing')go(st.i+1)};
  au.onerror=()=>{if(app.isConnected&&st.state!=='idle'&&au.src){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔')}};
