@@ -415,3 +415,21 @@ body.mz-focus #app{padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 .pcard .pc-cdw .cd{font-size:clamp(18px,5.6vw,24px)!important;white-space:nowrap}
 .pcard .pc-cdw{flex:none;margin-inline-start:auto}
 .hd-ctl .hl-b[data-st=starting]{animation:hlLoad 1s ease-in-out infinite}@keyframes hlLoad{50%{opacity:.55}}
+/* v76 premium share sheet buttons */
+#sheet .shgrid{gap:10px}
+#sheet .shgrid .btn{position:relative;overflow:hidden;min-height:52px;padding:8px 14px 8px 8px;gap:10px;justify-content:flex-start;border-radius:18px;font:600 15px var(--f-ui);letter-spacing:.01em;
+ background:linear-gradient(180deg,color-mix(in srgb,var(--card,#FFFBF2) 92%,#fff) 0%,color-mix(in srgb,var(--card,#FFFBF2) 100%,var(--acc) 6%) 100%);color:var(--fg)!important;
+ border:1px solid color-mix(in srgb,var(--acc) 55%,transparent);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 4px 14px -6px color-mix(in srgb,var(--acc) 45%,transparent);
+ transition:transform .14s ease,box-shadow .2s ease,filter .2s ease;-webkit-tap-highlight-color:transparent}
+#sheet .shgrid .btn>svg{flex:none;width:36px;height:36px;padding:8px;box-sizing:border-box;border-radius:50%;background:linear-gradient(145deg,var(--pri),color-mix(in srgb,var(--pri) 70%,#000));color:var(--onpri);box-shadow:0 0 0 1.5px color-mix(in srgb,var(--acc) 70%,transparent),0 2px 6px rgba(0,0,0,.18)}
+#sheet .shgrid .btn:hover{filter:brightness(1.03);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 18px -6px color-mix(in srgb,var(--acc) 60%,transparent)}
+#sheet .shgrid .btn:active{transform:scale(.96)}
+#sheet .shgrid .btn::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at center,color-mix(in srgb,var(--acc) 40%,transparent) 0,transparent 60%);opacity:0;transform:scale(.2);transition:opacity .45s ease,transform .45s ease;pointer-events:none}
+#sheet .shgrid .btn:active::after{opacity:1;transform:scale(2);transition:0s}
+#sheet .shgrid .btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#sheet .shgrid .btn.wa{background:linear-gradient(160deg,#2BD873 0%,#1DA851 55%,#128C4A 100%);color:#fff!important;border-color:rgba(255,255,255,.25);box-shadow:0 4px 14px -6px rgba(18,140,74,.7)}
+#sheet .shgrid .btn.wa>svg{background:rgba(255,255,255,.18);color:#fff;box-shadow:0 0 0 1.5px rgba(255,255,255,.55)}
+#sheet .shgrid #shImg{background:linear-gradient(160deg,#F1D58C 0%,#D8B56A 45%,#B8923A 100%);color:#2B220C!important;border-color:#9C7A2E;box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 6px 18px -6px rgba(184,146,58,.85)}
+#sheet .shgrid #shImg>svg{background:linear-gradient(145deg,#3B2E10,#5A4518);color:#F3D9A0;box-shadow:0 0 0 1.5px #F3D9A0}
+[data-theme=dark] #sheet .shgrid .btn:not(.wa):not(#shImg){background:linear-gradient(180deg,#2A3226 0%,#20271D 100%);color:#F3EBD6!important;border-color:rgba(216,181,106,.5);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 4px 14px -6px rgba(216,181,106,.35)}
+@media (prefers-reduced-motion:reduce){#sheet .shgrid .btn,#sheet .shgrid .btn::after{transition:none}#sheet .shgrid .btn:active{transform:none}}
