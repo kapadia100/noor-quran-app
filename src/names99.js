@@ -1,4 +1,5 @@
 import {brand} from './qrbrand.js';
+import {icon} from './icons.js';
 // t174u: 99 Names of Allah — colourful cards, swipeable detail, share images, favourites, name of the day, learn (flashcards + quiz)
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 export const hue=n=>Math.round((n*137.508+28)%360);
@@ -41,9 +42,12 @@ export function mount(ctx){const {app,tt,esc,ur,I_,shareBtn,siteUrl,N,start}=ctx
  function close(){const v=$('#nmv');if(v){v.hidden=true;v.innerHTML=''}document.body.classList.remove('nm-lock');if(/^#\/names\/\d+/.test(location.hash))history.replaceState(null,'','#/names');page()}
  // ---- share image (square + story)
  async function shareImg(n){const sh=$('#sheet');sh.hidden=false;const sq=await drawCard(n,1080,1080),st=await drawCard(n,1080,1920);const u1=sq.toDataURL('image/png'),u2=st.toDataURL('image/png');
-  $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share this name','یہ اسم شیئر کریں')}</h2><div class="nm-prev"><figure><img id="nmSq" src="${u1}" alt="${esc(n.tr)} square"><figcaption>${tt('Square','مربع')}</figcaption></figure><figure><img id="nmSt" src="${u2}" alt="${esc(n.tr)} story"><figcaption>${tt('Story','اسٹوری')}</figcaption></figure></div><div class="nm-acts"><button class="btn pri" data-sz="sq">${tt('Share square','مربع شیئر کریں')}</button><button class="btn pri" data-sz="st">${tt('Share story','اسٹوری شیئر کریں')}</button></div><p class="nm-dl"><a class="btn" download="name-${n.n}-square.png" href="${u1}">⬇ ${tt('Square','مربع')}</a> <a class="btn" download="name-${n.n}-story.png" href="${u2}">⬇ ${tt('Story','اسٹوری')}</a></p>`;
-  $('#sheetBody').querySelector('.nm-acts').onclick=async e=>{const b=e.target.closest('[data-sz]');if(!b)return;const cv=b.dataset.sz==='sq'?sq:st,blob=await new Promise(r=>cv.toBlob(r,'image/png')),file=new File([blob],`name-${n.n}-${b.dataset.sz==='sq'?'square':'story'}.png`,{type:'image/png'});
-   if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:`${n.tr} — Quran Safar`});return}catch(x){if(x.name==='AbortError')return}}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click()}}
+  $('#sheetBody').innerHTML=`<h2 class="h3">${tt('Share this name','یہ اسم شیئر کریں')}</h2><div class="nm-prev"><figure><img id="nmSq" src="${u1}" alt="${esc(n.tr)} square"><figcaption>${tt('Square','مربع')}</figcaption></figure><figure><img id="nmSt" src="${u2}" alt="${esc(n.tr)} story"><figcaption>${tt('Story','اسٹوری')}</figcaption></figure></div><p class="muted nm-tip" style="text-align:center;font-size:12.5px;margin:10px 0 0">${tt('Tip: choose “Save Image” in the share menu to keep it in Photos.','تصویر محفوظ کرنے کے لیے شیئر مینو میں “Save Image” چنیں۔')}</p><div class="shgrid nm-acts"><button class="btn" id="nmShSq" data-sz="sq">${icon('share')} ${tt('Share square','مربع شیئر کریں')}</button><button class="btn" id="shImg" data-sz="st">${icon('image')} ${tt('Share story','اسٹوری شیئر کریں')}</button></div>`;
+  // Blobs/files are prepared up front so navigator.share runs inside the tap (iOS drops the gesture after an await).
+  const mk=(cv,k)=>new Promise(r=>cv.toBlob(b=>r(new File([b],`name-${n.n}-${k}.png`,{type:'image/png'})),'image/png'));const F={sq:await mk(sq,'square'),st:await mk(st,'story')};
+  $('#sheetBody').querySelector('.nm-acts').onclick=e=>{const b=e.target.closest('[data-sz]');if(!b)return;const file=F[b.dataset.sz];
+   if(navigator.canShare?.({files:[file]})){navigator.share({files:[file],title:`${n.tr} — Quran Safar`}).catch(x=>{if(x.name!=='AbortError')openImg(file)});return}openImg(file)}}
+ function openImg(file){const u=URL.createObjectURL(file);if(!window.open(u,'_blank')){location.href=u}}
  app().onclick=e=>{const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;LS.set('namesTab',tab);page();return}const m=e.target.closest('[data-mode]');if(m){mode=m.dataset.mode;LS.set('namesMode',mode);qi=null;learn($('#nmBody'));return}
   const b=e.target.closest('.name,.nm-open,.nm-hero');if(b&&b.dataset.n){const i=+b.dataset.n-1;history.replaceState(null,'','#/names/'+(i+1));open(i)}};
  page();if(start>=1&&start<=99)open(start-1);return {open,close}}

@@ -433,3 +433,5 @@ body.mz-focus #app{padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 #sheet .shgrid #shImg>svg{background:linear-gradient(145deg,#3B2E10,#5A4518);color:#F3D9A0;box-shadow:0 0 0 1.5px #F3D9A0}
 [data-theme=dark] #sheet .shgrid .btn:not(.wa):not(#shImg){background:linear-gradient(180deg,#2A3226 0%,#20271D 100%);color:#F3EBD6!important;border-color:rgba(216,181,106,.5);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 4px 14px -6px rgba(216,181,106,.35)}
 @media (prefers-reduced-motion:reduce){#sheet .shgrid .btn,#sheet .shgrid .btn::after{transition:none}#sheet .shgrid .btn:active{transform:none}}
+/* v77 names share sheet uses the premium shgrid */
+#sheet .shgrid.nm-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
