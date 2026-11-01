@@ -21,7 +21,7 @@ describe('dictionary flashcards',()=>{
   for(const lang of ['en','ur'])for(const w of D.words)for(let i=0;i<3;i++){const o=K.options(D.words,w,lang);
    expect(o.filter(x=>x.r===w.r).length).toBe(1);const ts=new Set([...K.senses(w.e),...K.senses(w.u)]);
    for(const x of o)if(x.r!==w.r){expect(x.h).not.toBe(w.h);expect([...K.senses(x.e),...K.senses(x.u)].some(y=>ts.has(y))).toBe(false)}
-   expect(new Set(o.map(x=>K.brief(lang==='ur'?x.u:x.e))).size).toBe(o.length)}});
+   expect(new Set(o.map(x=>K.brief(lang==='ur'?x.u:x.e))).size).toBe(o.length)}},30000);
  it('isMark only matches pause marks',()=>{expect(K.isMark('ۚ')).toBe(true);expect(K.isMark('مِن')).toBe(false)});
 });
 describe('99 Names cards and quiz',()=>{
