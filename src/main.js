@@ -9,7 +9,7 @@ import {hifzNext,surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRa
 const API='https://api.alquran.cloud/v1', HAD='https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1';
 const $=s=>document.querySelector(s);let app=$('#app');
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
-const S=Object.assign({trans:'en.sahih',reciter:'ar.alafasy',tafsir:'ar.muyassar',ui:'en',dark:true,hlang:'eng',size:30,continuous:true,autoNext:true,surahAudio:false,amode:'ar',talang:'ur'},LS.get('settings',{}));delete S.hifzHide;
+const S=Object.assign({trans:'en.sahih',reciter:'ar.alafasy',tafsir:'ar.muyassar',ui:'en',dark:true,hlang:'eng',size:30,continuous:true,autoNext:true,surahAudio:false,amode:'ar',talang:'ur'},LS.get('settings',{}));delete S.hifzHide;queueMicrotask(()=>{try{syncTal()}catch{/* boot */}});
 const save=()=>LS.set('settings',S);
 const T={en:{home:'Home',ibadat:'Ibadat',duas:'Duas',more:'More',quran:'Quran',hadith:'Hadith',search:'Search',bookmarks:'Bookmarks',prayer:'Prayer',qibla:'Qibla',settings:'Settings',filter:'Search surah…',ayahs:'ayahs',translation:'Translation',tlang:'Translation language',translator:'Translator',reciter:'Reciter',tafsir:'Tafsir',lastRead:'Continue reading',none:'Nothing yet',play:'Play surah',lang:'Hadith language',size:'Arabic font size',q:'Search the Quran…',edition:'Search in',loading:'Loading…',err:'Could not load. Check your connection.',results:'results',books:'Books',uiLang:'App language',dark:'Dark mode',offlineTr:'Offline: showing the built-in English translation. Connect to load the selected translation.',cont:'Continuous play (auto-advance ayahs)',autoNext:'Continue into next surah',surahAudio:'Whole-surah audio files (best for locked screen, no ayah highlight)'},
  ur:{home:'ہوم',ibadat:'عبادات',duas:'دعائیں',more:'مزید',quran:'قرآن',hadith:'حدیث',search:'تلاش',bookmarks:'نشانیاں',prayer:'نماز',qibla:'قبلہ',settings:'ترتیبات',filter:'سورت تلاش کریں…',ayahs:'آیات',translation:'ترجمہ',tlang:'ترجمے کی زبان',translator:'مترجم',reciter:'قاری',tafsir:'تفسیر',lastRead:'پڑھنا جاری رکھیں',none:'ابھی کچھ نہیں',play:'سورت سنیں',lang:'حدیث کی زبان',size:'عربی فونٹ سائز',q:'قرآن میں تلاش کریں…',edition:'تلاش بذریعہ',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',results:'نتائج',books:'کتب',uiLang:'ایپ کی زبان',dark:'ڈارک موڈ',offlineTr:'آف لائن: بلٹ اِن انگریزی ترجمہ دکھایا جا رہا ہے۔',cont:'مسلسل تلاوت',autoNext:'اگلی سورت جاری رکھیں',surahAudio:'پوری سورت کی آڈیو فائل (لاک اسکرین کے لیے بہتر)'}};
@@ -26,6 +26,7 @@ document.querySelectorAll('[data-i]').forEach(b=>b.insertAdjacentHTML('afterbegi
 import * as L2 from './lib.js';
 import * as PH from './play-hl.js';
 import {kick as glide} from './glide.js';
+import * as FW from './follow.js';
 const mem={};
 async function j(url){if(mem[url])return mem[url];const r=await fetch(url);if(!r.ok)throw new Error(r.status);const d=await r.json();return mem[url]=d.data??d}
 const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(API+'/surah'));
@@ -155,10 +156,10 @@ const isWhole=w=>w&&S.amode==='ar';
 function setClip(){const c=cur.urls[cur.i][cur.part];audio.src=cur.altOn?c.alt:c.u}
 const surahUrl=(s,br)=>`https://cdn.islamic.network/quran/audio-surah/${br}/${S.reciter}/${s}.mp3`;
 async function surahName(s){try{return (await surahs())[s-1].englishName}catch{return 'Surah '+s}}
-function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;$('#pPlay').textContent=audio.paused?'▶':'⏸';$('#pPlay').setAttribute('aria-label',audio.paused?'Play':'Pause');
+function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;{const b=$('#pPlay'),k=audio.paused?'play':'pause';if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=k==='play'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.6v12.8a1.1 1.1 0 0 0 1.68.93l10.05-6.4a1.1 1.1 0 0 0 0-1.86L10.18 4.67A1.1 1.1 0 0 0 8.5 5.6z"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.4"/><rect x="13.5" y="5" width="4" height="14" rx="1.4"/></svg>'}}$('#pPlay').setAttribute('aria-label',audio.paused?'Play':'Pause');
  $('#pInfo').textContent=cur.clip?cur.name:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`+(hifzCfg&&hifzPos?` · 🔁 ${hifzPos.c+1}/${hifzCfg.each}${hifzCfg.range>1?' · R'+(hifzPos.r+1)+'/'+hifzCfg.range:''}`:'');markPlaying()}
 function markPlaying(){queueMicrotask(glide);document.querySelectorAll('.ayah.playing').forEach(e=>e.classList.remove('playing'));PH.clearWords();if(!cur||cur.whole)return;
- if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;window.__ensureAyah?.(cur.i+1);const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)el.scrollIntoView({block:'center',behavior:'smooth'})}}
+ if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;window.__ensureAyah?.(cur.i+1);const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)requestAnimationFrame(()=>FW.follow(el))}}
 function media(){if(!('mediaSession' in navigator)||!cur)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`,artist:S.reciterName||S.reciter,album:'Quran Safar',artwork:[{src:import.meta.env.BASE_URL+'icon-512.png',sizes:'512x512',type:'image/png'}]})}catch{}}
 function msHandlers(){if(!('mediaSession' in navigator))return;const ms=navigator.mediaSession,h=(a,f)=>{try{ms.setActionHandler(a,f)}catch{}};
  h('play',()=>{audio.play().catch(()=>{});playerUI()});h('pause',()=>{audio.pause();playerUI()});h('nexttrack',()=>advance(true));h('previoustrack',()=>prev())}
@@ -234,8 +235,8 @@ async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return
  ensure(Math.max(CHUNK,(+start||0)+10));
  const sentinel=new IntersectionObserver(es=>{if(es[0].isIntersecting)ensure(shown+CHUNK)},{rootMargin:'1200px 0px'});sentinel.observe($('#more'));
  const redraw=()=>{const keep=shown;box.innerHTML='';shown=0;ensure(keep);markPlaying()};
- $('#tr').onchange=e=>{S.trans=e.target.value;save();reader(n,lastVisible(n))};
- $('#trL').onchange=e=>{S.trans=PK.defaultTranslator(trs,e.target.value)||S.trans;save();reader(n,lastVisible(n))};
+ $('#tr').onchange=e=>{S.trans=e.target.value;trChanged();reader(n,lastVisible(n))};
+ $('#trL').onchange=e=>{S.trans=PK.defaultTranslator(trs,e.target.value)||S.trans;trChanged();reader(n,lastVisible(n))};
  $('#rc').onchange=e=>{S.reciter=e.target.value;S.reciterName=e.target.selectedOptions[0].dataset.en||e.target.selectedOptions[0].textContent;save();const was=cur&&!audio.paused?cur:null;stop();if(was)playPos(was.s,was.i);reader(n,lastVisible(n))};
  $('#playAll').onclick=()=>{hifzCfg=null;playPos(n,0)};bindAudioBar('r');
  const loadW=async()=>{try{words=await F.wbw(n);redraw();tjLeg()}catch{S.wbw=false;save();$('#wbwT').classList.remove('on');toast(S.ui==='ur'?'لفظ بہ لفظ کے لیے انٹرنیٹ درکار ہے':'Word-by-word needs an internet connection')}};
@@ -243,7 +244,9 @@ async function reader(n,start){if(!validSurah(n)){location.hash='#/quran';return
  S.hifzHide=false;save(); // v3.7.3: Hide text is set only by the Hifz page and applies to the surah it opens (no toggle in the tools row)
  const tjLeg=()=>{const k=$('#rtk');const on=tjOn()&&!words;k.hidden=!on;k.innerHTML=on?TJ.legend(ur).map(g=>`<span><i style="background:${g.color}"></i>${esc(g.name)}</span>`).join('')+`<small style="width:100%;text-align:center" class="muted">${ur?'رنگین حرف دبائیں':'Tap a coloured letter'}</small>`:''};
  const loadTjR=async()=>{try{if(!tjd){const f=await j(OFF+'tj/'+n+'.json');tjd=txts.map((tx,i)=>TJ.ayahSegs(AR[n-1][i],tx,f[i]))}}catch{tjOn()&&toast(ur?'تجوید ڈیٹا لوڈ نہیں ہو سکا':'Tajweed data could not be loaded')}redraw();tjLeg()};
- $('#tjT').onclick=e=>{const on=!tjOn();localStorage.setItem('qsTjR',on?'1':'0');e.currentTarget.classList.toggle('on',on);e.currentTarget.setAttribute('aria-pressed',on);if(on&&!words)loadTjR();else{redraw();tjLeg()}};
+ const tjApply=()=>{if(view!==app||!document.getElementById('tjT'))return window.removeEventListener('qs-tj',tjApply);const on=tjOn(),b=$('#tjT');b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);if(on&&!words)loadTjR();else{redraw();tjLeg()}};
+ window.__tjApply&&window.removeEventListener('qs-tj',window.__tjApply);window.__tjApply=tjApply;window.addEventListener('qs-tj',tjApply);
+ $('#tjT').onclick=()=>{localStorage.setItem('qsTjR',tjOn()?'0':'1');window.dispatchEvent(new CustomEvent('qs-tj',{detail:{from:'reader'}}))};
  if(tjOn())loadTjR();
  if(S.wbw)loadW();
  $('#recT').onclick=async()=>{const b=$('#recT');b.disabled=true;try{if(cur)stop();const [R,w]=await Promise.all([import('./recite.js'),words?Promise.resolve(words):F.wbw(n).catch(()=>null)]);RC=R;
@@ -349,12 +352,18 @@ async function search(q=''){setTitle(t('search'));const trs=await editions('tran
  if(q)run()}
 
 function bookmarks(){setTitle(t('bookmarks'));const l=LS.get('bookmarks',[]);app.innerHTML=l.length?l.map(b=>`<a class="card" href="#/surah/${b.ref.replace(':','/')}"><span class="badge">${esc(b.name)} ${b.ref}</span><p>${esc(b.text)}…</p></a>`).join(''):`<p class="muted c">${t('none')}</p>`}
+// v83: translation audio follows the selected translation language (was a separate 'talang' that defaulted to Urdu and never
+// changed when the translation language did). A manual pick in the audio bar is kept only while the translation language stays the same.
+const trLangOf=id=>String(id||'').split('.')[0];
+function syncTal(){const l=trLangOf(S.trans);if(S.talangFor===l)return;const v=TRANS_AUDIO.find(x=>x.lang===l);if(v)S.talang=v.id;delete S.talangFor}
+const talMissing=()=>S.amode!=='ar'&&!TRANS_AUDIO.some(x=>x.lang===trLangOf(S.trans));
+function trChanged(){syncTal();save();const was=cur&&!cur.clip&&!audio.paused?cur:null;if(was&&S.amode!=='ar'){stop();playPos(was.s,was.i)}if(talMissing())toast(S.ui==='ur'?'اس زبان میں ترجمہ آڈیو دستیاب نہیں — منتخب آڈیو زبان چلے گی':'No translation audio in this language — playing the language chosen under Translation audio')}
 function audioBar(p){const u=S.ui==='ur';const show=S.amode!=='ar';
  return `<div class="bar abar" id="${p}_abar"><label>${u?'آڈیو':'Audio'}<select id="${p}_am" aria-label="Audio mode">${AUDIO_MODES.map(([v,e,ur])=>`<option value="${v}" ${S.amode===v?'selected':''}>${u?ur:e}</option>`).join('')}</select></label>
  <label id="${p}_talW" ${show?'':'hidden'}>${u?'ترجمہ آڈیو زبان':'Translation audio'}<select id="${p}_tal" aria-label="Translation audio language">${TRANS_AUDIO.map(v=>`<option value="${v.id}" ${S.talang===v.id?'selected':''}>${u?v.ur:v.en}</option>`).join('')}</select></label></div>`}
 function bindAudioBar(p){const re=()=>{const was=cur&&!cur.clip&&!audio.paused?cur:null;if(was){stop();playPos(was.s,was.i)}};
  $('#'+p+'_am').onchange=e=>{S.amode=e.target.value;save();$('#'+p+'_talW').hidden=S.amode==='ar';re()};
- $('#'+p+'_tal').onchange=e=>{S.talang=e.target.value;save();re()}}
+ $('#'+p+'_tal').onchange=e=>{S.talang=e.target.value;S.talangFor=trLangOf(S.trans);save();re()}}
 async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Promise.all([editions('translation'),audioEds(),editions('tafsir')]);
  app.innerHTML=`<div class="form"><label>${t('uiLang')}<select id="s_ui"><option value="en">English</option><option value="ur" ${S.ui==='ur'?'selected':''}>اردو</option></select></label>
  <label>${t('tlang')}<select id="s_tlang">${PK.langOptions(PK.transLangs(trs),PK.langOfEdition(trs,S.trans),S.ui)}</select></label><label>${t('translator')}<select id="s_trans">${PK.translatorOptions(trs,PK.langOfEdition(trs,S.trans),S.trans,S.ui)}</select></label><label>${t('reciter')}<select id="s_reciter">${PK.reciterOptions(recs,S.reciter,S.ui)}</select></label><label>${t('tafsir')}<select id="s_tafsir">${opt(tfs,S.tafsir)}</select></label>
@@ -366,8 +375,8 @@ async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Pro
  <p class="muted">Android home-screen widget: on the roadmap (native work).</p></div>`;
  bindAudioBar('s');['script','wbwLang'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;save()});
  const aot=async()=>{S.aotd=$('#s_aotd').checked;S.aotdT=$('#s_aotdT').value||'07:00';save();const r=await scheduleAotd();$('#aMsg').textContent=r.ok?`✓ ${r.count}`:r.reason};$('#s_aotd').onchange=aot;$('#s_aotdT').onchange=aot;
- ['ui','trans','reciter','tafsir'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;if(k==='reciter')S.reciterName=e.target.selectedOptions[0].dataset.en||'';save();applyUI();if(k==='ui')settings()});
- $('#s_tlang').onchange=e=>{S.trans=PK.defaultTranslator(trs,e.target.value)||S.trans;save();settings()};
+ ['ui','trans','reciter','tafsir'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;if(k==='trans')trChanged();if(k==='reciter')S.reciterName=e.target.selectedOptions[0].dataset.en||'';save();applyUI();if(k==='ui')settings()});
+ $('#s_tlang').onchange=e=>{S.trans=PK.defaultTranslator(trs,e.target.value)||S.trans;trChanged();settings()};
  $('#s_size').oninput=e=>{S.size=+e.target.value;save();applyUI()};$('#s_dark').onchange=e=>{S.dark=e.target.checked;save();applyUI()};[['cont','continuous'],['next','autoNext'],['sa','surahAudio']].forEach(([id,k])=>$('#s_'+id).onchange=e=>{S[k]=e.target.checked;save()})}
 
 // Each navigation renders into a fresh container, so a slow, stale render (e.g. a surah still loading) can never overwrite the newer screen.

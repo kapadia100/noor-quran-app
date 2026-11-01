@@ -31,8 +31,9 @@ export async function rankOf(C,s,a,w){
  return 0}
 
 const meaning=(w,ur)=>ur?w.u:w.e;
-const ayahWords=(sm,ur,tt)=>{const ws=sm[3].split(' ');
- return `<p class="ar dc-ay" dir="rtl" lang="ar">${ws.map((x,i)=>i===sm[2]-1?`<button class="dc-hw" data-au="${esc(sm[6])}" aria-label="${tt('Hear this word','یہ لفظ سنیں')}">${esc(x)}</button>`:esc(x)).join(' ')}</p>`};
+const ayahWords=(sm,ur,tt,hear=true)=>{let k=0;
+ return `<p class="ar dc-ay" dir="rtl" lang="ar">${sm[3].split(' ').map(x=>{if(K.isMark(x))return esc(x);if(++k!==sm[2])return esc(x);
+  return hear?`<button class="dc-hw" data-au="${esc(sm[6])}" aria-label="${tt('Hear this word','یہ لفظ سنیں')}">${esc(x)}</button>`:`<mark class="dc-hw dc-nohear">${esc(x)}</mark>`}).join(' ')}</p>`};
 
 export async function dictPage(C,tt,ur,I,a,b){
  C.setTitle(tt('Quran Dictionary','قرآن ڈکشنری'));C.app().onclick=null;au?.pause?.();
@@ -126,19 +127,19 @@ function step(C,tt,ur,I,D){
  const head=`<div class="dc-top"><a class="btn ghost" href="#/dict/quiz">‹ ${tt('Back','واپس')}</a><small class="dc-pg" id="dcPg">${Q.i+1} / ${n}</small></div><div class="q-bar"><i style="width:${100*Q.i/n}%"></i></div>`;
  if(Q.kind==='cards'){
   const f=Q.flip,sm=w.s[0];
-  app.innerHTML=`<section class="dsec dc-wrap">${head}<div class="card dc-fc" id="dcCard"><button class="dc-hear" data-au="${esc(sm[6])}" aria-label="${tt('Hear the word','لفظ سنیں')}"><span class="ar dc-word" dir="rtl" lang="ar">${esc(w.h)}</span><span class="dc-sp" aria-hidden="true">🔊</span></button>
-  ${f?`<b class="dc-tr">${esc(w.t)}</b><p class="dc-mn">${esc(meaning(w,U))}</p><p class="dc-mn2 muted" ${U?'':'dir="rtl"'}>${esc(meaning(w,!U))}</p><small class="muted">${tt('Root','مادہ')}: <span class="ar" dir="rtl" lang="ar">${esc(w.rt||'—')}</span> · ${w.n.toLocaleString()}×</small>${ayahWords(sm,U,tt)}`:`<button class="btn" id="dcFlip">${tt('Show meaning','معنی دکھائیں')}</button>`}</div>
+  app.innerHTML=`<section class="dsec dc-wrap">${head}<div class="card dc-fc" id="dcCard"><div class="dc-hear dc-nohear"><span class="ar dc-word" dir="rtl" lang="ar">${esc(w.h)}</span></div>
+  ${f?`<b class="dc-tr">${esc(w.t)}</b><p class="dc-mn">${esc(meaning(w,U))}</p><p class="dc-mn2 muted" ${U?'':'dir="rtl"'}>${esc(meaning(w,!U))}</p><small class="muted">${tt('Root','مادہ')}: <span class="ar" dir="rtl" lang="ar">${esc(w.rt||'—')}</span> · ${w.n.toLocaleString()}×</small>${ayahWords(sm,U,tt,false)}`:`<button class="btn" id="dcFlip">${tt('Show meaning','معنی دکھائیں')}</button>`}</div>
   ${f?`<div class="bar dc-ans"><button class="btn ghost" id="dcNo">✗ ${tt('Not yet','ابھی نہیں')}</button><button class="btn" id="dcYes">✓ ${tt('I knew it','مجھے آتا تھا')}</button></div>`:''}</section>`;
-  app.onclick=ev=>{const h=ev.target.closest('[data-au]');if(h){playWord(C,tt,h.dataset.au);return}
+  app.onclick=ev=>{
    if(ev.target.closest('#dcFlip')){Q.flip=true;step(C,tt,ur,I,D);return}
    const y=ev.target.closest('#dcYes'),no=ev.target.closest('#dcNo');if(y||no)answer(C,tt,ur,I,D,r,!!y)};
  }else{
   const {rev,opts}=Q.opts[Q.i],pk=Q.pick;
   const label=o=>rev?`<span class="ar" dir="rtl" lang="ar">${esc(o.h)}</span>`:esc(K.brief(meaning(o,U)));
-  app.innerHTML=`<section class="dsec dc-wrap">${head}<div class="card dc-fc">${rev?`<small class="muted">${tt('Which Arabic word means…','کون سا عربی لفظ اس معنی کا ہے…')}</small><p class="dc-mn" id="dcQ">${esc(K.brief(meaning(w,U)))}</p>`:`<button class="dc-hear" data-au="${esc(w.s[0][6])}" aria-label="${tt('Hear the word','لفظ سنیں')}"><span class="ar dc-word" dir="rtl" lang="ar">${esc(w.h)}</span><span class="dc-sp" aria-hidden="true">🔊</span></button><small class="muted">${tt('What does it mean?','اس کا کیا مطلب ہے؟')}</small>`}</div>
+  app.innerHTML=`<section class="dsec dc-wrap">${head}<div class="card dc-fc">${rev?`<small class="muted">${tt('Which Arabic word means…','کون سا عربی لفظ اس معنی کا ہے…')}</small><p class="dc-mn" id="dcQ">${esc(K.brief(meaning(w,U)))}</p>`:`<div class="dc-hear dc-nohear"><span class="ar dc-word" dir="rtl" lang="ar">${esc(w.h)}</span></div><small class="muted">${tt('What does it mean?','اس کا کیا مطلب ہے؟')}</small>`}</div>
   <div class="dc-opts" id="dcOpts">${opts.map(o=>`<button class="dc-opt${pk?(o.r===r?' ok':o.r===pk?' bad':''):''}" data-r="${o.r}" ${pk?'disabled':''}>${label(o)}</button>`).join('')}</div>
   ${pk?`<p class="dc-fb" role="status">${pk===r?'✓ '+tt('Correct','درست'):'✗ '+tt('Not quite: ','درست نہیں: ')+(pk===r?'':esc(meaning(w,U)))}</p><div class="bar"><button class="btn" id="dcNext">${Q.i+1>=n?tt('Finish','مکمل'):tt('Next','اگلا')} ›</button></div>`:''}</section>`;
-  app.onclick=ev=>{const h=ev.target.closest('[data-au]');if(h){playWord(C,tt,h.dataset.au);return}
+  app.onclick=ev=>{
    const o=ev.target.closest('.dc-opt');if(o&&!Q.pick){Q.pick=+o.dataset.r;const p=load();p.w[r]=K.grade(p.w[r],Q.pick===r);save(p);Q.res.push(Q.pick===r);if(Q.pick===r)Q.right++;step(C,tt,ur,I,D);return}
    if(ev.target.closest('#dcNext')){Q.i++;Q.pick=null;step(C,tt,ur,I,D)}}}}
 function answer(C,tt,ur,I,D,r,ok){const p=load();p.w[r]=K.grade(p.w[r],ok);save(p);Q.res.push(ok);if(ok)Q.right++;Q.i++;Q.flip=false;step(C,tt,ur,I,D)}

@@ -63,7 +63,7 @@ test('quality setting persists and mic errors are explained (no mic API)',async(
  await open(page);await page.click('#rcOptB');await page.click('[data-q=accurate]');expect(await page.evaluate(()=>localStorage.qsQuality)).toBe('accurate');await expect(page.locator('#rcOpt [data-q=accurate]')).toHaveClass(/on/)});
 
 test('tajweed colours: coloured letters appear in the line and tapping one explains the rule',async({page})=>{
- await open(page,2);await expect.poll(async()=>(await st(page)).tj).toBeGreaterThan(0);
+ await page.addInitScript(()=>{if(!sessionStorage.qsSeed){localStorage.setItem('qsTjR','1');sessionStorage.qsSeed=1}});await open(page,2);await expect.poll(async()=>(await st(page)).tj).toBeGreaterThan(0);
  await page.click('#rcMic');await expect(page.locator('#rcLine .tj').first()).toBeVisible();await expect(page.locator('#rcTjk')).toBeVisible();
  await page.locator('#rcLine .tj').first().click();await expect(page.locator('#rcTjc')).toBeVisible();await expect(page.locator('#rcTjc b')).not.toBeEmpty();
  await page.click('#rcOptB');await page.click('#oTj');await expect(page.locator('#rcLine .tj')).toHaveCount(0)});

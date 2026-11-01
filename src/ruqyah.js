@@ -3,6 +3,7 @@
 import*as H from'./hadith-tts.js';
 import {ayahText} from'./lib.js';
 import {kick as glide} from'./glide.js';
+import {follow} from'./follow.js';
 const API='https://api.alquran.cloud/v1';
 /** Quranic sections: [surah, fromAyah, toAyah]. */
 export const RQ=[[1,1,7],[2,1,5],[2,102,102],[2,163,164],[2,255,255],[2,285,286],[3,18,19],[7,54,56],[7,117,122],[10,81,82],[20,69,69],[23,115,118],[37,1,10],[46,29,32],[55,33,36],[59,21,24],[72,1,9],[112,1,4],[113,1,5],[114,1,6]];
@@ -50,7 +51,7 @@ export async function page(C,tt,ur,I){
  const end=()=>{st.state='idle';st.i=-1;paint();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
  const paint0=paint;paint=()=>{paint0();mp()};
  const go=async i=>{if(i>=seq.length){end();return}
-  st.i=i;st.state='loading';paint();const e=app.querySelector(`[data-i="${i}"]`);e?.scrollIntoView({block:'center',behavior:'smooth'});const x=seq[i];
+  st.i=i;st.state='loading';paint();const e=app.querySelector(`[data-i="${i}"]`);requestAnimationFrame(()=>follow(e));const x=seq[i];
   try{dispatchEvent(new CustomEvent('qs:audio',{detail:'ruqyah'}))}catch{/* ignore */}
   if(x.k==='q'){let u;try{u=(await getUrl(x.s))[x.a-1]}catch{u=null}if(st.i!==i||st.state!=='loading')return;
    if(!u){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔');return}

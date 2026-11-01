@@ -1,6 +1,7 @@
 // Qaida audio: ONE player for the whole Qaida (taps, Hear & repeat, Play lesson, Play all), plus the "Play lesson" bar.
 // Rules: never two sounds at once; any other audio in the app (the Quran player) takes over and stops this one; playback never starts while
 // the microphone is live; a clip that cannot be loaded is reported as SILENT and is never counted as played.
+import {follow} from './follow.js';
 import{polishBlob}from'./clip-polish.js';
 const base=()=>import.meta.env.BASE_URL||'/';
 const BR=typeof window!=='undefined'&&typeof document!=='undefined';
@@ -99,7 +100,7 @@ export function mountPlayer(env){
   for(;;){
    while(idx<items.length){
     const x=items[idx];clearMarks();x.classList.add('q-play');
-    try{x.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}catch{/* ignore */}
+    try{follow(x)}catch{/* ignore */}
     say(tt(`Playing ${idx+1} of ${items.length}`,`${items.length} میں سے ${idx+1} چل رہا ہے`),res.silent);media(`${tt(les.en,les.ur)} · ${idx+1}/${items.length}`);
     const nx=items[idx+1];if(nx)prefetch(nx.dataset.u.split('|'));
     const ok=await itemRun(x,my);

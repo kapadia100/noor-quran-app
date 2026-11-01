@@ -50,12 +50,17 @@ export function buildSession(words,state,now=Date.now(),size=10,only=null){
  const star=pool.filter(w=>state[w.r]?.s&&!state[w.r]?.l&&!isKnown(state[w.r]));
  const fresh=pool.filter(w=>!state[w.r]?.l&&!state[w.r]?.s&&!isKnown(state[w.r]));
  return [...due,...star,...fresh].slice(0,size).map(w=>w.r)}
+/** True for a token that is only a Quranic pause/annotation mark (not a word). */
+export const isMark=t=>/^[\u06D6-\u06ED]+$/.test(t);
+/** Every sense of a meaning, normalised, e.g. 'he was; to be' -> ['he was','to be']. */
+export const senses=s=>String(s).toLowerCase().replace(/\([^)]*\)/g,' ').split(/[;،,]/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
 /** Shortest useful meaning for a multiple-choice option (first sense). */
 export const brief=s=>String(s).split(/[;(]/)[0].trim()||String(s);
 /** n-1 distractors: other parts of speech excluded when possible, similar frequency preferred, never an equal meaning. */
 export function options(words,target,lang='en',n=4,rnd=Math.random){
  const key=w=>brief(lang==='ur'?w.u:w.e).toLowerCase(),tk=key(target);
- let pool=words.filter(w=>w.r!==target.r&&key(w)!==tk&&w.h!==target.h);
+ const ts=new Set([...senses(target.e),...senses(target.u)]),clash=w=>[...senses(w.e),...senses(w.u)].some(x=>ts.has(x));
+ let pool=words.filter(w=>w.r!==target.r&&key(w)!==tk&&w.h!==target.h&&!clash(w));
  const same=pool.filter(w=>w.p===target.p&&Math.abs(w.r-target.r)<=120);
  const near=pool.filter(w=>Math.abs(w.r-target.r)<=150);
  const src=same.length>=n-1?same:near.length>=n-1?near:pool;

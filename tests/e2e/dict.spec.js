@@ -100,3 +100,11 @@ for(const dark of [false,true])for(const ui of ['en','ur'])test(`layout at 390px
 test('service worker: v41 precaches the dictionary data',async({request,baseURL})=>{
  const sw=await (await request.get(new URL('sw.js',baseURL).href)).text();expect(sw).toMatch(/qsafar-v\d+/);expect(sw).toContain('offline/x/dict.json');expect(sw).toContain('offline/x/dict-idx.json');
  for(const f of ['offline/x/dict.json','offline/x/dict-idx.json']){const r=await request.get(new URL(f,baseURL).href);expect(r.ok()).toBe(true)}});
+
+test('quiz has no speaker: flashcards and multiple choice never offer or play word audio; example shows exact ayah with the word marked',async({page})=>{
+ await page.goto('./#/dict/quiz/cards');await expect(page.locator('#dcFlip')).toBeVisible();
+ await expect(page.locator('[data-au], #dcHear, button.dc-hw')).toHaveCount(0);await page.locator('.dc-word').click();
+ await page.click('#dcFlip');await expect(page.locator('mark.dc-hw')).toHaveCount(1);await expect(page.locator('[data-au], button.dc-hw')).toHaveCount(0);
+ const ay=await page.locator('.dc-ay').textContent();const w=D.words.flatMap(x=>x.s).find(s=>s[3].replace(/\s+/g,' ')===ay.trim().replace(/\s+/g,' '));expect(w).toBeTruthy();
+ await page.locator('mark.dc-hw').click();await page.goto('./#/dict/quiz/mc');await expect(page.locator('[data-au], #dcHear, button.dc-hw')).toHaveCount(0);await page.locator('.dc-word').first().click();
+ expect(await plays(page)).toEqual([])});

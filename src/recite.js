@@ -333,7 +333,11 @@ function optsHtml(){const tot=st.ctx.txts.length,q=qPref(),eff=qLevel();
   <div class="bar"><button class="btn" id="abP">▶ ${L('Play','چلائیں')}</button><button class="btn" id="abL">⟲ ${L('Loop A–B','A–B دہرائیں')}</button><button class="btn ghost" id="abS">■</button></div><small class="muted" id="abH">${L('Tap a first word (A), then a last word (B). Loop repeats that part.','پہلا لفظ (A) پھر آخری لفظ (B) دبائیں۔ لوپ اسی حصے کو دہراتا ہے۔')}</small></div>
  <div class="rc-og"><b>${L('Quality','معیار')}</b><div class="rc-sp">${['auto','fast','balanced','accurate'].map(k=>`<button class="rc-chp${q===k?' on':''}" data-q="${k}">${L(QINFO[k][0],QINFO[k][1])}</button>`).join('')}</div><small class="muted">${L(QINFO[q][2],QINFO[q][3])}${q==='auto'?' '+L(`Now: ${QINFO[eff][0]}.`,`ابھی: ${QINFO[eff][1]}۔`):''}</small></div>
  <div class="rc-og"><div class="rc-sp"><button class="rc-chp${st.tjOn?' on':''}" id="oTj">${L('Tajweed colours','تجوید کے رنگ')}</button><button class="rc-chp${localStorage.getItem('qsHaptic')!=='0'?' on':''}" id="oHap">${L('Vibration','وائبریشن')}</button><button class="rc-chp" id="oTips">${L('Tips','مشورے')}</button><a class="rc-chp" href="#/progress" id="oProg">${L('My progress','میری پیش رفت')}</a></div></div>`}
-function wireExtras(){const o=$('#rcOpt');st.tjOn=localStorage.getItem('qsTj')!=='0';st.abSel=[null,null];
+// v83: one tajweed setting shared with the reader (qsTjR). The tutor used its own 'qsTj' (default on) while the reader's ayahs
+// under the panel used 'qsTjR', so turning colours off in one place left them on in the other.
+function tjPref(){const r=localStorage.getItem('qsTjR');if(r!==null)return r==='1';const o=localStorage.getItem('qsTj');if(o!==null){localStorage.setItem('qsTjR',o==='0'?'0':'1');return o!=='0'}return false}
+function onTjEv(){if(!st)return;st.tjOn=tjPref();st.lineA=0;const o=$('#rcOpt');if(o&&!o.hidden){o.innerHTML=optsHtml();abWords()}paint();tjLegend()}
+function wireExtras(){const o=$('#rcOpt');st.tjOn=tjPref();window.removeEventListener('qs-tj',onTjEv);window.addEventListener('qs-tj',onTjEv);st.abSel=[null,null];
  if(!st.autoQ){st.autoQ=(navigator.deviceMemory||8)<=2?'fast':'balanced';navigator.getBattery?.().then(b=>{if(st&&!b.charging&&b.level<0.2&&qPref()==='auto'){st.autoQ='fast';st.T.cfg=Q().gop}}).catch(()=>{})}
  document.addEventListener('visibilitychange',onVis);
  $('#rcOptB').onclick=()=>{const open=o.hidden;o.hidden=!open;$('#rcOptB').setAttribute('aria-expanded',open);if(open){o.innerHTML=optsHtml();abWords()}};
@@ -341,7 +345,7 @@ function wireExtras(){const o=$('#rcOpt');st.tjOn=localStorage.getItem('qsTj')!=
   if(b.dataset.md){setMode(b.dataset.md);o.innerHTML=optsHtml();abWords();return}
   if(b.dataset.rate){st.rate=+b.dataset.rate;localStorage.setItem('qsRate',st.rate);o.innerHTML=optsHtml();abWords();return}
   if(b.dataset.q){localStorage.setItem('qsQuality',b.dataset.q);st.T.cfg=Q().gop;o.innerHTML=optsHtml();abWords();return}
-  if(b.id==='oTj'){st.tjOn=!st.tjOn;localStorage.setItem('qsTj',st.tjOn?'1':'0');st.lineA=0;o.innerHTML=optsHtml();abWords();paint();return}
+  if(b.id==='oTj'){localStorage.setItem('qsTjR',st.tjOn?'0':'1');localStorage.removeItem('qsTj');window.dispatchEvent(new CustomEvent('qs-tj',{detail:{from:'tutor'}}));return}
   if(b.id==='oHap'){localStorage.setItem('qsHaptic',localStorage.getItem('qsHaptic')==='0'?'1':'0');buzz(15);o.innerHTML=optsHtml();abWords();return}
   if(b.id==='oTips'){onbShow();o.hidden=true;$('#rcOptB').setAttribute('aria-expanded','false');return}
   if(b.id==='oProg'){close();return}
