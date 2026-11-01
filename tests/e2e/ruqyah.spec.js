@@ -30,7 +30,7 @@ test('Play all plays every ruqyah ayah in order with highlight, progress, pause/
  // tap an ayah to start there, then stop
  await page.locator('#rq5 .rq-a').first().click();await expect.poll(()=>page.evaluate(()=>window.__played.at(-1))).toMatch(/\/2\/285\.mp3$|\/292\.mp3$/);
  // auto-scroll keeps the page moving (Stop may be off-screen): press it directly, before the remaining ayahs finish
- await page.evaluate(()=>{const m=document.querySelector('#rqMini');(m&&!m.hidden&&getComputedStyle(m).display!=='none'?document.querySelector('#rqMini .rq-mstop')||document.querySelector('#rqStop'):document.querySelector('#rqStop')).click()});await expect(page.locator('.rq-on')).toHaveCount(0)});
+ await page.evaluate(()=>{const m=document.querySelector('#rqMini');(m&&!m.hidden&&getComputedStyle(m).display!=='none'?document.querySelector('#rqMStop'):document.querySelector('#rqMStop')).click()});await expect(page.locator('.rq-on')).toHaveCount(0)});
 test('v3.7.10: Play card sits in normal flow above Al-Fatiha; mini player appears only when scrolled past while playing',async({page})=>{
  await mock(page);await page.addInitScript(()=>{window.__dur=1500});await page.goto('./#/ruqyah');
  const t=await page.locator('.rq-top').boundingBox(),f=await page.locator('#rq0').boundingBox();expect(t.y+t.height).toBeLessThanOrEqual(f.y+1);
@@ -60,3 +60,24 @@ test('Ruqyah order: displayed and Play-all ayahs follow mushaf order; Al-Baqarah
  const len=await page.evaluate(async()=>{const o={};for(let s=1;s<=114;s++)o[s]=(await (await fetch(`offline/s/ar/${s}.json`)).json()).length;return o});
  const sa=u=>{let m=u.match(/\/(\d+)\/(\d+)\.mp3$/);if(m&&u.includes('audio.test'))return `${m[1]}:${m[2]}`;let n=+u.match(/(\d+)\.mp3$/)[1],s=1;while(n>len[s]){n-=len[s];s++}return `${s}:${n}`};
  expect((await page.evaluate(()=>window.__played)).map(sa)).toEqual(exp)});
+test('v83: Ruqyah uses the same mini player as the reader: prev | gold play/pause | next, close = stop; no separate Stop button; same place',async({page})=>{
+ await mock(page);await page.addInitScript(()=>{window.__dur=4000});await page.goto('./#/ruqyah');
+ await expect(page.locator('#rqStop')).toHaveCount(0);await page.click('#rqPlay');
+ await page.evaluate(()=>document.querySelector('#rq8').scrollIntoView());const m=page.locator('#rqMini');await expect(m).toBeVisible();
+ expect(await m.evaluate(e=>[...e.querySelectorAll('button')].map(b=>b.className))).toEqual(['pl-b pl-s','pl-b pl-p','pl-b pl-s','pl-x']);
+ const bg=await page.locator('#rqMP').evaluate(e=>getComputedStyle(e).backgroundImage);expect(bg).toContain('gradient');
+ const i0=await page.evaluate(()=>window.__rq.state().i);await page.click('#rqMNext');await expect.poll(()=>page.evaluate(()=>window.__rq.state().i)).toBe(i0+1);
+ await page.click('#rqMPrev');await expect.poll(()=>page.evaluate(()=>window.__rq.state().i)).toBe(i0);
+ await page.click('#rqMP');await expect(page.locator('#rqMP')).toHaveAttribute('aria-label','Play');await page.click('#rqMP');await expect(page.locator('#rqMP')).toHaveAttribute('aria-label','Pause');
+ // same geometry as the reader's player
+ const b=await m.boundingBox();await page.click('#rqMStop');await expect(m).toBeHidden();await expect(page.locator('.rq-on')).toHaveCount(0);
+ await page.goto('./#/surah/1');await page.waitForSelector('.ayah');await page.click('[data-play="0"]');const r=await page.locator('#player').boundingBox();
+ for(const k of ['x','width','height'])expect(Math.abs(b[k]-r[k])).toBeLessThanOrEqual(2);expect(Math.abs(b.y-r.y)).toBeLessThanOrEqual(2);
+ if(process.env.SHOTS){await page.screenshot({path:'/workspace/shots-player/reader-v83b.png'})}
+});
+test('v83: leaving Ruqyah while its player is up never hides the reader player',async({page})=>{
+ await mock(page);await page.addInitScript(()=>{window.__dur=4000});await page.goto('./#/ruqyah');await page.click('#rqPlay');
+ await page.evaluate(()=>document.querySelector('#rq8').scrollIntoView());await expect(page.locator('#rqMini')).toBeVisible();
+ await page.evaluate(()=>location.hash='#/surah/1');await page.waitForSelector('.ayah');expect(await page.evaluate(()=>document.body.classList.contains('mp-alt'))).toBe(false);
+ await page.click('[data-play="0"]');await expect(page.locator('#player')).toBeVisible();
+});

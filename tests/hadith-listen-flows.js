@@ -118,8 +118,8 @@ export function hadithListenFlows(test,expect){
   await b.click();await expect(b).toHaveText('Resume');const n=(await spoken(page)).length;await b.click();await expect(b).toHaveText('Pause');await expect.poll(async()=>(await spoken(page)).length).toBe(n+1);
   await page.locator('.hl-x').first().click();await expect(b).toHaveText('Play');await expect(page.locator('.hd-on')).toHaveCount(0);await expect(page.locator('.hl-x').first()).toBeHidden();
   await page.waitForTimeout(500);expect((await spoken(page)).length).toBe(n+1)});
- test('plays to the end and goes back to Play',async({page})=>{await mockSpeech(page);await setLang(page,'urd');await page.goto('./#/hadith/bukhari/n/2');const b=btn(page,0);await b.click();await expect(b).toHaveText('Pause');await expect(b).toHaveText('Play',{timeout:8000});
-  expect((await spoken(page))[0].voice).toBe('Imran')});
+ test('plays to the end and goes back to Play',async({page})=>{await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/2');const b=btn(page,0);await b.click();await expect(b).toHaveText('Pause');await expect(b).toHaveText('Play',{timeout:8000});
+  expect((await spoken(page))[0].voice).toBe('Samantha')});
  test('speed control is passed to the voice',async({page})=>{await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await page.selectOption('#hlRate','0.8');await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].rate).toBe(0.8);
   await page.reload();await expect(page.locator('#hlRate')).toHaveValue('0.8')});
  test('a language with no device voice (Tamil): Play is disabled and the card says so plainly',async({page})=>{
@@ -133,26 +133,26 @@ export function hadithListenFlows(test,expect){
   await expect.poll(()=>asked.length).toBeGreaterThan(0);expect(asked[0]).toMatch(/\/urd\/bukhari\/1\.m4a$/)});
  test('device with only an English voice: Urdu and Arabic show Play disabled with a message, English plays',async({page})=>{
   await mockSpeech(page,{voices:[{name:'Samantha',lang:'en-US',localService:true,default:true}]});await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeEnabled({timeout:15000});
-  await page.click('[data-sl="urd"]');await expect(btn(page,0)).toBeDisabled();await expect(page.locator('article.hd .hd-nv')).toContainText('No Urdu voice');
-  await page.click('[data-sl="ara"]');await expect(btn(page,0)).toBeDisabled();await expect(page.locator('article.hd .hd-nv')).toContainText('No Arabic voice on this device');
+  await page.click('[data-sl="urd"]');await expect(btn(page,0)).toBeDisabled();await expect(page.locator('article.hd .hd-nv')).toContainText('No Urdu recording');
+  await page.click('[data-sl="ara"]');await expect(btn(page,0)).toBeDisabled();await expect(page.locator('article.hd .hd-nv')).toContainText('Arabic hadith audio is not available yet');
   await btn(page,0).click({force:true});await page.waitForTimeout(300);expect((await spoken(page)).length).toBe(0)});
  test('voices that load late (voiceschanged) still give Play',async({page})=>{await mockSpeech(page,{lateMs:700});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await expect(page.locator('#hlNote')).toBeEmpty()});
  test('no speech engine at all: no Play, clear note, nothing breaks',async({page})=>{await mockSpeech(page,{none:true});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(page.locator('#hlNote')).toHaveText('No voice for this language on your device',{timeout:15000});await expect(page.locator('[data-hl]')).toHaveCount(0);await expect(page.locator('.hd .hd-t:not([hidden]) p').first()).toBeVisible()});
  test('a silent device never shows "playing" and tells the user',async({page})=>{await mockSpeech(page,{silent:true});await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');const b=btn(page,0);await expect(b).toBeVisible({timeout:15000});await b.click();
   await expect(page.locator('#hlNote')).toContainText('Nothing played',{timeout:8000});await expect(b).toHaveText('Play');await expect(page.locator('.hd-on')).toHaveCount(0)});
 
- // Arabic is spoken only when the user has picked Arabic on that hadith, with the device Arabic voice.
- test('Arabic is never spoken unless Arabic is picked; picking Arabic plays it with the ar-SA voice',async({page})=>{
+ // Standing rule: the device voice never speaks Arabic, even with an Arabic voice installed and Arabic picked.
+ test('Arabic is never spoken by the device voice, even when Arabic is picked and an ar-SA voice exists',async({page})=>{
   await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});
-  await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);let s=(await spoken(page))[0];expect(s.voice).toBe('Samantha');expect(s.text).not.toMatch(/[\u0600-\u06FF]/);
-  await page.click('[data-sl="ara"]');await expect(page.locator('article.hd .hd-t[data-l="ara"]')).toBeVisible();await expect(page.locator('article.hd .hd-t[data-l="eng"]')).toBeHidden();
-  await expect(btn(page,0)).toHaveAttribute('aria-label','Play Arabic');await page.waitForTimeout(300);expect((await spoken(page)).length).toBe(1);
-  await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(2);s=(await spoken(page))[1];expect(s.voice).toBe('Majed');expect(s.lang).toBe('ar-SA');expect(s.text).toBe((await page.locator('.hd-t[data-l="ara"] p').innerText()).replace(/\s+/g,' ').trim());expect(s.text).toContain('إنما الأعمال');
-  await expect(btn(page,0)).toHaveText('Pause')});
+  await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);const s=(await spoken(page))[0];expect(s.voice).toBe('Samantha');expect(s.text).not.toMatch(/[\u0600-\u06FF]/);
+  await page.click('[data-sl="ara"]');await expect(page.locator('article.hd .hd-t[data-l="ara"]')).toBeVisible();
+  await expect(btn(page,0)).toBeDisabled();await expect(page.locator('article.hd .hd-nv')).toContainText('Arabic hadith audio is not available yet');
+  await btn(page,0).click({force:true});await page.waitForTimeout(300);expect((await spoken(page)).length).toBe(1);
+  expect(await page.evaluate(()=>{const u=new SpeechSynthesisUtterance('إنما الأعمال');u.lang='ar-SA';speechSynthesis.speak(u);return window.__ttsBlocked||0})).toBeGreaterThan(0);expect((await spoken(page)).length).toBe(1)});
  test('no Arabic voice: Arabic text still shows, Play is disabled with a clear message, nothing is spoken',async({page})=>{
   await mockSpeech(page,{voices:[{name:'Samantha',lang:'en-US',localService:true,default:true},{name:'Imran',lang:'ur-PK',localService:true}]});await page.goto('./#/hadith/bukhari/1');await expect(page.locator('article.hd')).toHaveCount(3,{timeout:15000});
   await page.click('article.hd >> nth=0 >> [data-sl="ara"]');await expect(page.locator('article.hd .hd-t[data-l="ara"]').first()).toBeVisible();
-  for(let i=0;i<3;i++){await expect(btn(page,i)).toBeDisabled();await expect(page.locator('article.hd').nth(i).locator('.hd-nv')).toContainText('No Arabic voice on this device')}
+  for(let i=0;i<3;i++){await expect(btn(page,i)).toBeDisabled();await expect(page.locator('article.hd').nth(i).locator('.hd-nv')).toContainText('Arabic hadith audio is not available yet')}
   await page.waitForTimeout(300);expect((await spoken(page)).length).toBe(0)});
  test('every hadith has its own Arabic / Urdu / English row (in words, in that order); picking one changes all cards and is remembered',async({page})=>{
   await mockSpeech(page);await page.goto('./#/hadith/bukhari/1');await expect(page.locator('article.hd')).toHaveCount(3,{timeout:15000});
@@ -172,15 +172,14 @@ export function hadithListenFlows(test,expect){
   await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);await expect(btn(page,0)).toHaveAttribute('aria-label','Pause');
   await btn(page,1).click();await expect.poll(()=>spoken(page)).toHaveLength(2);await expect(btn(page,0)).toHaveAttribute('aria-label','Play English');await expect(btn(page,1)).toHaveAttribute('aria-label','Pause');await expect(page.locator('article.hd.hd-on')).toHaveCount(1);
   await page.locator('[data-sl="ara"]').first().click();await expect(page.locator('article.hd.hd-on')).toHaveCount(0);await expect(btn(page,1)).toHaveAttribute('aria-label','Play Arabic');
-  await btn(page,2).click();await expect.poll(()=>spoken(page)).toHaveLength(3);expect((await spoken(page))[2].lang).toBe('ar-SA');
-  await btn(page,2).click();await expect(btn(page,2)).toHaveAttribute('aria-label','Resume')});
+  await expect(btn(page,2)).toBeDisabled();await btn(page,2).click({force:true});await page.waitForTimeout(300);expect((await spoken(page)).length).toBe(2)});
  test('list cards open the reader: Arabic/Urdu/English row, speaker, previous / next and the 1 / 3 counter',async({page})=>{
   await mockSpeech(page);await page.goto('./#/hadith/bukhari/1');await expect(page.locator('article.hd')).toHaveCount(3,{timeout:15000});
   await page.locator('article.hd').nth(1).locator('.hd-open').click();await expect(page).toHaveURL(/#\/hadith\/bukhari\/n\/2$/);
   await expect(page.locator('#hdCt')).toHaveText('2 / 3',{timeout:15000});await expect(page.locator('article.hd .hd-sel')).toHaveCount(1);await expect(btn(page,0)).toBeVisible();
   await page.click('#hdNext');await expect(page).toHaveURL(/#\/hadith\/bukhari\/n\/3$/);await expect(page.locator('#hdCt')).toHaveText('3 / 3');await expect(page.locator('#hdNext')).toHaveAttribute('aria-disabled','true');
   await page.click('#hdPrev');await page.click('#hdPrev');await expect(page.locator('#hdCt')).toHaveText('1 / 3');await expect(page.locator('#hdPrev')).toHaveAttribute('aria-disabled','true');
-  await page.click('[data-sl="ara"]');await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].voice).toBe('Majed');
+  await page.click('[data-sl="ara"]');await expect(btn(page,0)).toBeDisabled();
   await page.click('#hdNext');await expect(page.locator('#hdCt')).toHaveText('2 / 3');await expect(page.locator('article.hd .hd-t:not([hidden]) p')).toContainText('إنما');await expect(btn(page,0)).toHaveAttribute('aria-label','Play Arabic');
   await page.goto('./#/hadith/bukhari/n/2');await page.evaluate(()=>localStorage.setItem('x','1'));
   const errs=[];page.on('pageerror',e=>errs.push(e.message));await page.goto('./#/hadith/bukhari/n/9999');expect(errs).toEqual([])});
@@ -224,7 +223,7 @@ export function hadithListenFlows(test,expect){
   await page.goto('./#/haudio/malik/2/5');await expect(page.locator('#haBook')).toHaveValue('bukhari');await expect(page.locator('.ha-it').first()).toBeVisible();
   await expect(page.locator('#haBook option[value="malik"]')).toHaveCount(0)});
 
- test('Urdu hadith with no official text: auto-translated label, own data field, plays with an auto-translated note; no text is invented otherwise',async({page})=>{
+ test('Urdu hadith with no official text: auto-translated label, own data field, never read by the device voice; no text is invented otherwise',async({page})=>{
   // test data only: Urdu Bukhari 1 has hadith 2 and 3 empty; the auto file (a separate field) covers only hadith 2
   await page.route('https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/urd-bukhari/sections/1.min.json',r=>r.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({metadata:{name:'Sahih al-Bukhari',section:{1:'Revelation'}},hadiths:[{hadithnumber:1,text:txt('urd',1),grades:[]},{hadithnumber:2,text:'',grades:[]},{hadithnumber:3,text:'',grades:[]}]})}));
   await page.route('**/offline/x/hur/bukhari.json',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({2:'نبی صلی اللہ علیہ وسلم نے فرمایا: صبر کرو۔'})}));
@@ -233,9 +232,7 @@ export function hadithListenFlows(test,expect){
   await expect(c.nth(0).locator('.hd-auto')).toHaveCount(0);
   await expect(c.nth(1).locator('.hd-t[data-l="urd"] .tr')).toHaveText('نبی صلی اللہ علیہ وسلم نے فرمایا: صبر کرو۔');await expect(c.nth(1).locator('.hd-t[data-l="urd"] .hd-auto')).toHaveText('Auto-translated from English');await expect(c.nth(1).locator('.hd-t[data-l="eng"] .hd-auto')).toHaveCount(0);
   await expect(c.nth(2).locator('.hd-t[data-l="urd"] .tr')).toHaveCount(0);await expect(c.nth(2).locator('.hd-miss')).toHaveText('No Urdu translation for this hadith');await expect(btn(page,2)).toBeDisabled();
-  await btn(page,1).click();await expect(page.locator('#hlNote')).toContainText('auto-translated');
-  await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].text).toBe('نبی صلی اللہ علیہ وسلم نے فرمایا: صبر کرو۔');expect((await spoken(page))[0].text).not.toContain('Auto-translated');
-  await page.click('[data-sl="eng"]');await expect(c.nth(1).locator('.hd-auto:visible')).toHaveCount(0);
-  await page.click('[data-sl="urd"]');await btn(page,0).click();await expect(page.locator('#hlNote')).not.toContainText('auto-translated')});
+  await btn(page,1).click({force:true});await page.waitForTimeout(400);expect((await spoken(page)).length).toBe(0);
+  await page.click('[data-sl="eng"]');await expect(c.nth(1).locator('.hd-auto:visible')).toHaveCount(0)});
 
 }

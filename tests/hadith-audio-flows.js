@@ -36,17 +36,13 @@ export function hadithAudioFlows(test,expect){
   expect(all).not.toMatch(/[\u0600-\u06FF]/);for(const x of s){expect(x.voice).toBe('Samantha');expect(x.lang).toBe('en-US')}
   await expect(page.locator('#haPlay')).toHaveText('Play')});
 
- test('Urdu plays the Urdu translation with the Urdu voice; a hadith with no Urdu translation is marked and skipped, never dropped',async({page})=>{
+ test('Urdu is never read by the device voice (even with an Urdu voice installed); a hadith with no Urdu translation is marked and skipped, never dropped',async({page})=>{
   await mockSpeech(page);await page.addInitScript(()=>{window.__dur=60});await open(page);
   await lang(page,'urd').click();await expect(lang(page,'urd')).toHaveAttribute('aria-checked','true');
   await expect(page.locator('.ha-it')).toHaveCount(3);await expect(page.locator('.ha-it.ha-miss')).toHaveCount(1);
   await expect(page.locator('.ha-it.ha-miss')).toContainText('No Urdu translation for this hadith');
   await expect(page.locator('#haSkip')).toContainText('1 hadith in this chapter has no Urdu translation and is skipped');
-  await page.click('#haPlay');
-  await expect.poll(async()=>(await spoken(page)).map(s=>s.text).join(' ')).toContain('نمبر 3');
-  const s=await spoken(page),all=s.map(x=>x.text).join(' ');
-  expect(all).toContain('نمبر 1');expect(all).not.toContain('نمبر 2');for(const x of s){expect(x.voice).toBe('Imran');expect(x.lang).toBe('ur-PK')}
-  expect(all).not.toContain('إنما')});
+  await page.click('#haPlay',{force:true});await page.waitForTimeout(500);expect((await spoken(page)).length).toBe(0)});
 
  test('jump by hadith number selects the right chapter and hadith, then Play reads that one',async({page})=>{
   await mockSpeech(page);await open(page);
@@ -75,9 +71,9 @@ export function hadithAudioFlows(test,expect){
   await expect(page.locator('#haBook')).not.toHaveValue('tirmidhi');
   await expect(page.locator('#haBook option[value="tirmidhi"]')).toHaveAttribute('disabled','');await expect(page.locator('#haBook option[value="tirmidhi"]')).toContainText('Urdu not available')});
 
- test('no Urdu voice installed: clear message, Play disabled; English still plays',async({page})=>{
+ test('no Urdu recording reachable: clear message, Play disabled, never the device voice; English still plays',async({page})=>{
   await mockSpeech(page,{voices:MOCK_VOICES.filter(v=>v.lang!=='ur-PK')});await open(page);
-  await lang(page,'urd').click();await expect(page.locator('#haMsg')).toContainText('No Urdu voice is installed on this device');
+  await lang(page,'urd').click();await expect(page.locator('#haMsg')).toContainText('Urdu is played from recordings only');
   await expect(page.locator('#haPlay')).toBeDisabled();expect((await spoken(page)).length).toBe(0);
   await lang(page,'eng').click();await expect(page.locator('#haMsg')).toBeHidden();await expect(page.locator('#haPlay')).toBeEnabled()});
 
@@ -87,11 +83,11 @@ export function hadithAudioFlows(test,expect){
   await mockSpeech(page,{voices:MOCK_VOICES.filter(v=>v.lang!=='ur-PK')});await open(page);
   await lang(page,'urd').click();await expect(page.locator('#haPlay')).toBeEnabled();await expect(page.locator('#haMsg')).toBeHidden();
   await page.click('#haPlay');await expect.poll(()=>asked.length).toBeGreaterThan(0);expect(asked[0]).toMatch(/^https:\/\/audio\.example\/urd\/bukhari\/[\d_.]+\.m4a$/)});
- test('recorded Urdu audio: a hadith not uploaded yet is never requested; the device voice reads it',async({page})=>{
+ test('recorded Urdu audio: a hadith not uploaded yet is never requested and never read by the device voice',async({page})=>{
   const asked=[];await page.route('https://audio.example/urd/**',r=>{const u=r.request().url();if(u.endsWith('index.json'))return r.fulfill({status:200,contentType:'application/json',body:'{"bukhari":[]}'});asked.push(u);return r.fulfill({status:404,body:''})});
   await page.addInitScript(()=>{localStorage.setItem('qsHadithAudioBase','https://audio.example/urd')});
-  await mockSpeech(page);await open(page);await lang(page,'urd').click();await page.waitForTimeout(500);await page.click('#haPlay');
-  await expect.poll(async()=>(await spoken(page)).length).toBeGreaterThan(0);expect(asked.length).toBe(0)});
+  await mockSpeech(page);await open(page);await lang(page,'urd').click();await page.waitForTimeout(500);await page.click('#haPlay',{force:true});
+  await page.waitForTimeout(500);expect((await spoken(page)).length).toBe(0);expect(asked.length).toBe(0)});
  test('a device that never speaks shows the silent message instead of pretending',async({page})=>{
   await mockSpeech(page,{silent:true});await open(page);await page.click('#haPlay');await expect(page.locator('#haMsg')).toContainText('Nothing played')});
 
@@ -103,7 +99,7 @@ export function hadithAudioFlows(test,expect){
   await page.goto('./#/hadith/bukhari/1');await expect(page.locator('article.hd').first()).toContainText('எண் 1');
   await page.evaluate(()=>localStorage.setItem('settings',JSON.stringify({ui:'ur'})));await page.goto('./#/haudio/bukhari');await page.reload();
   await expect(page.locator('.ha-it').first()).toBeVisible();await expect(page.locator('#haPlay')).toContainText('سنیں');await expect(page.locator('[data-lang="eng"]')).toHaveText('انگریزی');await expect(page.locator('[data-lang="urd"]')).toHaveText('اردو')})
- test('Urdu Audio plays an auto-translated text where the official Urdu is missing, labelled, with "auto-translated" in the status line',async({page})=>{
+ test('Urdu Audio: auto-translated text is labelled; with no recording it is never read by the device voice',async({page})=>{
   // test data only: the separate auto-translation field covers Urdu Bukhari hadith 2 (empty in the official Urdu)
   await page.route('**/offline/x/hur/bukhari.json',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({2:'نبی صلی اللہ علیہ وسلم نے فرمایا: صبر کرو۔'})}));
   await mockSpeech(page);await page.addInitScript(()=>{window.__dur=60000});await open(page);
@@ -111,7 +107,5 @@ export function hadithAudioFlows(test,expect){
   await expect(page.locator('.ha-it.ha-miss')).toHaveCount(0);await expect(page.locator('#haSkip')).toHaveCount(0);
   await expect(page.locator('.ha-it').nth(1).locator('.hd-auto')).toHaveText('Auto-translated from English');await expect(page.locator('.ha-it').nth(0).locator('.hd-auto')).toHaveCount(0);
   await expect(page.locator('#haMsg')).not.toContainText('auto-translated');
-  await page.locator('.ha-it').nth(1).click();await expect(page.locator('#haMsg')).toContainText('auto-translated');
-  await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].text).toBe('نبی صلی اللہ علیہ وسلم نے فرمایا: صبر کرو۔');
-  await page.locator('.ha-it').nth(0).click();await expect(page.locator('#haMsg')).not.toContainText('auto-translated')});
+  await page.locator('.ha-it').nth(1).click();await page.waitForTimeout(400);expect((await spoken(page)).length).toBe(0)});
 }

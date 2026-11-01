@@ -1,5 +1,7 @@
 // Listen to a hadith with the voices already on the phone (speechSynthesis). Nothing is downloaded and nothing is claimed unless the device really starts speaking.
 import{codeOf,bcpOf}from'./hadith-lang.js';
+import{ttsLangOk,stripArabic,utteranceOk,install as guardTTS}from'./tts-guard.js';
+guardTTS();
 const SS=()=>globalThis.speechSynthesis||null,UT=()=>globalThis.SpeechSynthesisUtterance||null;
 export const supported=()=>!!(SS()&&UT());
 /** Voices load asynchronously on iOS and Chrome: wait for them (up to `ms`) instead of trusting the first, often empty, list. */
@@ -14,8 +16,8 @@ const NOVELTY=/\b(novelty|bad news|bahh|bells|boing|bubbles|cellos|deranged|good
 const GOOD=/enhanced|premium|siri|neural|natural|online|wavenet/i;
 /** Best installed voice for a language code ("eng", "en", "urd"...), or null. Prefers voices that work offline, then higher-quality ones. */
 export function pickVoice(voices,lang){
- const want=codeOf(lang);if(!want)return null;
- const c=(voices||[]).filter(v=>codeOf(v.lang)===want&&!NOVELTY.test(v.name||''));
+ const want=codeOf(lang);if(!want||!ttsLangOk(lang)||!ttsLangOk(want))return null;
+ const c=(voices||[]).filter(v=>codeOf(v.lang)===want&&ttsLangOk(v.lang)&&!NOVELTY.test(v.name||''));
  if(!c.length)return null;
  const sc=v=>(v.localService?4:0)+(GOOD.test(v.name||'')?3:0)+(v.default?1:0)-(/compact/i.test(v.name||'')?1:0);
  const best=[...c].sort((a,b)=>sc(b)-sc(a))[0];
@@ -49,7 +51,8 @@ function playFile(my,c){const a=A();if(!a){fallback(my,c);return}
  if(a.dataset?.src!==c.url||!c.pos){a.src=c.url;if(a.dataset)a.dataset.src=c.url}
  rt();const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(my!==gen)return;if(e&&e.name==='NotAllowedError'){fail(my,'error');return}fallback(my,c)})}
 // File missing or offline: speak with the device voice if there is one.
-function fallback(my,c){if(my!==gen)return;c.url='';if(c.voice&&supported())say();else fail(my,'error')}
+// Never for Arabic-script languages: Urdu is recorded audio only, Arabic is never spoken by the device.
+function fallback(my,c){if(my!==gen)return;c.url='';if(c.voice&&supported()&&ttsLangOk(c.lang)&&c.chunks.length)say();else fail(my,'error')}
 const stopFile=()=>{if(el){try{el.pause()}catch{/* ignore */}}};
 // ---- one player ----
 let cur=null,gen=0,wd=null,listeners=new Set();
@@ -59,9 +62,12 @@ export const info=()=>cur?{id:cur.id,state:cur.state,error:cur.error||''}:{id:nu
 const WDMS=()=>(globalThis.window?.__hdWd)??5000;
 function say(){
  const my=gen,c=cur;if(!c)return;
- const s=SS(),U=UT();c.state='starting';emit();
+ const s=SS(),U=UT();if(!ttsLangOk(c.lang)||!c.voice||!ttsLangOk(c.voice.lang)){fail(my,'error');return}
+ const text=stripArabic(c.chunks[c.i]);if(!text){c.i++;if(c.i<c.chunks.length)say();else{const d=c.onEnd;cur=null;emit();d?.()}return}
+ c.state='starting';emit();
  try{s.cancel()}catch{/* ignore */}
- const u=new U(c.chunks[c.i]);u.lang=c.voice.lang||bcpOf(c.lang);u.voice=c.voice;u.rate=c.rate;u.volume=1;
+ const u=new U(text);u.lang=c.voice.lang||bcpOf(c.lang);u.voice=c.voice;u.rate=c.rate;u.volume=1;
+ if(!utteranceOk(u)){fail(my,'error');return}
  u.onstart=()=>{if(my!==gen)return;clearTimeout(wd);c.state='playing';emit()};
  u.onend=()=>{if(my!==gen)return;clearTimeout(wd);c.i++;if(c.i<c.chunks.length)say();else{const d=c.onEnd;cur=null;emit();d?.()}};
  u.onerror=e=>{if(my!==gen)return;if(e&&(e.error==='canceled'||e.error==='interrupted'))return;fail(my,'error')};
@@ -72,8 +78,8 @@ const errL=new Set();const errEmit=(w,id)=>{for(const f of errL)try{f(w,id)}catc
 export const onError=f=>{errL.add(f);return()=>errL.delete(f)};
 /** Starts speaking. `id` names what is playing (a card id); `onEnd` runs when the whole text finished. State becomes 'playing' only after the device actually starts. */
 export function play({id,text,lang,voice,rate=1,onEnd,url=''}){
- stop();if(!url&&(!supported()||!voice))return false;const chunks=splitText(text);if(!chunks.length&&!url)return false;
- gen++;cur={id,chunks,i:0,voice,lang,rate,onEnd,url,state:'starting'};
+ stop();const tts=ttsLangOk(lang)&&!!voice&&ttsLangOk(voice.lang);if(!url&&(!supported()||!tts))return false;const chunks=tts?splitText(stripArabic(text)):[];if(!chunks.length&&!url)return false;
+ gen++;cur={id,chunks,i:0,voice:tts?voice:null,lang,rate,onEnd,url,state:'starting'};
  try{dispatchEvent(new CustomEvent('qs:audio',{detail:'hadith'}))}catch{/* ignore */}
  if(url){if(el){el.removeAttribute('src');if(el.dataset)delete el.dataset.src}playFile(gen,cur)}else say();return true}
 export function pause(){if(!cur||cur.state==='paused')return;gen++;clearTimeout(wd);if(cur.url){stopFile();cur.pos=1}else{try{SS().cancel()}catch{/* ignore */}}cur.state='paused';emit()}

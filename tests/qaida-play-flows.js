@@ -34,7 +34,7 @@ export function qaidaPlayFlows(test,expect){
  test('Pause holds the lesson, Resume carries on, Stop ends it and clears the highlight',async({page})=>{
   await page.addInitScript(()=>{window.__qDelay=150});
   await open(page,'/qaida/m/m1');await page.click('#qPlPlay');await expect.poll(async()=>(await plays(page)).length).toBeGreaterThan(1);
-  await page.click('#qPlPause');await expect(page.locator('#qPlPause')).toContainText(/Resume/);
+  await page.click('#qPlPause');await expect(page.locator('#qPlPause')).toHaveAttribute('aria-label',/Resume/);
   await page.waitForTimeout(400);const n=(await plays(page)).length;await page.waitForTimeout(700);expect((await plays(page)).length).toBe(n);
   await page.click('#qPlPause');await expect.poll(async()=>(await plays(page)).length).toBeGreaterThan(n);
   await page.click('#qPlStop');await expect(page.locator('.q-play')).toHaveCount(0);await expect(page.locator('#qPlMsg')).toContainText('Stopped');

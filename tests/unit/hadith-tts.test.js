@@ -7,7 +7,7 @@ describe('splitText',()=>{
 });
 describe('pickVoice',()=>{
  const vs=[V('Compact','en-GB',{localService:true}),V('Samantha Enhanced','en_US',{localService:true}),V('Google US English','en-US',{localService:false}),V('Bad News','en-US'),V('Majed','ar-SA'),V('Plain Arabic','ar-EG'),V('Imran','ur-PK'),V('Android','eng-USA')];
- it('prefers offline, higher-quality voices and ignores novelty voices',()=>{expect(H.pickVoice(vs,'eng').name).toBe('Samantha Enhanced');expect(H.pickVoice(vs,'urd').name).toBe('Imran')});
+ it('prefers offline, higher-quality voices and ignores novelty voices',()=>{expect(H.pickVoice(vs,'eng').name).toBe('Samantha Enhanced');expect(H.pickVoice(vs,'urd')).toBeNull()});
  it('returns null when no voice exists for the language',()=>{expect(H.pickVoice(vs,'tam')).toBeNull();expect(H.pickVoice([],'eng')).toBeNull();expect(H.pickVoice(vs,'nope')).toBeNull()});
  it('matches three-letter and underscore tags',()=>{expect(H.pickVoice([V('x','eng-USA')],'eng')).toBeTruthy();expect(H.pickVoice([V('x','in_ID')],'ind')).toBeTruthy()});
 });

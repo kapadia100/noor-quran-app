@@ -1,6 +1,7 @@
-import './fonts.css';import './style.css';import './sakina.css';
+import './tts-guard.js';import './fonts.css';import './style.css';import './sakina.css';
 import{langName,edLang,orderLangs,langRank}from './hadith-lang.js';
 import*as HL from './hadith-listen.js';
+import*as MP from './miniplayer.js';
 import*as HA from './hadith-audio.js';
 import*as PK from './pickers.js';
 import * as PR from './prayer.js';
@@ -156,7 +157,7 @@ const isWhole=w=>w&&S.amode==='ar';
 function setClip(){const c=cur.urls[cur.i][cur.part];audio.src=cur.altOn?c.alt:c.u}
 const surahUrl=(s,br)=>`https://cdn.islamic.network/quran/audio-surah/${br}/${S.reciter}/${s}.mp3`;
 async function surahName(s){try{return (await surahs())[s-1].englishName}catch{return 'Surah '+s}}
-function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;{const b=$('#pPlay'),k=audio.paused?'play':'pause';if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=k==='play'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.6v12.8a1.1 1.1 0 0 0 1.68.93l10.05-6.4a1.1 1.1 0 0 0 0-1.86L10.18 4.67A1.1 1.1 0 0 0 8.5 5.6z"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.4"/><rect x="13.5" y="5" width="4" height="14" rx="1.4"/></svg>'}}$('#pPlay').setAttribute('aria-label',audio.paused?'Play':'Pause');
+function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;MP.setPlaying($('#pPlay'),!audio.paused,{play:'Play',pause:'Pause'});
  $('#pInfo').textContent=cur.clip?cur.name:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`+(hifzCfg&&hifzPos?` · 🔁 ${hifzPos.c+1}/${hifzCfg.each}${hifzCfg.range>1?' · R'+(hifzPos.r+1)+'/'+hifzCfg.range:''}`:'');markPlaying()}
 function markPlaying(){queueMicrotask(glide);document.querySelectorAll('.ayah.playing').forEach(e=>e.classList.remove('playing'));PH.clearWords();if(!cur||cur.whole)return;
  if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;window.__ensureAyah?.(cur.i+1);const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)requestAnimationFrame(()=>FW.follow(el))}}
@@ -380,7 +381,8 @@ async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Pro
  $('#s_size').oninput=e=>{S.size=+e.target.value;save();applyUI()};$('#s_dark').onchange=e=>{S.dark=e.target.checked;save();applyUI()};[['cont','continuous'],['next','autoNext'],['sa','surahAudio']].forEach(([id,k])=>$('#s_'+id).onchange=e=>{S[k]=e.target.checked;save()})}
 
 // Each navigation renders into a fresh container, so a slow, stale render (e.g. a surah still loading) can never overwrite the newer screen.
-async function route(){HL.leave();HA.leave();if(window.__rq)F.ruqyahLeave();if(window.__jz)F.janazahLeave();$('#sheet').hidden=true;try{GC.route(location.hash.replace(/^#\/?/,'').split('/'))}catch{/* analytics never breaks the app */}document.body.classList.remove('is-home','q-floating');const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
+async function route(){// iOS WebKit fires no focusout when the focused field is removed with the old page, so 'kb' (keyboard open: hides nav + player) stuck forever. A new page never has the keyboard open.
+ try{const a=document.activeElement;if(a&&a!==document.body)a.blur?.()}catch{/* ignore */}document.body.classList.remove('kb');HL.leave();HA.leave();if(window.__rq)F.ruqyahLeave();if(window.__jz)F.janazahLeave();$('#sheet').hidden=true;try{GC.route(location.hash.replace(/^#\/?/,'').split('/'))}catch{/* analytics never breaks the app */}document.body.classList.remove('is-home','q-floating','mp-alt');const v=app=document.createElement('div');$('#app').replaceChildren(v);const p=location.hash.replace(/^#\/?/,'').split('/').map(decodeURIComponent);
  $('#back').style.visibility=p[0]?'visible':'hidden';
  const sec={hsearch:'hadith',haudio:'hadith',surah:'quran',juz:'quran',mushaf:'quran',search:'quran',bookmarks:'quran',notes:'quran',khatam:'quran',hifz:'quran',hifztest:'more',recite:'quran',progress:'more',qaida:'more',dict:'more',ruqyah:'more',kalimas:'more',janazah:'more',prayer:'ibadat',qibla:'ibadat',tracker:'ibadat',ramadan:'ibadat',calendar:'ibadat',tasbeeh:'ibadat',duas:'ibadat',zakat:'ibadat',mosques:'ibadat',names:'ibadat'}[p[0]]??p[0];if(sec!==PREV_SEC||window.__navTop)toTop();window.__navTop=false;PREV_SEC=sec;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
  const FR={kalimas:F.kalimas,janazah:F.janazah,qaida:()=>F.qaida(p[1],p[2]),quran:()=>home(),more:F.more,ibadat:F.ibadat,help:F.help,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:()=>F.names(p[1]),tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz,hifztest:()=>F.hifzTest(p[1]),progress:F.progress,dict:()=>F.dict(p[1],p[2]),ruqyah:F.ruqyah};
@@ -407,6 +409,7 @@ if('serviceWorker' in navigator&&import.meta.env.PROD){const had=!!navigator.ser
 // iOS keyboard: hide nav while typing so it can't be pushed up by the keyboard
 const isField=e=>e&&e.matches?.('input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select');
 document.addEventListener('focusin',e=>{if(isField(e.target))document.body.classList.add('kb')});document.addEventListener('focusout',()=>setTimeout(()=>{if(!isField(document.activeElement))document.body.classList.remove('kb')},50));
+addEventListener('pageshow',()=>{if(!isField(document.activeElement))document.body.classList.remove('kb')});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!isField(document.activeElement))document.body.classList.remove('kb')});
 export const VERSION=__APP_VERSION__;
 // Debug overlay: tap the version line 5× (More/Settings) to show real viewport numbers the user can screenshot.
 let dbgTaps=0,dbgT;document.addEventListener('click',e=>{if(!e.target.closest('#ver'))return;clearTimeout(dbgT);dbgT=setTimeout(()=>dbgTaps=0,1500);if(++dbgTaps>=5){dbgTaps=0;showDebug()}});

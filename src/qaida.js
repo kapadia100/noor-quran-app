@@ -2,6 +2,7 @@
 // Honest scope: the speech model is Quran-trained and cannot reliably recognise isolated letters or syllables (measured), so letters, vowels and
 // words here are self-rated; checked reading happens on real ayahs in the live tutor.
 import * as D from './qaida-data.js';
+import * as MP from './miniplayer.js';
 import * as M from './madani-data.js';
 import {esc} from './lib.js';
 import {createLive,modelCached,releaseModel} from './qaida-live.js';
@@ -131,7 +132,7 @@ function playBar(les,tt,n){
  if(!lessonHasAudio(les,n))return `<div class="card q-pl q-pl-off" id="qPlOff"><b>🔇 ${tt('No recording for this lesson','اس سبق کی ریکارڈنگ نہیں')}</b><p class="muted">${les.kind==='joined'?tt('This lesson is about letter shapes, so there is nothing to play as a lesson. Tap a row to hear that letter.','یہ سبق حروف کی شکلوں کا ہے، اس لیے چلانے کے لیے کچھ نہیں۔ کسی قطار کو دبا کر وہ حرف سنیں۔'):tt('These phrases are typed for reading only. They have no recording, so Play skips this lesson.','یہ الفاظ صرف پڑھنے کے لیے لکھے ہیں۔ ان کی ریکارڈنگ نہیں، اس لیے پلے اس سبق کو چھوڑ دیتا ہے۔')}</p></div>`
  const chip=(a,t)=>`<button class="rc-chp" ${a} aria-pressed="false">${t}</button>`;
  return `<div class="card q-pl" id="qPl"><div class="q-plh"><b>🔊 ${tt('Listen to this lesson','یہ سبق سنیں')}</b><small class="muted">${tt(`${n} items`,`${n} چیزیں`)}</small></div>
-  <div class="bar q-plb"><button class="btn" id="qPlPlay"><span aria-hidden="true">▶</span> ${tt('Play lesson','سبق چلائیں')}</button><button class="btn ghost" id="qPlPause" hidden>⏸ ${tt('Pause','وقفہ')}</button><button class="btn ghost" id="qPlStop" hidden>■ ${tt('Stop','روکیں')}</button></div>
+  <div class="bar q-plb"><button class="btn" id="qPlPlay"><span aria-hidden="true">▶</span> ${tt('Play lesson','سبق چلائیں')}</button>${MP.miniHTML({root:'qMini',prev:'qPlPrev',play:'qPlPause',next:'qPlNext',info:'qPlInfo',close:'qPlStop'},{prev:tt('Previous','پچھلا'),next:tt('Next','اگلا'),play:tt('Resume','جاری رکھیں'),pause:tt('Pause','وقفہ'),close:tt('Stop','روکیں')})}</div>
   <div class="q-plo" role="group" aria-label="${tt('Playback options','پلے کی ترتیبات')}">${chip('data-rate="0.75"','0.75×')}${chip('data-rate="1"','1×')}${chip('id="qPlRep"','🔁 '+tt('Repeat','دہرائیں'))}${chip('id="qPlCont"',tt('Continue to next lesson','اگلے سبق پر جائیں'))}</div>
   <p class="muted q-plm" id="qPlMsg" aria-live="polite"></p></div><p class="muted q-tapmsg" id="qTapMsg" aria-live="polite"></p>`}
 

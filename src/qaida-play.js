@@ -2,6 +2,7 @@
 // Rules: never two sounds at once; any other audio in the app (the Quran player) takes over and stops this one; playback never starts while
 // the microphone is live; a clip that cannot be loaded is reported as SILENT and is never counted as played.
 import {follow} from './follow.js';
+import * as MP from './miniplayer.js';
 import{polishBlob}from'./clip-polish.js';
 const base=()=>import.meta.env.BASE_URL||'/';
 const BR=typeof window!=='undefined'&&typeof document!=='undefined';
@@ -77,8 +78,9 @@ export function mountPlayer(env){
  const savePref=()=>jset(localStorage,PREF,{rate:P.rate,repeat:P.repeat,cont:P.cont});
  const paintOpts=()=>{bar.querySelectorAll('[data-rate]').forEach(b=>{const on=+b.dataset.rate===P.rate;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
   for(const [id,k] of [['#qPlRep','repeat'],['#qPlCont','cont']]){const b=$(id);b.classList.toggle('on',P[k]);b.setAttribute('aria-pressed',P[k])}};
- const ui=s=>{state=s;$('#qPlPlay').hidden=s!=='idle';$('#qPlPause').hidden=s==='idle';$('#qPlStop').hidden=s==='idle';
-  $('#qPlPause').innerHTML=s==='paused'?`▶ ${tt('Resume','جاری رکھیں')}`:`⏸ ${tt('Pause','وقفہ')}`;bar.classList.toggle('q-playing',s!=='idle');$('.q-plb')?.classList.toggle('q-float',s!=='idle');document.body.classList.toggle('q-floating',s!=='idle')};
+ const ML={play:tt('Resume','جاری رکھیں'),pause:tt('Pause','وقفہ')};
+ const ui=s=>{state=s;$('#qPlPlay').hidden=s!=='idle';const mini=root.querySelector('#qMini');if(mini){mini.hidden=s==='idle';MP.setPlaying($('#qPlPause'),s!=='paused',ML);const inf=root.querySelector('#qPlInfo');if(inf)inf.textContent=tt(les.en,les.ur)}
+  bar.classList.toggle('q-playing',s!=='idle');document.body.classList.toggle('q-floating',s!=='idle');document.body.classList.toggle('mp-alt',s!=='idle')};
  const clearMarks=()=>root.querySelectorAll('.q-play').forEach(x=>x.classList.remove('q-play'));
  const say=(t,silent)=>{msg.innerHTML='';const p=document.createElement('span');p.textContent=t;msg.append(p);if(skipNote){const k=document.createElement('span');k.id='qPlSkip';k.className='q-silents';k.textContent=skipNote;msg.append(document.createElement('br'),k)}
   if(res?.off){const o=document.createElement('span');o.id='qPlOffline';o.className='q-silents';o.textContent=tt(' Some sounds are not saved for offline use yet. Connect once and play the lesson to save them.',' کچھ آوازیں ابھی آف لائن کے لیے محفوظ نہیں۔ ایک بار انٹرنیٹ سے سبق چلا کر محفوظ کریں۔');msg.append(o)}
@@ -122,7 +124,7 @@ export function mountPlayer(env){
  P.stop=()=>{if(state==='idle')return;run++;stop();clearMarks();ui('idle');say(tt('Stopped.','روک دیا۔'),res?.silent);mediaOff()};
  P.pause=()=>{if(state==='playing'){pause();ui('paused');say(tt('Paused.','وقفہ۔'),res?.silent);media(tt(les.en,les.ur))}else if(state==='paused'){resume();ui('playing');say(tt(`Playing ${idx+1} of ${list().length}`,`${list().length} میں سے ${idx+1} چل رہا ہے`),res?.silent)}};
  P.dispose=()=>{run++;if(state!=='idle'){stop();clearMarks();ui('idle')}mediaOff();if(cur===P)cur=null};
- $('#qPlPlay').onclick=()=>{unlock();go(0)};$('#qPlPause').onclick=()=>P.pause();$('#qPlStop').onclick=()=>P.stop();
+ $('#qPlPlay').onclick=()=>{unlock();go(0)};$('#qPlPause').onclick=()=>P.pause();$('#qPlStop').onclick=()=>P.stop();$('#qPlPrev').onclick=()=>seek(-1);$('#qPlNext').onclick=()=>seek(1);
  bar.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>{P.rate=+b.dataset.rate;setRate(P.rate);savePref();paintOpts()});
  $('#qPlRep').onclick=()=>{P.repeat=!P.repeat;if(P.repeat)P.cont=false;savePref();paintOpts()};
  $('#qPlCont').onclick=()=>{P.cont=!P.cont;if(P.cont)P.repeat=false;savePref();paintOpts()};

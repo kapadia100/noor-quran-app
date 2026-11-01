@@ -3,6 +3,7 @@
 import*as H from'./hadith-tts.js';
 const TX={en:{title:'Hadith Audio',lang:'Translation language',book:'Book',chapter:'Chapter',num:'Hadith number',go:'Go',play:'Play',pause:'Pause',resume:'Resume',stop:'Stop',next:'Next',prev:'Previous',cont:'Play through the whole chapter',speed:'Speed',
   intro:'Pick a language, a book and a chapter, or jump to a hadith number, then press Play. This page reads the translation. To hear the Arabic, open a hadith and pick Arabic.',
+  noRec:'Urdu is played from recordings only, and they could not be reached. Check your connection and open this page again.',
   noVoice:l=>`No ${l} voice is installed on this device, so it cannot be played. Add one in your phone's speech or language settings, then open this page again.`,
   silent:'Nothing played: your device did not speak. Check the volume and the silent switch.',
   noTr:l=>`No ${l} translation for this hadith`,skipped:(n,l)=>`${n} hadith${n===1?'':'s'} in this chapter ${n===1?'has':'have'} no ${l} translation and ${n===1?'is':'are'} skipped.`,
@@ -10,6 +11,7 @@ const TX={en:{title:'Hadith Audio',lang:'Translation language',book:'Book',chapt
   autoLbl:'Auto-translated from English',autoNow:'Playing an auto-translated Urdu text (machine translation from English).',done:'End of the chapter.',loading:'Loading…',err:'Could not load. Check your connection.',nowOf:(a,b)=>`${a} of ${b}`,empty:'This chapter has no hadith with a translation in this language.',hadith:'Hadith',noneTr:'No translation to play'},
  ur:{title:'حدیث آڈیو',lang:'ترجمے کی زبان',book:'کتاب',chapter:'باب',num:'حدیث نمبر',go:'جائیں',play:'سنیں',pause:'وقفہ',resume:'جاری رکھیں',stop:'بند',next:'اگلی',prev:'پچھلی',cont:'پورا باب مسلسل سنیں',speed:'رفتار',
   intro:'زبان، کتاب اور باب چنیں، یا حدیث نمبر پر جائیں، پھر سنیں دبائیں۔ یہاں ترجمہ پڑھا جاتا ہے۔ عربی سننے کے لیے کوئی حدیث کھول کر عربی چنیں۔',
+  noRec:'اردو صرف ریکارڈ شدہ آڈیو سے چلتی ہے، جو اس وقت دستیاب نہیں۔ انٹرنیٹ دیکھ کر صفحہ دوبارہ کھولیں۔',
   noVoice:l=>`اس آلے پر ${l} کی آواز موجود نہیں، اس لیے چلانا ممکن نہیں۔ اپنے فون کی اسپیچ یا زبان کی ترتیبات میں آواز شامل کریں، پھر یہ صفحہ دوبارہ کھولیں۔`,
   silent:'آواز نہیں چلی: آپ کے آلے نے آواز نہیں دی۔ والیوم اور سائلنٹ سوئچ دیکھیں۔',
   noTr:l=>`اس حدیث کا ${l} ترجمہ موجود نہیں`,skipped:(n,l)=>`اس باب کی ${n} احادیث کا ${l} ترجمہ موجود نہیں، انہیں چھوڑ دیا جائے گا۔`,
@@ -108,7 +110,8 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){H.load
   if(k<0){msg(t.notFound(raw));return}
   S.idx=k;if(!S.items[k].text){msg(t.missingJump(raw,lname(S.lang)));const n=nextOk(k,1);if(n>=0)S.idx=n}paintList();scroll(S.idx)};
  const needVoice=()=>{voice=H.supported()?H.pickVoice(voices,S.lang):null;
-  if((!H.supported()||!voice)&&!(S.lang==='urd'&&H.audioBase()))msg(t.noVoice(lname(S.lang)));else if(S.msg===t.noVoice(lname(S.lang)))msg('')};
+  const nm=S.lang==='urd'?t.noRec:t.noVoice(lname(S.lang));
+  if((!H.supported()||!voice)&&!(S.lang==='urd'&&H.audioBase()))msg(nm);else if(S.msg===nm)msg('')};
  const setLang=async l=>{S.lang=l;savePref({...pref(),lang:l});
   root.querySelectorAll('[data-lang]').forEach(b=>{const on=b.dataset.lang===l;b.classList.toggle('on',on);b.classList.toggle('ghost',!on);b.setAttribute('aria-checked',on)});
   const pb=S.book;if(!has(S.book,l))S.book=books.find(k=>has(k,l))||S.book;if(S.book!==pb)S.sec='';
