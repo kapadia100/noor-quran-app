@@ -2,6 +2,7 @@
 // A small speech model runs on-device in a Web Worker and is re-run every ~250 ms on the last few seconds of audio;
 // the tracker (recite-live.js) highlights each expected word the moment it is heard. Audio never leaves the phone.
 import {norm} from './recite-core.js';
+import * as MIC from './mic.js';
 import {Tracker,GOP_CFG} from './recite-live.js';
 import * as PG from './progress.js';
 import * as TJ from './tj-rules.js';
@@ -99,11 +100,13 @@ function paint(){if(!st||!panel||st.drill)return;if(st.mode==='hifz')return hzPa
 async function startMic(){if(st.listening)return;st.ctx.event?.();unlockAudio();
  if(window.__reciteFake){st.listening=true;armStuck(window.__stuckFirst??1500);micUI();return}
  if(!navigator.mediaDevices?.getUserMedia){chip('warn',L('This browser cannot use the microphone here. Open the app directly in Safari or Chrome (not inside another app).','یہاں یہ براؤزر مائیک استعمال نہیں کر سکتا۔ ایپ کو براہِ راست Safari یا Chrome میں کھولیں (کسی اور ایپ کے اندر نہیں)۔'));return}
- let stream;const gum=a=>navigator.mediaDevices.getUserMedia({audio:a});
+ const claim=MIC.claim('recite',()=>{if(!st)return;if(document.hidden&&st.listening)onVis();else stopMic()});let stream;const gum=a=>MIC.getMic(claim,a);
  try{try{stream=await gum({echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1})}catch(e){if(e&&e.name==='OverconstrainedError')stream=await gum(true);else throw e}}
- catch(e){const n=e&&e.name;chip('warn',n==='NotFoundError'||n==='DevicesNotFoundError'?L('No microphone found on this device.','اس ڈیوائس پر مائیک نہیں ملا۔'):n==='NotReadableError'||n==='TrackStartError'?L('The microphone is busy — close other apps or calls that use it, then tap the mic again.','مائیک مصروف ہے — اسے استعمال کرنے والی دوسری ایپس یا کالز بند کریں، پھر دوبارہ مائیک دبائیں۔'):L('Microphone permission is needed. On iPhone: tap the aA button in Safari › Website Settings › Microphone › Allow (or Settings › Safari › Microphone). Then tap the mic again.','مائیک کی اجازت درکار ہے۔ آئی فون پر: Safari میں aA › ویب سائٹ سیٹنگز › مائیک › اجازت دیں (یا Settings › Safari › Microphone)۔ پھر دوبارہ مائیک دبائیں۔'));return}
- if(!st.vs){try{await ensureVad()}catch{/* fallback: level gate */}if(!st)return;if(!st.vs)st.vs=newVadStream()}
- const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();await ac.resume().catch(()=>{});
+ catch(e){const n=e&&e.name;chip('warn',n==='NotFoundError'||n==='DevicesNotFoundError'?L('No microphone found on this device.','اس ڈیوائس پر مائیک نہیں ملا۔'):n==='NotReadableError'||n==='TrackStartError'?L('The microphone is busy — close other apps or calls that use it, then tap the mic again.','مائیک مصروف ہے — اسے استعمال کرنے والی دوسری ایپس یا کالز بند کریں، پھر دوبارہ مائیک دبائیں۔'):L('Microphone permission is needed. On iPhone: tap the aA button in Safari › Website Settings › Microphone › Allow (or Settings › Safari › Microphone). Then tap the mic again.','مائیک کی اجازت درکار ہے۔ آئی فون پر: Safari میں aA › ویب سائٹ سیٹنگز › مائیک › اجازت دیں (یا Settings › Safari › Microphone)۔ پھر دوبارہ مائیک دبائیں۔'));MIC.release('recite');return}
+ if(!stream||!st||!claim.alive){MIC.release('recite');return}
+ if(!st.vs){try{await ensureVad()}catch{/* fallback: level gate */}if(!st||!claim.alive){MIC.release('recite');return}if(!st.vs)st.vs=newVadStream()}
+ const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();MIC.addCtx(claim,ac);await ac.resume().catch(()=>{});
+ if(!st||!claim.alive){MIC.release('recite');return}
  const src=ac.createMediaStreamSource(stream),proc=ac.createScriptProcessor(4096,1,1);const rs=new Resampler(ac.sampleRate,SR),cond=new Conditioner();
  st.mic={stream,ac,src,proc};
  ac.onstatechange=()=>{if(st&&st.mic&&st.mic.ac===ac&&ac.state!=='running'&&st.listening){stopMic();chip('warn',L('The microphone was interrupted (a call or another app). Tap the mic to continue.','مائیک رک گیا (کال یا کوئی اور ایپ)۔ جاری رکھنے کے لیے مائیک دبائیں۔'))}};
@@ -111,7 +114,7 @@ async function startMic(){if(st.listening)return;st.ctx.event?.();unlockAudio();
  proc.onaudioprocess=e=>{if(!st||!st.listening)return;ingest(cond.process(rs.push(e.inputBuffer.getChannelData(0))))};
  src.connect(proc);proc.connect(ac.destination);st.listening=true;armStuck(1500);micUI();
  try{navigator.wakeLock?.request('screen').then(l=>{if(st&&st.listening)st.wl=l;else l.release()}).catch(()=>{})}catch{/* optional */}}
-function stopMic(){if(!st)return;try{st.wl?.release()}catch{/* ignore */}st.wl=null;if(st.mic){try{st.mic.proc.disconnect();st.mic.src.disconnect();st.mic.stream.getTracks().forEach(t=>t.stop());st.mic.ac.close()}catch{/* ignore */}st.mic=null}
+function stopMic(){if(!st)return;try{st.wl?.release()}catch{/* ignore */}st.wl=null;if(st.mic){try{st.mic.proc.disconnect();st.mic.src.disconnect();st.mic.stream.getTracks().forEach(t=>t.stop());st.mic.ac.close().catch(()=>{})}catch{/* ignore */}st.mic=null}MIC.release('recite');
  st.listening=false;st.lvl=0;if(panel){micUI();paint()}}
 function micUI(){const b=$('#rcMic');b.classList.toggle('on',st.listening);b.querySelector('span').textContent=st.listening?L('Stop','روکیں'):L('Start','شروع');b.setAttribute('aria-pressed',st.listening);
  if(st.listening)chip('listen',L('Listening — start reciting','سن رہا ہے — پڑھنا شروع کریں'));else if(ready)chip('ready',L('Paused — tap the mic to continue','رکا ہوا — جاری رکھنے کے لیے مائیک دبائیں'));paint()}

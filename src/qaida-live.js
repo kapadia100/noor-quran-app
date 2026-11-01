@@ -10,6 +10,7 @@ import {ensureVad} from './vad.js';
 export {ensureVad};
 import {gradeClosed,CLOSED} from './qaida-grade.js';
 import {Resampler,Conditioner} from './audio-front.js';
+import * as MIC from './mic.js';
 const SR=16000,MODEL_BASE='https://kapadia100.github.io/noor-quran-app/models/';
 let worker=null,ready=false,loadP=null;const pending=new Map();let jobId=0;
 const base=()=>import.meta.env.BASE_URL||'/';
@@ -76,13 +77,17 @@ export function createLive(o){
    if(!navigator.mediaDevices?.getUserMedia)return{ok:false,err:'nomic'};
    // iOS Safari only unlocks audio inside the tap: create + resume the AudioContext first, before any await (model download, permission prompt).
    const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();ac.resume?.().catch(()=>{});
-   const fail=err=>{try{ac.close()}catch{/* ignore */}return{ok:false,err}};
+   const claim=MIC.claim('qaida',()=>{if(!S.stopped){S.mic=null;api.stop();o.onStatus?.('interrupted')}});MIC.addCtx(claim,ac);
+   const fail=err=>{try{ac.close().catch(()=>{})}catch{/* ignore */}MIC.release('qaida');return{ok:false,err}};
    try{await ensureVad();S.pace=mkPace()}catch{return fail('vad')}
    if(check)try{await ensureModel(o.onProgress)}catch{return fail('model')}
-   let stream;const gum=a=>navigator.mediaDevices.getUserMedia({audio:a});
+   let stream;const gum=a=>MIC.getMic(claim,a);
+   if(S.stopped)return fail('stopped');
    try{try{stream=await gum({echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1})}catch(e){if(e&&e.name==='OverconstrainedError')stream=await gum(true);else throw e}}
    catch(e){const n=e&&e.name;return fail(n==='NotFoundError'||n==='DevicesNotFoundError'?'nomic':n==='NotReadableError'||n==='TrackStartError'?'busy':'denied')}
+   if(!stream||S.stopped||!claim.alive)return fail('stopped');
    await ac.resume().catch(()=>{});
+   if(S.stopped||!claim.alive)return fail('stopped');
    if(ac.state!=='running'){stream.getTracks().forEach(t=>t.stop());return fail('suspended')}
    const src=ac.createMediaStreamSource(stream),proc=ac.createScriptProcessor(4096,1,1);const rs=new Resampler(ac.sampleRate,SR),hp=new Conditioner({agc:false}),cond=new Conditioner();
    S.mic={stream,ac,src,proc};
@@ -93,7 +98,7 @@ export function createLive(o){
    try{navigator.wakeLock?.request('screen').then(l=>{if(S.stopped)l.release();else S.wl=l}).catch(()=>{})}catch{/* optional */}
    return{ok:true}},
   stop(){if(S.stopped)return;S.stopped=true;try{S.wl?.release()}catch{/* ignore */}
-   if(S.mic){try{S.mic.proc.disconnect();S.mic.src.disconnect();S.mic.stream.getTracks().forEach(t=>t.stop());S.mic.ac.close()}catch{/* ignore */}S.mic=null}S.fake=false;o.onStatus?.('stopped')},
+   if(S.mic){try{S.mic.proc.disconnect();S.mic.src.disconnect();S.mic.stream.getTracks().forEach(t=>t.stop());S.mic.ac.close().catch(()=>{})}catch{/* ignore */}S.mic=null}MIC.release('qaida');S.fake=false;o.onStatus?.('stopped')},
   /** Test hooks (webdriver): simulate one spoken burst / one decoded result without audio. */
   async _burst(){await S.fakeReady;if(!S.fake)return;S.pace.cnt++;S.bursts.push({t0:S.t});setPos();finishIfDone()},
   async _grade(i,ok){await S.fakeReady;if(!S.fake)return;S.grades[i]=ok?'ok':'nc';o.onGrade?.(i,ok?'ok':'nc');finishIfDone()}
