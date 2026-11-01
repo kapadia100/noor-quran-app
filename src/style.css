@@ -708,3 +708,5 @@ article.hd.hd-on{outline:2px solid var(--pri);outline-offset:2px}
 /* t181 share sheet */
 .sh-scope{margin:6px 0 4px}.sh-scope .seg-b{flex:1;padding:9px 6px;border-radius:12px;border:1px solid var(--line,#8884);background:transparent;color:inherit;font:inherit;font-weight:600}.sh-scope .seg-b.on{background:var(--accent,#0f766e);color:#fff;border-color:transparent}
 .sh-imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:10px}.sh-imgs figure{margin:0;text-align:center}.sh-imgs img{width:100%;border-radius:10px;box-shadow:0 4px 14px #0004}.sh-imgs .btn{margin-top:6px;width:100%}#shRk{margin:8px 0}#shRk select{margin-inline-start:6px}
+/* v85: room under the Arabic glyph so descenders (ج ح خ, kasra, kasratan) never touch the name below */
+.q-tile .ar{padding-bottom:.42em}.q-cell .ar{padding-bottom:.8em}
