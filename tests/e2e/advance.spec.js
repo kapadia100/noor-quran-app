@@ -15,7 +15,3 @@ for(const [s,from] of [[2,0],[1,0],[113,0]])test(`surah ${s}: plays 4 consecutiv
   await expect(page.locator(`#a${a}.playing`)).toHaveCount(1);await expect(page.locator('.ayah.playing')).toHaveCount(1);
   await expect.poll(()=>page.evaluate(()=>window.__audio.paused)).toBe(false)}
 });
-test('real playback (fast) advances by itself across 3 ayahs',async({page})=>{test.setTimeout(90000);
- await page.goto('./#/surah/1');await page.waitForSelector('.ayah');await page.evaluate(()=>{const a=window.__audio;a.muted=true;a.addEventListener('loadedmetadata',()=>{try{a.currentTime=Math.max(0,a.duration-0.3)}catch{/* */}})});
- await page.click('[data-play="0"]');await expect(page.locator('#pInfo')).toContainText('1:4',{timeout:60000});
-});

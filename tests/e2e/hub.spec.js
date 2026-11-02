@@ -49,6 +49,7 @@ test('more: Urdu + dark hub has no overflow and shows Urdu labels',async({page})
  const r=await page.locator('#moreRecite').boundingBox();const vw=page.viewportSize().width;expect(r.x).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(vw)});
 
 test('home: quick-button row is gone; prayer card shows next prayer, countdown, 6 rows with one current',async({page})=>{
+ await page.clock.install({time:new Date('2026-11-02T12:00:00+05:00')}); // between Dhuhr and Asr (Fajr→sunrise shows the current-prayer layout instead)
  await page.goto('./');await expect(page.locator('.pcard')).toBeVisible();
  await expect(page.locator('.quick')).toHaveCount(0);
  await expect(page.locator('.pcard .pc-nx b')).not.toBeEmpty();
@@ -61,6 +62,7 @@ test('home: quick-button row is gone; prayer card shows next prayer, countdown, 
   expect(await page.locator('.hero a[href="#/bookmarks"]').count()).toBe(0); // search bar + heart removed from Home (v3.7.11)
  await page.click('.pcard');expect(page.url()).toContain('#/prayer')});
 test('home: prayer card in Urdu + dark stays inside the screen',async({page})=>{
+ await page.clock.install({time:new Date('2026-11-02T12:00:00+05:00')});
  await page.addInitScript(()=>{if(!sessionStorage.getItem('qsS')){sessionStorage.setItem('qsS','1');localStorage.setItem('settings',JSON.stringify({ui:'ur',dark:true}))}});
  await page.goto('./');await expect(page.locator('.pcard')).toContainText('اگلی نماز');
  const cells=await page.locator('.pcard .pc-i').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return [r.left,r.right]}));
