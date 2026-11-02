@@ -3,6 +3,7 @@
 // the microphone is live; a clip that cannot be loaded is reported as SILENT and is never counted as played.
 import {follow} from './follow.js';
 import * as MP from './miniplayer.js';
+import {silence} from './bg-audio.js';
 import{polishBlob}from'./clip-polish.js';
 const base=()=>import.meta.env.BASE_URL||'/';
 const BR=typeof window!=='undefined'&&typeof document!=='undefined';
@@ -45,8 +46,17 @@ export async function one(u,my){
    a.addEventListener('ended',ok);a.addEventListener('error',bad);a.src=s;a.playbackRate=rate;a.play().catch(bad)});
   return my===gen}
  catch{inClip=false;if(my!==gen)return false;fail={u,why:navigator.onLine===false?'offline':'missing'};return false}}
+/** The pause between clips. In the foreground a plain timer (unchanged). In the background (phone locked / other app)
+ * timers can be frozen while nothing is sounding, so the same pause is played as silence on the same audio element and
+ * the lesson moves on from its 'ended' event — same length, keeps the audio session alive. */
+const sil=new Map();
+export async function gap(ms){if(!BR||WD()||!document.hidden||!(ms>0)||typeof URL==='undefined'||!URL.createObjectURL)return sleep(ms);
+ try{const k=Math.round(ms);let u=sil.get(k);if(!u){u=URL.createObjectURL(new Blob([silence(k)],{type:'audio/wav'}));sil.set(k,u)}
+  const a=elem();await new Promise(res=>{const done=()=>{a.removeEventListener('ended',done);a.removeEventListener('pause',done);a.removeEventListener('error',done);res()};
+   a.addEventListener('ended',done);a.addEventListener('pause',done);a.addEventListener('error',done);a.src=u;a.playbackRate=1;a.play().catch(()=>{done()})})}
+ catch{return sleep(ms)}}
 export const play=u=>one(u,begin());
-export async function playSeq(urls,gap=350){const my=begin();for(let i=0;i<urls.length;i++){if(!await one(urls[i],my))return false;if(i<urls.length-1)await sleep(gap);if(my!==gen)return false}return true}
+export async function playSeq(urls,gap_=350){const my=begin();for(let i=0;i<urls.length;i++){if(!await one(urls[i],my))return false;if(i<urls.length-1)await gap(gap_);if(my!==gen)return false}return true}
 export const playU=u=>u.includes('|')?playSeq(u.split('|')):play(u);
 /** Warm the cache for the next clips while one is playing (no-op for silent/failed ones). */
 export const prefetch=us=>{if(WD())return;for(const u of us)srcOf(u).catch(()=>{})};
@@ -93,7 +103,7 @@ export function mountPlayer(env){
  let idx=0,skip=0;
  const seek=d=>{if(state==='idle')return;if(state==='paused'){resume();ui('playing')}skip=d;stop()}; // jump handled by the run loop (it sees the interruption and restarts at idx+d)
  async function itemRun(x,my){const us=x.dataset.u.split('|').filter(Boolean);if(!us.length)return false;
-  for(const u of us){const ok=await one(u,my);if(my!==gen)return null;if(!ok)return false;await sleep(G(180/P.rate))}return true}
+  for(const u of us){const ok=await one(u,my);if(my!==gen)return null;if(!ok)return false;await gap(G(180/P.rate))}return true}
  async function go(start=0,auto=null){
   if(env.live()){say(tt('Stop live reading first, so the speaker does not get into the microphone.','پہلے لائیو پڑھنا بند کریں، تاکہ اسپیکر کی آواز مائیک میں نہ جائے۔'));return}
   const items=list();if(!items.length)return;
@@ -108,7 +118,7 @@ export function mountPlayer(env){
     const ok=await itemRun(x,my);
     if(mine!==run)return; // another play took over
     if(ok!==null){if(ok){res.played++;x.classList.remove('q-silent')}else{x.classList.add('q-silent');res.silent.push(label(x));x.dataset.silent='1';if(lastFail()?.why==='offline')res.off++}
-     idx++;if(idx<items.length)await sleep(G(380/P.rate));if(mine!==run)return}
+     idx++;if(idx<items.length)await gap(G(380/P.rate));if(mine!==run)return}
     if(my!==gen){ // interrupted: a seek button (previous/next track), or something else took the player
      if(skip){const d=skip;skip=0;idx=Math.max(0,Math.min(items.length-1,idx+(ok===null?d:d-1)));my=begin();continue}
      if(state==='paused')return;

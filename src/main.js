@@ -1,4 +1,5 @@
-import './tts-guard.js';import './fonts.css';import './style.css';import './sakina.css';
+import './tts-guard.js';
+import './bg-audio.js';import './fonts.css';import './style.css';import './sakina.css';
 import{langName,edLang,orderLangs,langRank}from './hadith-lang.js';
 import*as HL from './hadith-listen.js';
 import*as MP from './miniplayer.js';
@@ -148,7 +149,7 @@ function qibla(){setTitle(S.ui==='ur'?'قبلہ فائنڈر':'Qibla Finder');co
 // One persistent <audio> element (required for iOS to keep playing on auto-advance / locked screen),
 // plus a second element only used to preload the next file.
 const audio=new Audio();audio.preload='auto';const pre=new Audio();pre.preload='auto';
-let cur=null,errs=0,oneShot=false;window.__audio=audio;
+let cur=null,errs=0,oneShot=false;window.__audio=audio;window.__cur=()=>cur;
 const arUrls=async s=>(await j(`${API}/surah/${s}/${S.reciter}`)).ayahs.map(a=>a.audio);
 /** Per-ayah clip lists for the current audio mode (Arabic / translation / both). */
 const urlsFor=async s=>{const n=AYAH_COUNTS[s-1];let ar=[];if(S.amode!=='tr'){try{ar=await arUrls(s)}catch(e){if(S.amode==='ar')throw e}}
@@ -159,11 +160,13 @@ const surahUrl=(s,br)=>`https://cdn.islamic.network/quran/audio-surah/${br}/${S.
 async function surahName(s){try{return (await surahs())[s-1].englishName}catch{return 'Surah '+s}}
 function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;MP.setPlaying($('#pPlay'),!audio.paused,{play:'Play',pause:'Pause'});
  $('#pInfo').textContent=cur.clip?cur.name:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`+(hifzCfg&&hifzPos?` · 🔁 ${hifzPos.c+1}/${hifzCfg.each}${hifzCfg.range>1?' · R'+(hifzPos.r+1)+'/'+hifzCfg.range:''}`:'');markPlaying()}
-function markPlaying(){queueMicrotask(glide);document.querySelectorAll('.ayah.playing').forEach(e=>e.classList.remove('playing'));PH.clearWords();if(!cur||cur.whole)return;
- if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;window.__ensureAyah?.(cur.i+1);const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)requestAnimationFrame(()=>FW.follow(el))}}
-function media(){if(!('mediaSession' in navigator)||!cur)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`,artist:S.reciterName||S.reciter,album:'Quran Safar',artwork:[{src:import.meta.env.BASE_URL+'icon-512.png',sizes:'512x512',type:'image/png'}]})}catch{}}
+function markPlaying(){try{markPlaying_()}catch(e){console.warn('highlight',e)}}
+// Visual only (highlight, glide, follow-scroll): never awaited, never throws into the audio path.
+function markPlaying_(){queueMicrotask(()=>{try{glide()}catch{/* visual */}});document.querySelectorAll('.ayah.playing').forEach(e=>e.classList.remove('playing'));PH.clearWords();if(!cur||cur.whole)return;
+ if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return;window.__ensureAyah?.(cur.i+1);const el=document.getElementById('a'+(cur.i+1));if(el){el.classList.add('playing');if(!audio.paused)requestAnimationFrame(()=>{try{FW.follow(el)}catch{/* visual */}})}}
+function media(){if(!('mediaSession' in navigator)||!cur)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`,artist:S.reciterName||S.reciter,album:'Quran Safar',artwork:[{src:import.meta.env.BASE_URL+'icon-192.png',sizes:'192x192',type:'image/png'},{src:import.meta.env.BASE_URL+'icon-512.png',sizes:'512x512',type:'image/png'}]})}catch{}}
 function msHandlers(){if(!('mediaSession' in navigator))return;const ms=navigator.mediaSession,h=(a,f)=>{try{ms.setActionHandler(a,f)}catch{}};
- h('play',()=>{audio.play().catch(()=>{});playerUI()});h('pause',()=>{audio.pause();playerUI()});h('nexttrack',()=>advance(true));h('previoustrack',()=>prev())}
+ h('play',()=>{audio.play().catch(()=>{});playerUI()});h('pause',()=>{audio.pause();playerUI()});h('nexttrack',()=>advance(true));h('previoustrack',()=>prev());h('stop',()=>stop())}
 msHandlers();
 // Word-by-word follow (only where timing data matches the clip: Arabic per-ayah, not the Bismillah, not translation).
 PH.follow(()=>{if(!cur||cur.whole||!cur.urls||!cur.segs)return null;const c=cur.urls[cur.i]?.[cur.part];if(!c||c.tr||c.bas||cur.altOn)return null;
@@ -176,13 +179,19 @@ async function playPos(s,i,whole=S.surahAudio){whole=isWhole(whole);if(!validSur
  else{let urls;try{urls=await urlsFor(s)}catch{toast(t('err'));return stop()}if(!urls[i])return stop();if(hifzCfg&&hifzCfg.s===s)urls=urls.map(c=>c.filter(x=>!x.bas));cur={s,i,name,urls,part:0};setClip();{const c=cur;PH.segmentsFor(S.reciter,s).then(m=>{c.segs=m}).catch(()=>{})}
   const n=nextPos(s,i);if(n&&n.s===s)pre.src=urls[n.i][0].u;else if(n&&S.autoNext)urlsFor(n.s).then(u=>pre.src=u[0][0].u).catch(()=>{})}
  try{await audio.play()}catch(e){if(e.name==='NotAllowedError'){toast('Tap ▶ to start audio')}}playerUI();media()}
+/** Next ayah of the same surah: switch the clip and call play() synchronously inside the 'ended' task (no awaits, so iOS keeps
+ * the audio session and there is no gap); UI/highlight/preload follow afterwards and can never stop playback. */
+function step(i){const c=cur;cur={s:c.s,i,name:c.name,urls:c.urls,segs:c.segs,part:0};errs=0;setClip();
+ audio.play().catch(e=>{if(e?.name==='NotAllowedError')toast('Tap ▶ to start audio')});
+ try{const n=nextPos(c.s,i);if(n&&n.s===c.s&&c.urls[n.i])pre.src=c.urls[n.i][0].u;else if(n&&S.autoNext)urlsFor(n.s).then(u=>pre.src=u[0][0].u).catch(()=>{})}catch{/* preload is optional */}
+ try{playerUI();media()}catch(e){console.warn('player ui',e)}}
 function advance(manual){if(!cur)return;
  if(hifzCfg&&!manual&&!cur.whole&&cur.s===hifzCfg.s){const nx=hifzNextPos();if(!nx){hifzCfg=null;toast(S.ui==='ur'?'حفظ سیشن مکمل':'Hifz session complete ✓');audio.pause();return playerUI()}return playPos(hifzCfg.s,nx-1,false)}if(cur.whole){if(S.autoNext&&cur.s<114||manual)return playPos(cur.s+1,0,true);return stop()}
  if(!S.continuous&&!manual)return playerUI();const n=nextPos(cur.s,cur.i);if(!n)return stop();
- if(n.s!==cur.s){if(!S.autoNext&&!manual)return stop();const viewing=location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)'));playPos(n.s,n.i).then(()=>{if(viewing&&!document.getElementById('recite'))location.hash=`#/surah/${n.s}`})}else playPos(n.s,n.i)}
+ if(n.s!==cur.s){if(!S.autoNext&&!manual)return stop();const viewing=location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)'));playPos(n.s,n.i).then(()=>{if(viewing&&!document.getElementById('recite'))location.hash=`#/surah/${n.s}`})}else if(!cur.whole&&cur.urls?.[n.i])step(n.i);else playPos(n.s,n.i)}
 function prev(){if(!cur)return;if(cur.whole)return playPos(Math.max(1,cur.s-1),0,true);if(cur.i>0)return playPos(cur.s,cur.i-1);if(cur.s>1)playPos(cur.s-1,AYAH_COUNTS[cur.s-2]-1)}
 function stop(){audio.pause();cur=null;hifzCfg=null;playerUI();if('mediaSession' in navigator)navigator.mediaSession.playbackState='none'}
-audio.onended=()=>{if(oneShot){oneShot=false;cur=null;return playerUI()}if(cur&&!cur.whole&&cur.urls&&cur.part+1<cur.urls[cur.i].length){cur.part++;cur.altOn=false;setClip();audio.play().catch(()=>{});return}advance(false)};
+audio.onended=()=>{if(oneShot){oneShot=false;cur=null;return playerUI()}if(cur&&!cur.whole&&cur.urls&&cur.part+1<cur.urls[cur.i].length){cur.part++;cur.altOn=false;setClip();audio.play().catch(()=>{});return}try{advance(false)}catch(e){console.warn('advance',e)}};
 /** Play a single clip (dua / word audio) through the same player. */
 function playUrl(url,label,quiet){hifzCfg=null;oneShot=true;cur={s:0,i:0,name:label||'Audio',whole:true,clip:true,quiet:!!quiet};audio.src=url;audio.play().catch(()=>{});if(!quiet)playerUI()}
 const hifzNextPos=()=>{const p=hifzNext(hifzCfg,hifzPos);hifzPos=p;return p?p.a:null};

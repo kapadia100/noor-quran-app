@@ -1,9 +1,10 @@
 // Central microphone manager. Every feature that records goes through here, so no stream can outlive its feature:
 // the mic is released when the feature stops, and for ALL features on navigation (hashchange/popstate),
 // when the app goes to the background (visibilitychange hidden) and on pagehide. Start again re-acquires.
+import * as BG from './bg-audio.js';
 const owners=new Map();// owner -> {streams:Set, ctxs:Set, onRevoke}
 let installed=false;
-const kill=o=>{for(const s of o.streams){try{s.getTracks().forEach(t=>t.stop())}catch{/* ignore */}}o.streams.clear();
+const kill=o=>{if(o.mics){BG.micOff(o.mics);o.mics=0}for(const s of o.streams){try{s.getTracks().forEach(t=>t.stop())}catch{/* ignore */}}o.streams.clear();
  for(const c of o.ctxs){try{if(c.state!=='closed')c.close().catch(()=>{})}catch{/* ignore */}}o.ctxs.clear()};
 function install(){if(installed||typeof window==='undefined')return;installed=true;
  const all=why=>releaseAll(why);
@@ -15,8 +16,8 @@ export function claim(owner,onRevoke){install();const prev=owners.get(owner);if(
 /** Attach an AudioContext to the claim (closed on release). */
 export function addCtx(o,ac){if(!o.alive){try{ac.close().catch(()=>{})}catch{/* ignore */}return false}o.ctxs.add(ac);return true}
 /** getUserMedia through the manager. Returns null if the claim was released while the permission prompt was open (the stream is stopped at once). */
-export async function getMic(o,audio){const s=await navigator.mediaDevices.getUserMedia({audio});
- if(!o.alive){s.getTracks().forEach(t=>t.stop());return null}o.streams.add(s);return s}
+export async function getMic(o,audio){BG.micOn();let s;try{s=await navigator.mediaDevices.getUserMedia({audio})}catch(e){BG.micOff();throw e}
+ if(!o.alive){s.getTracks().forEach(t=>t.stop());BG.micOff();return null}o.streams.add(s);o.mics=(o.mics||0)+1;return s}
 /** Release one owner's claim (normal stop). */
 export function release(owner){const o=owners.get(owner);if(!o)return;o.alive=false;kill(o);owners.delete(owner)}
 /** Release everything; tells each feature so its UI shows stopped. */

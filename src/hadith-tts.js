@@ -86,4 +86,4 @@ export function pause(){if(!cur||cur.state==='paused')return;gen++;clearTimeout(
 export function resume(){if(!cur||cur.state!=='paused')return;gen++;try{dispatchEvent(new CustomEvent('qs:audio',{detail:'hadith'}))}catch{/* ignore */}if(cur.url)playFile(gen,cur);else say()}
 export function stop(){gen++;clearTimeout(wd);stopFile();const had=!!cur;cur=null;try{SS()?.cancel()}catch{/* ignore */}if(had)emit()}
 export function setRate(r){if(cur)cur.rate=r;if(el&&cur?.url)try{el.defaultPlaybackRate=r;el.playbackRate=r}catch{/* ignore */}}
-if(typeof window!=='undefined'){addEventListener('qs:audio',e=>{if(e.detail!=='hadith')stop()});addEventListener('pagehide',()=>stop())}
+if(typeof window!=='undefined'){addEventListener('qs:audio',e=>{if(e.detail!=='hadith')stop()});addEventListener('pagehide',()=>{if(cur&&!cur.url)stop()})}

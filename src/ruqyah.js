@@ -22,8 +22,8 @@ const arN=n=>(+n).toLocaleString('ar-EG');
 // Same display text as the reader (lib.ayahText): the Bismillah prefix of ayah 1 is matched without diacritics, because the
 // Quran file writes shadda+fatha in the other mark order than BISM, so a plain startsWith never matched and it showed twice.
 export const ayahTxt=(s,a,t)=>s===9?t:ayahText(s,a,t);
-let off=[];const au=new Audio();au.preload='auto';
-export function leave(){au.pause();H.stop();document.body.classList.remove('mp-alt');off.forEach(f=>f());off=[]}
+let off=[];const au=new Audio();au.preload='auto';const pre=new Audio();pre.preload='auto';
+export function leave(){au.pause();pre.removeAttribute('src');H.stop();if(typeof navigator!=='undefined'&&'mediaSession' in navigator&&au.src){try{navigator.mediaSession.metadata=null;for(const a of['play','pause','stop','previoustrack','nexttrack'])navigator.mediaSession.setActionHandler(a,null)}catch{/* ignore */}try{dispatchEvent(new Event('qs:media-restore'))}catch{/* ignore */}}document.body.classList.remove('mp-alt');off.forEach(f=>f());off=[]}
 export async function page(C,tt,ur,I){
  leave();C.setTitle(tt('Ruqyah Shariah','رقیہ شرعیہ'));
  const ML={prev:tt('Previous ayah','پچھلی آیت'),next:tt('Next ayah','اگلی آیت'),play:tt('Play','چلائیں'),pause:tt('Pause','وقفہ'),close:tt('Stop and close','بند کریں')};
@@ -50,15 +50,23 @@ q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))
  const top=q('.rq-top'),mini=q('#rqMini');let topVis=true;
  const mp=()=>{mini.hidden=topVis||st.state==='idle';app.classList.toggle('rq-live',st.state!=='idle');document.body.classList.toggle('mp-alt',st.state!=='idle');MP.setPlaying(q('#rqMP'),st.state!=='paused',ML);q('#rqMS').textContent=q('#rqSt').textContent};
  try{new IntersectionObserver(([e])=>{topVis=e.isIntersecting;mp()}).observe(top)}catch{/* old browsers: no mini player */}
- const end=()=>{st.state='idle';st.i=-1;paint();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
+ const end=()=>{st.state='idle';st.i=-1;paint();mediaOff();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
  const paint0=paint;paint=()=>{paint0();mp()};
  const go=async i=>{if(i>=seq.length){end();return}
   st.i=i;st.state='loading';paint();const e=app.querySelector(`[data-i="${i}"]`);requestAnimationFrame(()=>follow(e));const x=seq[i];
   try{dispatchEvent(new CustomEvent('qs:audio',{detail:'ruqyah'}))}catch{/* ignore */}
   if(x.k==='q'){let u;try{u=(await getUrl(x.s))[x.a-1]}catch{u=null}if(st.i!==i||st.state!=='loading')return;
    if(!u){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔');return}
-   au.src=u;au.play().then(()=>{if(st.i===i&&st.state==='loading'){st.state='playing';paint()}else if(st.i!==i||st.state!=='playing')au.pause()}).catch(()=>{if(st.i===i&&st.state==='loading'){st.state='paused';paint()}})}
+   preNext(i);au.src=u;media(x);au.play().then(()=>{if(st.i===i&&st.state==='loading'){st.state='playing';paint()}else if(st.i!==i||st.state!=='playing')au.pause()}).catch(()=>{if(st.i===i&&st.state==='loading'){st.state='paused';paint()}})}
 };
+ // Lock-screen / headset controls (Media Session) drive the same mini player; the next ayah is preloaded so it starts from 'ended' even in the background.
+ const preNext=async i=>{const n=seq[i+1];if(!n||n.k!=='q')return;try{const v=(await getUrl(n.s))[n.a-1];if(v&&pre.src!==v)pre.src=v}catch{/* optional */}};
+ const MS=()=>typeof navigator!=='undefined'&&'mediaSession' in navigator?navigator.mediaSession:null;
+ const media=x=>{const ms=MS();if(!ms)return;try{ms.metadata=new MediaMetadata({title:`${tt('Ruqyah','رقیہ')} · ${x.s}:${x.a}`,artist:C.S.reciterName||C.S.reciter||'',album:'Quran Safar',artwork:[{src:import.meta.env.BASE_URL+'icon-192.png',sizes:'192x192',type:'image/png'},{src:import.meta.env.BASE_URL+'icon-512.png',sizes:'512x512',type:'image/png'}]});
+  const h=(a,f)=>{try{ms.setActionHandler(a,f)}catch{/* unsupported */}};h('play',()=>{if(st.state==='paused')q('#rqPlay').click();else if(st.state==='playing')au.play().catch(()=>{})});h('pause',()=>{if(st.state==='playing'||st.state==='loading')q('#rqPlay').click()});
+  h('previoustrack',()=>jump(-1));h('nexttrack',()=>jump(1));h('stop',()=>q('#rqMStop').click())}catch{/* ignore */}};
+ const mediaOff=()=>{const ms=MS();if(!ms)return;try{ms.metadata=null;ms.playbackState='none';for(const a of['play','pause','stop','previoustrack','nexttrack'])ms.setActionHandler(a,null)}catch{/* ignore */}try{dispatchEvent(new Event('qs:media-restore'))}catch{/* ignore */}};
+ au.onplay=()=>{const ms=MS();if(ms)try{ms.playbackState='playing'}catch{/* ignore */}};au.onpause=()=>{const ms=MS();if(ms&&st.state!=='idle')try{ms.playbackState='paused'}catch{/* ignore */}};
  au.onended=()=>{if(app.isConnected&&st.state==='playing')go(st.i+1)};
  au.onerror=()=>{if(app.isConnected&&st.state!=='idle'&&au.src){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔')}};
  q('#rqPlay').onclick=()=>{const x=seq[st.i];
@@ -66,7 +74,7 @@ q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))
   else if(st.state==='paused'){if(x?.k==='d')H.resume();else au.play().catch(()=>{});st.state='playing';paint()}
   else go(0)};
  q('#rqMP').onclick=()=>q('#rqPlay').click();
- q('#rqMStop').onclick=()=>{au.pause();H.stop();st.state='idle';st.i=-1;paint()};
+ q('#rqMStop').onclick=()=>{au.pause();H.stop();st.state='idle';st.i=-1;paint();mediaOff()};
  const jump=d=>{if(st.i<0)return;const n=Math.max(0,Math.min(seq.length-1,st.i+d));au.pause();H.stop();go(n)};q('#rqMPrev').onclick=()=>jump(-1);q('#rqMNext').onclick=()=>jump(1);
  const pick=e=>{const el=e.target.closest('[data-i]');if(!el)return;au.pause();H.stop();go(+el.dataset.i)};
  app.addEventListener('click',e=>{if(e.target.closest('.rq-a,.rq-d'))pick(e)});
