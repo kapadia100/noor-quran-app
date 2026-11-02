@@ -10,7 +10,8 @@ test('v3.7.11 Mosque Finder name on the Home card and page heading; Mushaf still
  await page.goto('./#/more');await page.reload();await expect(page.locator('a[href="#/mushaf"]').first()).toBeAttached({timeout:10000});
  await page.goto('./#/mosques');await expect(page.locator('#title')).toContainText('Mosque Finder')});
 test('v3.7.11 header: big live countdown on the same line as the next prayer time, clear of the arch, on a 360px phone',async({page})=>{
- await page.setViewportSize({width:360,height:740});await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./');
+ // fixed mid-morning: the live countdown is hidden in the sunrise window, so the layout check must not depend on the run time
+ await page.clock.install({time:new Date('2026-11-02T10:00:00+05:00')}); await page.setViewportSize({width:360,height:740});await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./');
  const cd=page.locator('.pc-nx .cd');await expect(cd).toHaveText(/\d+:\d\d:\d\d/);const t0=await cd.textContent();
  const [b,at,c,arch]=await Promise.all(['.pc-nx b','.pc-at','.pc-nx .cd','.pc-arch'].map(s=>page.locator(s).boundingBox()));
  expect(c.height).toBeGreaterThan(at.height);expect(Math.abs((c.y+c.height)-(at.y+at.height))).toBeLessThan(12);expect(c.x).toBeGreaterThan(at.x+at.width);

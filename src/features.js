@@ -90,7 +90,8 @@ export const janazahLeave=()=>import('./janazah.js').then(m=>m.leave()).catch(()
 export const ruqyahLeave=()=>import('./ruqyah.js').then(m=>m.leave()).catch(()=>{});
 export const dict=(a,b)=>import('./dict.js').then(m=>m.dictPage(C,tt,ur,I,a,b));
 export const dictRank=(s,a,w)=>import('./dict.js').then(m=>m.rankOf(C,s,a,w));
-export const qaida=(a,b)=>import('./qaida.js').then(m=>m.qaidaPage(C,tt,ur,I,a,b));
+// The module loads async the first time: if the user has already moved to another route, don't render (or rewrite history) for the stale one.
+export const qaida=(a,b)=>{const h=location.hash;return import('./qaida.js').then(m=>{if(location.hash!==h)return;return m.qaidaPage(C,tt,ur,I,a,b)})};
 // v3.7.8 More tiles: layout A = list of big rows (default), B = card grid. localStorage moreLayout='B' switches (mockups).
 const moreTiles=list=>{if(localStorage.getItem('moreLayout')==='B')return grid(list.map((x,i)=>i<6?[...x.slice(0,4),'L']:x.slice(0,4)));
  return `<div class="mlist" id="moreList">${list.map(([h,i,e,u])=>`<a class="mrow" href="${h}"><span class="fi">${I.icon(i)}</span><b>${tt(e,u)}</b><span class="go">›</span></a>`).join('')}</div>`};

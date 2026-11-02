@@ -26,7 +26,7 @@ test('home v2.9.3: Quran card without history opens the Quran list; tutor card o
  await init(page,{dark:false});await page.goto('./');await expect(page.locator('#homeQuran')).toContainText('114 surahs');await expect(page.locator('#homeQuran')).toHaveAttribute('href','#/quran');
  await page.click('#homeTutor');await expect(page).toHaveURL(/#\/recite$/)});
 test('home v2.9.3: Urdu + dark keeps order, equal cards and no overflow',async({page})=>{
- await init(page,{ui:'ur',dark:true},{s:2,a:1,name:'البقرة'});await page.goto('./');await expect(page.locator('.pcard')).toBeVisible();
+ await page.clock.install({time:new Date('2026-11-02T10:00:00+05:00')});await init(page,{ui:'ur',dark:true},{s:2,a:1,name:'البقرة'});await page.goto('./');await expect(page.locator('.pcard')).toBeVisible();
  const [pc,q,t,a,h]=await Promise.all(['.pcard','#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));const vw=page.viewportSize().width;
  expect(pc.height).toBeLessThan(170);expect(Math.abs(a.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(h.width-t.width)).toBeLessThanOrEqual(1);
  expect(t.x).toBeGreaterThan(a.x);expect(a.x).toBeGreaterThan(h.x); // RTL: Quran Live on the right
@@ -56,6 +56,6 @@ test('home v3.5: Hifz Test card opens the Hifz Test picker, and Hifz is still in
  await init(page,{});await page.goto('./');await expect(page.locator('#homeHifz')).toContainText('Hifz Test');await expect(page.locator('#homeHifz .ti svg')).toBeVisible();
  await page.click('#homeHifz');await expect(page).toHaveURL(/#\/hifztest$/);await expect(page.locator('.hz-s[data-s="1"]')).toBeVisible();
  await page.goto('./#/more');await expect(page.locator('a[href="#/hifztest"]')).toBeVisible()});
-for(const w of [360,390,430])test(`prayer header: arch sits in the top row, no overlap with strip/countdown at ${w}px`,async({page})=>{await page.setViewportSize({width:w,height:800});await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./');await expect(page.locator('.pc-arch')).toBeVisible();
+for(const w of [360,390,430])test(`prayer header: arch sits in the top row, no overlap with strip/countdown at ${w}px`,async({page})=>{await page.clock.install({time:new Date('2026-11-02T10:00:00+05:00')});await page.setViewportSize({width:w,height:800});await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./');await expect(page.locator('.pc-arch')).toBeVisible();
  const r=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect(),a=b('.pc-arch'),row=b('.pc-row'),cd=b('.pc-cdw'),card=b('.pcard'),chips=[...document.querySelectorAll('.pc-row .pc-i')].map(e=>e.getBoundingClientRect().width);return{aB:a.bottom,rT:row.top,aL:a.left,cR:cd.right,aR:a.right,kR:card.right,chips}});
  expect(r.aB).toBeLessThanOrEqual(r.rT);expect(r.cR).toBeLessThanOrEqual(r.aL);expect(r.aR).toBeLessThanOrEqual(r.kR);expect(r.chips.length).toBe(6);expect(Math.max(...r.chips)-Math.min(...r.chips)).toBeLessThan(2)});

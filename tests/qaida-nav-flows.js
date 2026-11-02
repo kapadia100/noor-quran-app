@@ -15,10 +15,10 @@ export function qaidaNavFlows(test,expect){
    await back(page,how);await url(page,/#\/qaida$/);await chooser(page);
    await back(page,how);await url(page,/#\/more$/)});
   test(`back (${how}): Noorani works the same`,async({page})=>{
-   await page.goto('./#/more');await page.click('#qaidaEntry');await page.click('#qcNoorani');await url(page,/#\/qaida\/n$/);
-   await page.click('[data-l=huroof]');await url(page,/#\/qaida\/n\/huroof$/);
+   await page.goto('./#/more');await page.click('#qaidaEntry');await page.click('#qcNoorani');await url(page,/#\/qaida\/n$/);await expect(page.locator('.q-row')).toHaveCount(9);
+   await page.click('[data-l=huroof]');await expect(page.locator('[data-lesson=huroof]')).toBeVisible();await url(page,/#\/qaida\/n\/huroof$/);
    await back(page,how);await url(page,/#\/qaida\/n$/);await expect(page.locator('.q-row')).toHaveCount(9);
-   await back(page,how);await chooser(page);await url(page,/#\/qaida$/);await back(page,how);await url(page,/#\/more$/)});
+   await back(page,how);await url(page,/#\/qaida$/);await chooser(page);await back(page,how);await url(page,/#\/more$/)});
   test(`back (${how}): Home card with a remembered choice skips the chooser but Back still lands on it, then Home`,async({page})=>{
    await page.goto('./#/more');await page.click('#qaidaEntry');await page.click('#qcMadani');await expect(page.locator('.q-row')).toHaveCount(22);
    await page.goto('./');await expect(page.locator('#homeQaida')).toHaveAttribute('href','#/qaida/m');
