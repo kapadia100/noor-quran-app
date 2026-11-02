@@ -513,3 +513,34 @@ body.mp-alt #player{display:none!important}
 .dc-ex2{display:block;padding:8px 4px;color:inherit;text-decoration:none;border-radius:12px}.dc-ex2:active,.dc-ex2:hover{background:color-mix(in srgb,var(--gold) 9%,transparent)}
 .dc-ex2 .tr{margin:2px 0;font-size:14px}.dc-ref{display:inline-block;font-weight:700;font-size:13px;border:1px solid var(--fg);padding:0 6px;margin-top:2px}
 .dc-hl{background:none;color:var(--bad);font-weight:700}[data-theme=dark] .dc-hl{color:var(--gold)}
+/* ---- Dictionary: List / Book switch and the book view (v89) ---- */
+.dc-view{display:flex;gap:4px;padding:4px;margin:10px auto;width:max-content;border-radius:999px;background:var(--card);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent)}
+.dc-view a{padding:7px 18px;border-radius:999px;text-decoration:none;color:var(--fg);font-weight:600;font-size:15px}
+.dc-view a.on{background:var(--gold);color:#fff}[data-theme=dark] .dc-view a.on{color:#1B2118}
+.dc-tobook{margin-inline-start:6px}
+.bk-bar{display:flex;gap:8px;align-items:stretch;margin:0 0 10px}.bk-bar .btn{white-space:nowrap;padding-block:0;display:flex;align-items:center}.bk-bar .dc-q{flex:1;margin:0}
+.bk-book{position:relative;margin:0 auto;max-width:560px}.bk-book.two{max-width:1180px}
+.bk-stage{position:relative;perspective:2400px;touch-action:pan-y;-webkit-user-select:none;user-select:none;transition:opacity .18s ease;border-radius:6px;
+ box-shadow:0 1px 0 #efe6cf,0 2px 0 #d8c9a3,0 3px 0 #efe6cf,0 4px 0 #cdbb90,0 5px 0 #efe6cf,0 14px 28px rgba(60,40,10,.22)}
+[data-theme=dark] .bk-stage{box-shadow:0 1px 0 #3a4232,0 2px 0 #2a3024,0 3px 0 #3a4232,0 4px 0 #22281d,0 14px 28px rgba(0,0,0,.5)}
+.bk-stage.bk-fade{opacity:0}
+.bk-slot,.bk-leaf{position:absolute;top:0;bottom:0}.bk-one{left:0;right:0}.bk-l{left:0;width:50%}.bk-r{right:0;width:50%}
+.bk-leaf{z-index:3;transform-style:preserve-3d;will-change:transform}
+.bk-face{position:absolute;inset:0;-webkit-backface-visibility:hidden;backface-visibility:hidden;overflow:hidden}
+.bk-back{transform:rotateY(180deg)}
+.bk-page{position:absolute;inset:0;background:linear-gradient(180deg,#fffaf0,#f8f0dd);border-radius:4px;overflow:hidden}
+[data-theme=dark] .bk-page{background:linear-gradient(180deg,#232a1f,#1d2319)}
+.bk-page::before{content:"";position:absolute;top:0;bottom:0;width:26px;left:0;pointer-events:none;z-index:1;background:linear-gradient(to right,rgba(90,60,10,.18),transparent)}
+.bk-book.rtl:not(.two) .bk-page::before,.bk-book.two .bk-l .bk-page::before{left:auto;right:0;background:linear-gradient(to left,rgba(90,60,10,.18),transparent)}
+.bk-book.two .bk-r .bk-page::before{left:0;right:auto;background:linear-gradient(to right,rgba(90,60,10,.18),transparent)}
+.bk-in{position:relative;height:100%;overflow-y:auto;overscroll-behavior:contain;padding:10px 10px 4px;-webkit-overflow-scrolling:touch}
+.bk-sheet{margin:0;box-shadow:none}
+.bk-pn{text-align:center;margin:8px 0 2px;color:var(--gold);font-weight:700;font-size:14px}.bk-pn::before{content:"❦ "}.bk-pn::after{content:" ❦"}
+.bk-sh{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(to right,rgba(0,0,0,.45),rgba(0,0,0,.08) 35%,transparent 60%,rgba(255,255,255,.18))}
+.bk-back .bk-sh{background:linear-gradient(to left,rgba(0,0,0,.45),rgba(0,0,0,.08) 35%,transparent 60%,rgba(255,255,255,.18))}
+.bk-cast{position:absolute;top:0;bottom:0;z-index:2;pointer-events:none;opacity:0;background:rgba(40,25,5,.32)}.bk-cast-one{left:0;right:0}.bk-cast-l{right:0;width:50%}.bk-cast-r{left:0;width:50%}
+.bk-blank{background:linear-gradient(180deg,#fbf5e6,#f3e9d2)}
+.bk-edge{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:34px;height:52px;border:1px solid color-mix(in srgb,var(--gold) 55%,transparent);background:color-mix(in srgb,var(--card) 88%,transparent);color:var(--gold);font-size:26px;line-height:1;border-radius:10px;cursor:pointer}
+.bk-el{left:-12px}.bk-er{right:-12px}.bk-edge:disabled{opacity:0;pointer-events:none}
+.bk-ind{text-align:center;margin:12px 0 0;font-weight:600}.bk-hint{text-align:center;font-size:13px}
+@media (prefers-reduced-motion:reduce){.bk-stage{transition-duration:.12s}}
