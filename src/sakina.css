@@ -568,3 +568,19 @@ html body :is(#player,.qs-mp) .pl-pw .sp-pill:active{transform:translateX(-50%) 
 .sp-pill,.sp-c{direction:ltr;unicode-bidi:isolate;white-space:nowrap}
 html body :is(#player,.qs-mp) .pl-pw .sp-pill{width:auto!important;max-width:none!important;padding:0 8px!important;font-size:11px!important;line-height:1!important;height:20px!important;border-radius:999px!important;overflow:visible}
 .sp-cs{direction:ltr}
+/* v91 (t243u): Option C — Quran Live / Qaida Live as gold medallions with Arabic calligraphy */
+html body .hcards.med{display:flex!important;justify-content:center;gap:clamp(20px,9vw,56px)!important;margin:6px 0 4px!important}
+html body .hcards.med .hc{flex:0 1 150px;min-width:0;min-height:0!important;padding:4px 2px!important;gap:3px!important;background:transparent!important;box-shadow:none!important;border:0!important;border-radius:20px!important;color:var(--fg)!important;align-items:center!important;text-align:center;overflow:visible!important;-webkit-tap-highlight-color:transparent}
+html body .hcards.med .hc::before,html body .hcards.med .hc::after{display:none!important}
+.hcards.med .md{position:relative;display:grid;place-items:center;width:clamp(104px,30vw,132px);aspect-ratio:1;border-radius:50%;margin-bottom:8px;
+ background:radial-gradient(circle at 50% 38%,#FFFDF6,#F7ECD2 62%,color-mix(in srgb,#C9A54A 30%,#F7ECD2) 64%,#FBF3DF 72%);border:2.5px solid #C9A54A;
+ box-shadow:0 0 0 5px rgba(201,165,74,.16),0 8px 22px rgba(90,70,20,.18),inset 0 1px 0 #fff;transition:transform .18s ease,box-shadow .25s ease}
+.hcards.med .md::after{content:"";position:absolute;inset:9px;border-radius:50%;border:1px dashed rgba(180,138,53,.65);pointer-events:none}
+.hcards.med .md-ar{font-family:'Amiri','Scheherazade New','Noto Naskh Arabic',serif;font-size:clamp(25px,7.6vw,32px);line-height:1.2;color:#7E6428;padding-bottom:6px}
+html body .hcards.med .hc-live{position:absolute!important;top:auto!important;bottom:-7px;left:50%;right:auto!important;inset-inline-end:auto!important;height:auto;line-height:1.35;transform:translateX(-50%);order:0!important;white-space:nowrap;font-size:9px!important;padding:2px 9px!important;box-shadow:0 0 0 2px var(--bg,#FFFBF2)}
+.hcards.med .hc b{font-size:15px!important;line-height:1.2}.hcards.med .hc small{font-size:11.5px!important;opacity:.72;line-height:1.25}
+.hcards.med .hc:active .md{transform:scale(.95)}.hcards.med .hc:focus-visible{outline:none}.hcards.med .hc:focus-visible .md{box-shadow:0 0 0 3px var(--bg,#fff),0 0 0 6px #C9A54A}
+[data-theme=dark] .hcards.med .md{background:radial-gradient(circle at 50% 38%,#24402F,#183026 62%,rgba(216,181,106,.28) 64%,#1A3127 72%);border-color:#D6B460;box-shadow:0 0 0 5px rgba(216,181,106,.14),0 8px 22px rgba(0,0,0,.45)}
+[data-theme=dark] .hcards.med .md::after{border-color:rgba(216,181,106,.55)}[data-theme=dark] .hcards.med .md-ar{color:#E9CB7C}
+@media (min-width:700px){.hcards.med .md{width:140px}.hcards.med .md-ar{font-size:34px}}
+@media (prefers-reduced-motion:reduce){.hcards.med .md{transition:none}.hcards.med .hc:active .md{transform:none}}

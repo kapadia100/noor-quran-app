@@ -11,5 +11,5 @@ export function qaidaEntry(tt,I,{big=false}={}){
  :`<a class="mrc-row" href="${QAIDA_HREF}" id="mrcQaida"><span class="mi">${I.icon('letters')}</span><span class="mt"><b>${tt('Qaida (learn to read)','قاعدہ (پڑھنا سیکھیں)')}</b><small>${tot}</small></span><span class="go">›</span></a>`}
 
 /** Compact Home card (third in the row): opens the last-used Qaida (the chooser the first time), where every lesson starts with a Live button. */
-export function qaidaHomeCard(tt,I){
- return `<a class="hc hc-qaida" href="${lastHref()}" id="homeQaida"><span class="ti">${I.icon('letters')}</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span><b>${tt('Qaida','قاعدہ')}</b><small>${tt('Read letters live','حروف لائیو پڑھیں')}</small></a>`}
+export function qaidaHomeCard(tt){
+ return `<a class="hc hc-qaida" href="${lastHref()}" id="homeQaida" aria-label="${tt('Qaida Live — read the letters (uses the microphone)','قاعدہ لائیو — حروف پڑھیں (مائیک استعمال ہوتا ہے)')}"><span class="md" aria-hidden="true"><span class="md-ar" lang="ar" dir="rtl">القاعدة</span><span class="hc-live">● ${tt('LIVE','لائیو')}</span></span><b>${tt('Qaida Live','قاعدہ لائیو')}</b><small>${tt('Read letters live','حروف لائیو پڑھیں')}</small></a>`}
