@@ -43,10 +43,9 @@ test('levels, sort and filters',async({page})=>{
 
 test('entry: all fields, hear plays the word clip, know + practice-list persist and update progress',async({page})=>{
  await page.goto('./#/dict/36');const w=D.words[35];
- await expect(page.locator('.dc-word')).toHaveText(w.h);await expect(page.locator('.dc-tr')).toHaveText(w.t);await expect(page.locator('.dc-mn')).toHaveText(w.e);await expect(page.locator('.dc-mn2')).toHaveText(w.u);
- await expect(page.locator('.dc-facts')).toContainText(w.n.toLocaleString());await expect(page.locator('.dc-ex')).toHaveCount(2);
+ await expect(page.locator('.dc-word')).toHaveText(w.h);await expect(page.locator('.dc-tr')).toHaveText(w.t);await expect(page.locator('.dc-mn')).toHaveText([w.u,w.e]);
+ await expect(page.locator('.dc-facts')).toContainText(w.nt.toLocaleString());await expect(page.locator('.dc-ex2')).toHaveCount(2);
  await page.click('#dcHear');await expect.poll(()=>plays(page)).toEqual(['https://audio.qurancdn.com/'+w.s[0][6]]);
- await page.locator('.dc-hw').nth(1).click();await expect.poll(async()=>(await plays(page)).length).toBe(2);
  await page.click('#dcKnow');await expect(page.locator('#dcKnow')).toHaveAttribute('aria-pressed','true');await page.click('#dcStar');
  let s=await store(page);expect(s.w[36].k).toBe(true);expect(s.w[36].s).toBe(true);
  await page.reload();await expect(page.locator('#dcKnow')).toHaveAttribute('aria-pressed','true');await expect(page.locator('#dcStar')).toHaveAttribute('aria-pressed','true');
@@ -108,3 +107,23 @@ test('quiz has no speaker: flashcards and multiple choice never offer or play wo
  const ay=await page.locator('.dc-ay').textContent();const w=D.words.flatMap(x=>x.s).find(s=>s[3].replace(/\s+/g,' ')===ay.trim().replace(/\s+/g,' '));expect(w).toBeTruthy();
  await page.locator('mark.dc-hw').click();await page.goto('./#/dict/quiz/mc');await expect(page.locator('[data-au], #dcHear, button.dc-hw')).toHaveCount(0);await page.locator('.dc-word').first().click();
  expect(await plays(page)).toEqual([])});
+
+const AR={};const ar=s=>(AR[s]??=rd('s/ar/'+s+'.json'));
+test('word sheet: number, word = meaning, ayah count, two exact examples with the word highlighted and a reference',async({page})=>{
+ for(const r of [1,9,36,343,500]){const w=D.words[r-1];await page.goto('./#/dict/'+r);
+  await expect(page.locator('.dc-no')).toHaveText('No.: '+r);await expect(page.locator('.dc-word')).toHaveText(w.h);
+  await expect(page.locator('#dcCount')).toContainText(`occurs in ${w.na.toLocaleString()} ayahs`);
+  await expect(page.locator('.dc-ex2')).toHaveCount(2);
+  for(let i=0;i<2;i++){const [s,a,ti]=w.x[i],ex=page.locator('.dc-ex2').nth(i);const t0=ar(s)[a-1],txt=a===1&&s!==1&&s!==9?t0.split(' ').slice(4).join(' '):t0;
+   expect(txt).toBe(w.s[i][3]);await expect(ex.locator('.dc-ay')).toHaveText(txt);
+   await expect(ex.locator('mark.dc-hl')).toHaveText(txt.split(' ')[ti]);await expect(ex.locator('.dc-ref')).toHaveText(`[${s}:${a}]`);
+   await expect(ex.locator('.tr')).toHaveText(w.s[i][4]);await expect(ex).toHaveAttribute('href',`#/surah/${s}/${a}`)}
+  const t=await page.locator('#app').innerText();expect(/quran\.com|corpus|tanzil|http/i.test(t)).toBe(false)}});
+test('word sheet in Urdu: Urdu labels and Urdu translation',async({page})=>{
+ const w=D.words[8];await page.goto('./#/dict/9');await page.click('#lang');
+ await expect(page.locator('.dc-no')).toHaveText('نمبر: 9');await expect(page.locator('.dc-lm')).toContainText('لفظ');await expect(page.locator('.dc-lm')).toContainText('معنی');
+ await expect(page.locator('#dcCount')).toContainText(`یہ لفظ قرآنِ کریم کی ${w.na.toLocaleString()} آیات میں آتا ہے`);await expect(page.locator('.dc-misl')).toHaveText('مثلاً');
+ await expect(page.locator('.dc-mn')).toHaveText([w.u]);await expect(page.locator('.dc-ex2 .tr').first()).toHaveText(w.s[0][5])});
+test('tapping an example opens the reader at that ayah',async({page})=>{
+ const w=D.words[99],[s,a]=w.x[1];await page.goto('./#/dict/100');await page.locator('.dc-ex2').nth(1).click();
+ await expect(page).toHaveURL(new RegExp(`#/surah/${s}/${a}$`));await expect(page.locator('#a'+a)).toBeInViewport()});

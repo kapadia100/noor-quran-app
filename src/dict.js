@@ -31,10 +31,8 @@ export async function rankOf(C,s,a,w){
  return 0}
 
 const meaning=(w,ur)=>ur?w.u:w.e;
-const ayahWords=(sm,ur,tt,hear=true)=>{let k=0;
- return `<p class="ar dc-ay" dir="rtl" lang="ar">${sm[3].split(' ').map(x=>{if(K.isMark(x))return esc(x);if(++k!==sm[2])return esc(x);
-  return hear?`<button class="dc-hw" data-au="${esc(sm[6])}" aria-label="${tt('Hear this word','یہ لفظ سنیں')}">${esc(x)}</button>`:`<mark class="dc-hw dc-nohear">${esc(x)}</mark>`}).join(' ')}</p>`};
-
+/** Exact ayah text with app token `ti` (0-based, split on spaces) highlighted. */
+export const hiAyah=(txt,ti,cls='dc-hl')=>txt.split(' ').map((x,i)=>i===ti?`<mark class="${cls}">${esc(x)}</mark>`:esc(x)).join(' ');
 export async function dictPage(C,tt,ur,I,a,b){
  C.setTitle(tt('Quran Dictionary','قرآن ڈکشنری'));C.app().onclick=null;au?.pause?.();
  let D;try{D=await data(C)}catch{C.app().innerHTML=`<section class="dsec"><div class="card"><p>${tt('The dictionary could not be loaded. Please try again.','ڈکشنری لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔')}</p></div></section>`;return}
@@ -58,7 +56,7 @@ function filtered(D,P){
 function rows(D,P,tt,ur){const ids=filtered(D,P);
  if(!ids.length)return `<p class="muted dc-empty" id="dcEmpty">${V.flt==='star'&&!V.q?tt('Your practice list is empty. Open a word and tap “Add to practice list”.','آپ کی مشق کی فہرست خالی ہے۔ کوئی لفظ کھولیں اور “مشق کی فہرست میں شامل کریں” دبائیں۔'):tt('No word matches. Try the Arabic with or without harakat, English, Urdu or transliteration.','کوئی لفظ نہیں ملا۔ عربی (حرکات کے ساتھ یا بغیر)، انگریزی، اردو یا تلفظ لکھ کر دیکھیں۔')}</p>`;
  return ids.map(i=>{const w=D.words[i],e=P.w[w.r],k=K.isKnown(e);
-  return `<a class="dc-row${k?' known':''}" href="#/dict/${w.r}" data-r="${w.r}"><span class="dc-n">${w.r}</span><span class="ar dc-ar" dir="rtl" lang="ar">${esc(w.h)}</span><span class="mt"><b>${esc(w.t)}</b><small>${esc(meaning(w,ur()))}</small></span><span class="dc-c">${w.n.toLocaleString()}×</span><span class="dc-k" aria-label="${k?tt('Known','معلوم'):''}">${k?'✓':e?.s?'★':''}</span></a>`}).join('')}
+  return `<a class="dc-row${k?' known':''}" href="#/dict/${w.r}" data-r="${w.r}"><span class="dc-n">${w.r}</span><span class="ar dc-ar" dir="rtl" lang="ar">${esc(w.h)}</span><span class="mt"><b>${esc(w.t)}</b><small>${esc(meaning(w,ur()))}</small></span><span class="dc-c">${w.nt.toLocaleString()}×</span><span class="dc-k" aria-label="${k?tt('Known','معلوم'):''}">${k?'✓':e?.s?'★':''}</span></a>`}).join('')}
 function list(C,tt,ur,I,D,P){
  const cv=K.coverage(D.words,P.w,D.total),due=K.dueCount(P.w),nS=Object.values(P.w).filter(e=>e.s).length;
  const lvLab=(i)=>{const [a,b]=K.LEVELS[i-1];const c=D.cov.find(x=>x[0]===b);return `<bdi dir="ltr">${a}–${b}${c?` · ${c[2]}%`:''}</bdi>`};
@@ -90,15 +88,20 @@ function entry(C,tt,ur,I,D,P,r){
  const pct=D.cov.find(c=>c[0]>=r)?.[2];
  C.app().innerHTML=`<section class="dsec dc-wrap dc-entry" data-r="${r}">
  <div class="dc-top"><a class="btn ghost" href="#/dict">‹ ${tt('Dictionary','ڈکشنری')}</a><span class="dc-nav">${nav(-1)}<small>${r} / ${D.words.length}</small>${nav(1)}</span></div>
- <div class="card dc-big"><button class="dc-hear" id="dcHear" data-au="${esc(w.s[0][6])}" aria-label="${tt('Hear the word','لفظ سنیں')}"><span class="ar dc-word" dir="rtl" lang="ar">${esc(w.h)}</span><span class="dc-sp" aria-hidden="true">🔊</span></button>
-  <b class="dc-tr">${esc(w.t)}</b>
-  <p class="dc-mn">${esc(meaning(w,U))}</p><p class="dc-mn2 muted" ${U?'':'dir="rtl"'}>${esc(meaning(w,!U))}</p></div>
- <div class="dc-facts"><div><small>${tt('Root','مادہ')}</small><b class="ar" dir="rtl" lang="ar">${w.rt?esc(w.rt):'—'}</b></div><div><small>${tt('Appears','تعداد')}</small><b>${w.n.toLocaleString()}×</b></div><div><small>${tt('Rank','درجہ')}</small><b>#${r}</b></div><div><small>${tt('Type','قسم')}</small><b>${esc(K.posLabel(w.p,U))}</b></div></div>
- <p class="muted dc-note">${tt(`Appears ${w.n.toLocaleString()} times, in all its forms (<bdi dir="ltr">${(100*w.n/D.total).toFixed(2)}%</bdi> of the Quran’s words). Knowing the first ${D.cov.find(c=>c[0]>=r)?.[0]} words covers <bdi dir="ltr">${pct}%</bdi>.`,`یہ لفظ اپنی تمام شکلوں میں ${w.n.toLocaleString()} بار آیا ہے (قرآن کے الفاظ کا <bdi dir="ltr">${(100*w.n/D.total).toFixed(2)}%</bdi>)۔ پہلے ${D.cov.find(c=>c[0]>=r)?.[0]} الفاظ جاننے سے <bdi dir="ltr">${pct}%</bdi> سمجھ آتا ہے۔`)}</p>
+ <article class="card dc-sheet" id="dcSheet"><div class="dc-frame">
+  <p class="dc-no"><span>${tt('No.','نمبر')}: <bdi dir="ltr">${r}</bdi></span></p>
+  <div class="dc-lm" aria-hidden="true"><span>${tt('Word','لفظ')}</span><i>⟷</i><span>${tt('Meaning','معنی')}</span></div>
+  <div class="dc-eq"><button class="dc-hear" id="dcHear" data-au="${esc(w.s[0][6])}" aria-label="${tt('Hear the word','لفظ سنیں')}"><span class="ar dc-word" dir="rtl" lang="ar">${esc(w.h)}</span></button><b class="dc-eqs" aria-hidden="true">=</b><span class="dc-mns"><span class="dc-mn" dir="rtl" lang="ur">${esc(w.u)}</span>${U?'':`<span class="dc-mn dc-en" dir="ltr" lang="en">${esc(w.e)}</span>`}</span></div>
+  <small class="dc-tr">${esc(w.t)}</small>
+  <div class="dc-orn" aria-hidden="true"></div>
+  <p class="dc-cnt2" id="dcCount" data-na="${w.na}">${tt(`This word occurs in <b>${w.na.toLocaleString()}</b> ayahs of the Quran`,`یہ لفظ قرآنِ کریم کی <b>${w.na.toLocaleString()}</b> آیات میں آتا ہے`)}</p>
+  <small class="dc-basis muted">${tt('Counted once per ayah, in any of its forms, including with attached prefixes or suffixes.','ہر آیت ایک بار شمار، لفظ کی کسی بھی شکل میں، سابقے یا لاحقے کے ساتھ بھی۔')}</small>
+  <h2 class="dc-misl"><span>${tt('For example','مثلاً')}</span></h2>
+  <ol class="dc-exs">${w.x.map((x,i)=>{const sm=w.s[i];return `<li><a class="dc-ex2" href="#/surah/${x[0]}/${x[1]}" data-s="${x[0]}" data-a="${x[1]}" aria-label="${tt(`Open ayah ${x[0]}:${x[1]} in the reader`,`آیت ${x[0]}:${x[1]} پڑھنے کے لیے کھولیں`)}"><p class="ar dc-ay" dir="rtl" lang="ar">${hiAyah(sm[3],x[2])}</p><p class="tr" dir="${U?'rtl':'ltr'}">${esc(U?sm[5]:sm[4])}</p><span class="dc-ref"><bdi dir="ltr">[${x[0]}:${x[1]}]</bdi></span></a></li>`}).join('')}</ol>
+ </div></article>
+ <div class="dc-facts"><div><small>${tt('Root','مادہ')}</small><b class="ar" dir="rtl" lang="ar">${w.rt?esc(w.rt):'—'}</b></div><div><small>${tt('Appears','تعداد')}</small><b>${w.nt.toLocaleString()}×</b></div><div><small>${tt('Rank','درجہ')}</small><b>#${r}</b></div><div><small>${tt('Type','قسم')}</small><b>${esc(K.posLabel(w.p,U))}</b></div></div>
  <div class="bar dc-act"><button class="btn${k?'':' ghost'}" id="dcKnow" aria-pressed="${k}">${k?'✓ '+tt('Known','معلوم'):tt('I know this word','مجھے یہ لفظ آتا ہے')}</button><button class="btn${e?.s?'':' ghost'}" id="dcStar" aria-pressed="${!!e?.s}">${e?.s?'★ '+tt('In practice list','مشق کی فہرست میں'):'☆ '+tt('Add to practice list','مشق کی فہرست میں شامل کریں')}</button></div>
- <h2 class="h3">${tt('In the Quran','قرآن میں')}</h2>
- ${w.s.map(s=>`<div class="card dc-ex"><small class="muted">${s[0]}:${s[1]}</small>${ayahWords(s,U,tt)}<p class="tr" dir="${U?'rtl':'ltr'}">${esc(U?s[5]:s[4])}</p><a class="dc-open" href="#/surah/${s[0]}/${s[1]}">${tt('Open this ayah','یہ آیت کھولیں')} ›</a></div>`).join('')}
- <p class="muted dc-note">${tt('Tap the word or any highlighted word to hear it. The highlighted word may appear in a different grammatical form from the headword above.','لفظ یا نمایاں لفظ دبا کر سنیں۔ نمایاں لفظ اوپر کے لفظ سے مختلف گرامر کی شکل میں ہو سکتا ہے۔')}</p></section>`;
+ <p class="muted dc-note">${tt(`In all its forms the word appears ${w.nt.toLocaleString()} times in ${w.na.toLocaleString()} ayahs. Knowing the first ${D.cov.find(c=>c[0]>=r)?.[0]} words covers <bdi dir="ltr">${pct}%</bdi>. Tap the word to hear it; tap an example to open it in the reader.`,`یہ لفظ اپنی تمام شکلوں میں ${w.na.toLocaleString()} آیات میں ${w.nt.toLocaleString()} بار آیا ہے۔ پہلے ${D.cov.find(c=>c[0]>=r)?.[0]} الفاظ جاننے سے <bdi dir="ltr">${pct}%</bdi> سمجھ آتا ہے۔ لفظ دبا کر سنیں؛ مثال دبا کر آیت کھولیں۔`)}</p></section>`;
  const app=C.app();
  app.onclick=ev=>{const h=ev.target.closest('[data-au]');if(h)playWord(C,tt,h.dataset.au)};
  app.querySelector('#dcKnow').onclick=()=>{const p=load();p.w[r]=K.markKnown(p.w[r],!K.isKnown(p.w[r]));save(p);entry(C,tt,ur,I,D,p,r)};
@@ -128,7 +131,7 @@ function step(C,tt,ur,I,D){
  if(Q.kind==='cards'){
   const f=Q.flip,sm=w.s[0];
   app.innerHTML=`<section class="dsec dc-wrap">${head}<div class="card dc-fc" id="dcCard"><div class="dc-hear dc-nohear"><span class="ar dc-word" dir="rtl" lang="ar">${esc(w.h)}</span></div>
-  ${f?`<b class="dc-tr">${esc(w.t)}</b><p class="dc-mn">${esc(meaning(w,U))}</p><p class="dc-mn2 muted" ${U?'':'dir="rtl"'}>${esc(meaning(w,!U))}</p><small class="muted">${tt('Root','مادہ')}: <span class="ar" dir="rtl" lang="ar">${esc(w.rt||'—')}</span> · ${w.n.toLocaleString()}×</small>${ayahWords(sm,U,tt,false)}`:`<button class="btn" id="dcFlip">${tt('Show meaning','معنی دکھائیں')}</button>`}</div>
+  ${f?`<b class="dc-tr">${esc(w.t)}</b><p class="dc-mn">${esc(meaning(w,U))}</p><p class="dc-mn2 muted" ${U?'':'dir="rtl"'}>${esc(meaning(w,!U))}</p><small class="muted">${tt('Root','مادہ')}: <span class="ar" dir="rtl" lang="ar">${esc(w.rt||'—')}</span> · ${w.nt.toLocaleString()}×</small><p class="ar dc-ay" dir="rtl" lang="ar">${hiAyah(sm[3],w.x[0][2],'dc-hw dc-nohear')}</p>`:`<button class="btn" id="dcFlip">${tt('Show meaning','معنی دکھائیں')}</button>`}</div>
   ${f?`<div class="bar dc-ans"><button class="btn ghost" id="dcNo">✗ ${tt('Not yet','ابھی نہیں')}</button><button class="btn" id="dcYes">✓ ${tt('I knew it','مجھے آتا تھا')}</button></div>`:''}</section>`;
   app.onclick=ev=>{
    if(ev.target.closest('#dcFlip')){Q.flip=true;step(C,tt,ur,I,D);return}
