@@ -64,7 +64,7 @@ test('v83: Ruqyah uses the same mini player as the reader: prev | gold play/paus
  await mock(page);await page.addInitScript(()=>{window.__dur=4000});await page.goto('./#/ruqyah');
  await expect(page.locator('#rqStop')).toHaveCount(0);await page.click('#rqPlay');
  await page.evaluate(()=>document.querySelector('#rq8').scrollIntoView());const m=page.locator('#rqMini');await expect(m).toBeVisible();
- expect(await m.evaluate(e=>[...e.querySelectorAll('button')].map(b=>b.className))).toEqual(['pl-b pl-s','pl-b pl-p','pl-b pl-s','pl-x']);
+ expect(await m.evaluate(e=>[...e.querySelectorAll('button')].map(b=>b.className))).toEqual(['pl-b pl-s','pl-b pl-p','sp-pill','pl-b pl-s','pl-x']);
  const bg=await page.locator('#rqMP').evaluate(e=>getComputedStyle(e).backgroundImage);expect(bg).toContain('gradient');
  const i0=await page.evaluate(()=>window.__rq.state().i);await page.click('#rqMNext');await expect.poll(()=>page.evaluate(()=>window.__rq.state().i)).toBe(i0+1);
  await page.click('#rqMPrev');await expect.poll(()=>page.evaluate(()=>window.__rq.state().i)).toBe(i0);

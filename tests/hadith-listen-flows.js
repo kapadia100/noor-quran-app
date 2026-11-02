@@ -120,8 +120,8 @@ export function hadithListenFlows(test,expect){
   await page.waitForTimeout(500);expect((await spoken(page)).length).toBe(n+1)});
  test('plays to the end and goes back to Play',async({page})=>{await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/2');const b=btn(page,0);await b.click();await expect(b).toHaveText('Pause');await expect(b).toHaveText('Play',{timeout:8000});
   expect((await spoken(page))[0].voice).toBe('Samantha')});
- test('speed control is passed to the voice',async({page})=>{await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await page.selectOption('#hlRate','0.8');await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].rate).toBe(0.8);
-  await page.reload();await expect(page.locator('#hlRate')).toHaveValue('0.8')});
+ test('speed control is passed to the voice',async({page})=>{await mockSpeech(page);await setLang(page,'eng');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeVisible({timeout:15000});await page.click('#hlRate [data-sp]');await page.click('.sp-pop .sp-c[data-r="0.75"]');await btn(page,0).click();await expect.poll(()=>spoken(page)).toHaveLength(1);expect((await spoken(page))[0].rate).toBe(0.75);
+  await page.reload();await expect(page.locator('#hlRate [data-sp]')).toHaveText('.75×')});
  test('a language with no device voice (Tamil): Play is disabled and the card says so plainly',async({page})=>{
   await mockSpeech(page);await setLang(page,'tam');await page.goto('./#/hadith/bukhari/n/1');await expect(btn(page,0)).toBeDisabled({timeout:15000});await expect(page.locator('article.hd .hd-nv')).toHaveText('No Tamil voice on this device');await expect(page.locator('#hlRate')).toBeVisible();
   await page.click('[data-sl="eng"]');await expect(btn(page,0)).toBeEnabled();await expect(page.locator('article.hd .hd-nv')).toBeHidden()});

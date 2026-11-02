@@ -67,4 +67,4 @@ test('hifz test: finishing a surah offers the next one, repeat, choose another',
 
 test('home live cards still work after a session on later surahs',async({page})=>{
  await live(page,3);await page.click('.rc-x');
- await page.goto('./#/');await expect(page.locator('#app a#homeHifz')).toBeVisible();await page.click('#tutor');await expect(page).toHaveURL(/#\/recite$/);await expect(page.locator('#sl a')).toHaveCount(114)});
+ await page.goto('./#/');await expect(page.locator('#app a#homeTutor')).toBeVisible();await expect(page.locator('#app a#homeQaida')).toBeVisible();await page.click('#tutor');await expect(page).toHaveURL(/#\/recite$/);await expect(page.locator('#sl a')).toHaveCount(114)});

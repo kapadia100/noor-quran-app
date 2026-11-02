@@ -9,11 +9,11 @@ const box=(page,s)=>page.locator(s).first().boundingBox();
 
 test('home v2.9.3: search, then compact prayer card first, then the Quran row, then Quran Live, Qaida Live and Hifz Test side by side in one row, Daily stories lower',async({page})=>{
  await init(page,{dark:false},{s:2,a:1,name:'Al-Baqara'});await page.goto('./');await expect(page.locator('.pcard')).toBeVisible();
- const [hd,pc,q,t,a,h]=await Promise.all(['header','.pcard','#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));
+ const [hd,pc,q,t,a]=await Promise.all(['header','.pcard','#homeQuran','#homeTutor','#homeQaida'].map(s=>box(page,s)));
  expect(hd.y).toBeLessThan(pc.y);await expect(page.locator('.srow, #hs, #hq')).toHaveCount(0);expect(pc.y+pc.height).toBeLessThanOrEqual(q.y+1);expect(pc.height).toBeLessThan(170); // compact
  // the Quran row is full width above three equal cards: Quran Live, Qaida, Hifz
- expect(q.y+q.height).toBeLessThanOrEqual(t.y+1);expect(q.width).toBeGreaterThan(t.width*2.5);
- for(const b of [a,h]){expect(Math.abs(b.width-t.width)).toBeLessThanOrEqual(1);expect(Math.abs(b.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(b.y-t.y)).toBeLessThanOrEqual(1)}expect(t.x).toBeLessThan(a.x);expect(a.x).toBeLessThan(h.x);
+ expect(q.y+q.height).toBeLessThanOrEqual(t.y+1);expect(q.width).toBeGreaterThan(t.width*1.8);
+ for(const b of [a]){expect(Math.abs(b.width-t.width)).toBeLessThanOrEqual(1);expect(Math.abs(b.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(b.y-t.y)).toBeLessThanOrEqual(1)}expect(t.x).toBeLessThan(a.x);
  expect(t.height).toBeGreaterThan(80); // compact but still a card
  // v3.7.11: the Daily row is gone (Ayah of the day card, Duas, Tasbeeh and Ramadan stay on Home)
  await expect(page.locator('#daily, .dhead, .story')).toHaveCount(0);await expect(page.locator('#aotd')).toBeVisible();await expect(page.locator('#homeRamadan')).toBeVisible();
@@ -27,10 +27,10 @@ test('home v2.9.3: Quran card without history opens the Quran list; tutor card o
  await page.click('#homeTutor');await expect(page).toHaveURL(/#\/recite$/)});
 test('home v2.9.3: Urdu + dark keeps order, equal cards and no overflow',async({page})=>{
  await page.clock.install({time:new Date('2026-11-02T10:00:00+05:00')});await init(page,{ui:'ur',dark:true},{s:2,a:1,name:'البقرة'});await page.goto('./');await expect(page.locator('.pcard')).toBeVisible();
- const [pc,q,t,a,h]=await Promise.all(['.pcard','#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));const vw=page.viewportSize().width;
- expect(pc.height).toBeLessThan(170);expect(Math.abs(a.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(h.width-t.width)).toBeLessThanOrEqual(1);
- expect(t.x).toBeGreaterThan(a.x);expect(a.x).toBeGreaterThan(h.x); // RTL: Quran Live on the right
- expect(q.x+q.width).toBeLessThanOrEqual(vw+1);expect(h.x).toBeGreaterThanOrEqual(-1);await expect(page.locator('#daily')).toHaveCount(0);
+ const [pc,q,t,a]=await Promise.all(['.pcard','#homeQuran','#homeTutor','#homeQaida'].map(s=>box(page,s)));const vw=page.viewportSize().width;
+ expect(pc.height).toBeLessThan(170);expect(Math.abs(a.height-t.height)).toBeLessThanOrEqual(1);expect(Math.abs(a.width-t.width)).toBeLessThanOrEqual(1);await expect(page.locator('#homeHifz')).toHaveCount(0);
+ expect(t.x).toBeGreaterThan(a.x);// RTL: Quran Live on the right
+ expect(q.x+q.width).toBeLessThanOrEqual(vw+1);expect(a.x).toBeGreaterThanOrEqual(-1);await expect(page.locator('#daily')).toHaveCount(0);
  for(const b of await page.locator('#homeBig a').evaluateAll(a=>a.map(x=>{const r=x.getBoundingClientRect();return [r.left,r.right]}))){expect(b[0]).toBeGreaterThanOrEqual(-1);expect(b[1]).toBeLessThanOrEqual(vw+1)}});
 test('home v2.9.3: weak-word review card (when due) sits under the cards',async({page})=>{
  await init(page);await page.goto('./');await expect(page.locator('#homeReview')).toHaveCount(0);
@@ -41,21 +41,30 @@ for(const [ui,dark] of [['en',false],['ur',true],['en',true]])
 test('home v3.5: Quran row, then Quran Live, Qaida Live and Hifz Test in one row; Qaida opens the lesson list; no overflow '+ui+(dark?' dark':''),async({page})=>{
  {
   await init(page,{ui,dark},{s:2,a:1,name:'Al-Baqara'});await page.goto('./');await expect(page.locator('#homeQaida')).toBeVisible();
-  const [q,t,a,h]=await Promise.all(['#homeQuran','#homeTutor','#homeQaida','#homeHifz'].map(s=>box(page,s)));const vw=page.viewportSize().width;
-  expect(q.y+q.height).toBeLessThanOrEqual(t.y+1);expect(Math.abs(t.y-a.y)).toBeLessThanOrEqual(1);expect(Math.abs(t.y-h.y)).toBeLessThanOrEqual(1);expect(Math.abs(t.width-a.width)).toBeLessThanOrEqual(1);expect(Math.abs(t.width-h.width)).toBeLessThanOrEqual(1);expect(Math.abs(t.height-h.height)).toBeLessThanOrEqual(1);
-  const xs=[t.x,a.x,h.x];if(ui==='ur'){expect(t.x).toBeGreaterThan(a.x);expect(a.x).toBeGreaterThan(h.x)}else{expect(t.x).toBeLessThan(a.x);expect(a.x).toBeLessThan(h.x)}
-  for(const b of [q,t,a,h]){expect(b.x).toBeGreaterThanOrEqual(-1);expect(b.x+b.width).toBeLessThanOrEqual(vw+1)}expect(xs.length).toBe(3);
-  await expect(page.locator('#homeQaida .hc-live')).toBeVisible();await expect(page.locator('#homeTutor .hc-live')).toBeVisible();await expect(page.locator('#homeHifz')).toHaveAttribute('href','#/hifztest');
+  const [q,t,a]=await Promise.all(['#homeQuran','#homeTutor','#homeQaida'].map(s=>box(page,s)));const vw=page.viewportSize().width;
+  expect(q.y+q.height).toBeLessThanOrEqual(t.y+1);expect(Math.abs(t.y-a.y)).toBeLessThanOrEqual(1);expect(Math.abs(t.width-a.width)).toBeLessThanOrEqual(1);expect(Math.abs(t.height-a.height)).toBeLessThanOrEqual(1);
+  if(ui==='ur')expect(t.x).toBeGreaterThan(a.x);else expect(t.x).toBeLessThan(a.x);
+  for(const b of [q,t,a]){expect(b.x).toBeGreaterThanOrEqual(-1);expect(b.x+b.width).toBeLessThanOrEqual(vw+1)}
+  await expect(page.locator('#homeQaida .hc-live')).toBeVisible();await expect(page.locator('#homeTutor .hc-live')).toBeVisible();await expect(page.locator('#homeHifz')).toHaveCount(0);await expect(page.locator('.hcards .hc')).toHaveCount(2);
   await expect(page.locator('#homeQaida')).toHaveAttribute('href','#/qaida');
   const ov=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);expect(ov).toBeLessThanOrEqual(1)}
  await page.click('#homeQaida');await expect(page).toHaveURL(/#\/qaida$/);await expect(page.locator('#qChoose .q-choice')).toHaveCount(2);
  await page.click('#qcNoorani');await expect(page).toHaveURL(/#\/qaida\/n$/);await expect(page.locator('.q-row')).toHaveCount(9);
  await page.goto('./');await expect(page.locator('#homeQaida')).toHaveAttribute('href','#/qaida/n')});
 
-test('home v3.5: Hifz Test card opens the Hifz Test picker, and Hifz is still in More',async({page})=>{
- await init(page,{});await page.goto('./');await expect(page.locator('#homeHifz')).toContainText('Hifz Test');await expect(page.locator('#homeHifz .ti svg')).toBeVisible();
- await page.click('#homeHifz');await expect(page).toHaveURL(/#\/hifztest$/);await expect(page.locator('.hz-s[data-s="1"]')).toBeVisible();
- await page.goto('./#/more');await expect(page.locator('a[href="#/hifztest"]')).toBeVisible()});
+test('home v3.5/t239: no Hifz Test card on Home; Hifz Test Live is in More and in the Settings customize list',async({page})=>{
+ await init(page,{});await page.goto('./');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('#homeHifz')).toHaveCount(0);
+ await page.goto('./#/more');await page.click('a[href="#/hifztest"]');await expect(page).toHaveURL(/#\/hifztest$/);await expect(page.locator('.hz-s[data-s="1"]')).toBeVisible()});
 for(const w of [360,390,430])test(`prayer header: arch sits in the top row, no overlap with strip/countdown at ${w}px`,async({page})=>{await page.clock.install({time:new Date('2026-11-02T10:00:00+05:00')});await page.setViewportSize({width:w,height:800});await page.addInitScript(()=>localStorage.setItem('instBanner','1'));await page.goto('./');await expect(page.locator('.pc-arch')).toBeVisible();
  const r=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect(),a=b('.pc-arch'),row=b('.pc-row'),cd=b('.pc-cdw'),card=b('.pcard'),chips=[...document.querySelectorAll('.pc-row .pc-i')].map(e=>e.getBoundingClientRect().width);return{aB:a.bottom,rT:row.top,aL:a.left,cR:cd.right,aR:a.right,kR:card.right,chips}});
  expect(r.aB).toBeLessThanOrEqual(r.rT);expect(r.cR).toBeLessThanOrEqual(r.aL);expect(r.aR).toBeLessThanOrEqual(r.kR);expect(r.chips.length).toBe(6);expect(Math.max(...r.chips)-Math.min(...r.chips)).toBeLessThan(2)});
+
+for(const [ui,dark] of [['en',false],['ur',true]])
+test('t239: Home always shows exactly two live cards; Settings Customize adds Hifz Test Live to Ibadat, never to Home '+ui,async({page})=>{
+ await init(page,{ui,dark});await page.goto('./');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('.hcards .hc')).toHaveCount(2);
+ const [t,a]=await Promise.all(['#homeTutor','#homeQaida'].map(s=>box(page,s)));expect(Math.abs(t.width-a.width)).toBeLessThanOrEqual(1);expect(Math.abs(t.y-a.y)).toBeLessThanOrEqual(1);
+ const vw=page.viewportSize().width;for(const b of [t,a]){expect(b.x).toBeGreaterThanOrEqual(-1);expect(b.x+b.width).toBeLessThanOrEqual(vw+1)}
+ await page.goto('./#/settings');await page.click('#s_custBtn');const cb=page.locator('#ibPick input[data-ib="#/hifztest"]');await expect(cb).toBeVisible();
+ await expect(page.locator('#ibPick li',{has:page.locator('input[data-ib="#/hifztest"]')})).toContainText(ui==='ur'?'حفظ ٹیسٹ لائیو':'Hifz Test Live');await cb.check();await page.click('#ibDone');
+ await page.goto('./#/ibadat');await expect(page.locator('.ib-tile[data-h="#/hifztest"]')).toBeVisible();await page.click('.ib-tile[data-h="#/hifztest"]');await expect(page).toHaveURL(/#\/hifztest$/);
+ await page.goto('./#/');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('.hcards .hc')).toHaveCount(2);await expect(page.locator('#homeHifz')).toHaveCount(0)});

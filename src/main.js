@@ -2,7 +2,7 @@ import './tts-guard.js';
 import './bg-audio.js';import './fonts.css';import './style.css';import './sakina.css';
 import{langName,edLang,orderLangs,langRank}from './hadith-lang.js';
 import*as HL from './hadith-listen.js';
-import*as MP from './miniplayer.js';
+import*as MP from './miniplayer.js';import*as SP from './speed.js';
 import*as HA from './hadith-audio.js';
 import*as PK from './pickers.js';
 import * as PR from './prayer.js';
@@ -33,8 +33,8 @@ const mem={};
 async function j(url){if(mem[url])return mem[url];const r=await fetch(url);if(!r.ok)throw new Error(r.status);const d=await r.json();return mem[url]=d.data??d}
 const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(API+'/surah'));
 // Edition lists: live API, fall back to the offline-bundled editions so screens still work with no network.
-async function editions(type){try{return await j(`${API}/edition?type=${type}`)}catch{if(type==='translation'){const l=await j(import.meta.env.BASE_URL+'offline/translations.json');return l.filter(e=>['en.sahih','ur.jalandhry','ur.kanzuliman'].includes(e.identifier))}return []}}
-async function audioEds(){try{return await j(API+'/edition?format=audio&type=versebyverse')}catch{return [{identifier:S.reciter,language:'ar',englishName:S.reciterName||S.reciter}]}}
+async function editions(type){try{const l=await j(`${API}/edition?type=${type}`);if(type!=='translation')return l;const tx=l.filter(e=>!e.format||e.format==='text');const k=PK.keepTranslation(tx,S.trans);if(tx.length&&k!==S.trans){S.trans=k;save()}return tx}catch{if(type==='translation'){const l=await j(import.meta.env.BASE_URL+'offline/translations.json');return l.filter(e=>['en.sahih','ur.jalandhry','ur.kanzuliman'].includes(e.identifier))}return []}}
+async function audioEds(){try{const l=await j(API+'/edition?format=audio&type=versebyverse');const c=PK.canonReciter(l,S.reciter);if(c!==S.reciter){S.reciter=c;save()}return l}catch{return [{identifier:S.reciter,language:'ar',englishName:S.reciterName||S.reciter}]}}
 const loading=()=>app.innerHTML=`<p class="muted c">${t('loading')}</p>`;
 function applyUI(){document.documentElement.dataset.theme=S.dark?'dark':'light';{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=S.dark?'#1B2118':'#F6F0E2'}document.documentElement.lang=S.ui;document.documentElement.dir=S.ui==='ur'?'rtl':'ltr';
  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));$('#lang').textContent=S.ui==='en'?'اردو':'EN';$('#tutor').setAttribute('aria-label',S.ui==='ur'?'تلاوت اور سیکھیں':'Recite & Learn');document.documentElement.style.setProperty('--ar',S.size+'px')}
@@ -47,10 +47,12 @@ function toTop(){const a=document.getElementById('app');if(a)a.scrollTop=0;windo
 $('#sheetClose').onclick=()=>$('#sheet').hidden=true;
 $('#sheet').onclick=e=>{if(e.target.id==='sheet')$('#sheet').hidden=true};
 const setTitle=s=>$('#title').textContent=s;
-const opt=(list,sel,order=true)=>(order?orderLangs(list,e=>e.language,e=>e.englishName||e.identifier):list).map(e=>`<option value="${e.identifier}" ${e.identifier===sel?'selected':''}>${esc(langName(e.language,S.ui,true))} · ${esc(PK.translatorLabel(e,S.ui))}</option>`).join('');
+const TAFSIR={'ar.muyassar':['Tafsir al-Muyassar','تفسير الميسر'],'ar.jalalayn':['Tafsir al-Jalalayn','تفسير الجلالين'],'ar.qurtubi':['Tafsir al-Qurtubi','تفسير القرطبي'],'ar.miqbas':['Tanwir al-Miqbas','تنوير المقباس من تفسير ابن عباس'],'ar.waseet':['Tafsir al-Waseet','التفسير الوسيط'],'ar.baghawi':['Tafsir al-Baghawi','تفسير البغوي']};
+const tafLabel=e=>{const k=TAFSIR[e.identifier];return k?(S.ui==='ur'?`${k[1]} — ${k[0]}`:`${k[0]} — ${k[1]}`):PK.translatorLabel(e,S.ui)};
+const opt=(list,sel,order=true)=>(order?orderLangs(list,e=>e.language,e=>e.englishName||e.identifier):list).map(e=>`<option value="${e.identifier}" ${e.identifier===sel?'selected':''}>${TAFSIR[e.identifier]?esc(tafLabel(e)):`${esc(langName(e.language,S.ui,true))} · ${esc(PK.translatorLabel(e,S.ui))}`}</option>`).join('');
 
 // ---------- Surah list ----------
-async function home(tab){setTitle(t('quran'));loading();const list=await surahs();const lr=LS.get('lastRead');
+async function home(tab){setTitle(t('quran'));loading();const root=app;const list=await surahs();if(app!==root)return;const lr=LS.get('lastRead');
  const nx=PR.next();app.innerHTML=`${dateCard(nx)}<div class="tabs"><a href="#/quran" class="${tab?'':'on'}">Surah</a><a href="#/mushaf">${I_('mushaf')} Mushaf</a><a href="#/juz" class="${tab?'on':''}">Juz / Para</a><a href="#/bookmarks">${I_('bookmarks')} ${t('bookmarks')}</a></div>${tab?juzList():''}`;tick();if(tab)return;
  app.insertAdjacentHTML('beforeend',`${lr?`<a class="card hl" href="#/surah/${lr.s}/${lr.a}">▶ ${t('lastRead')}: ${esc(lr.name)} ${lr.s}:${lr.a}</a>`:''}
  <input id="f" class="inp" aria-label="${t('filter')}" placeholder="${t('filter')}"><ul class="list" id="sl"></ul>`);
@@ -148,7 +150,7 @@ function qibla(){setTitle(S.ui==='ur'?'قبلہ فائنڈر':'Qibla Finder');co
 // ---------- Reader + audio ----------
 // One persistent <audio> element (required for iOS to keep playing on auto-advance / locked screen),
 // plus a second element only used to preload the next file.
-const audio=new Audio();audio.preload='auto';const pre=new Audio();pre.preload='auto';
+const audio=SP.bind(new Audio());audio.preload='auto';const pre=SP.bind(new Audio());pre.preload='auto';
 let cur=null,errs=0,oneShot=false;window.__audio=audio;window.__cur=()=>cur;
 const arUrls=async s=>(await j(`${API}/surah/${s}/${S.reciter}`)).ayahs.map(a=>a.audio);
 /** Per-ayah clip lists for the current audio mode (Arabic / translation / both). */
@@ -158,7 +160,7 @@ const isWhole=w=>w&&S.amode==='ar';
 function setClip(){const c=cur.urls[cur.i][cur.part];audio.src=cur.altOn?c.alt:c.u}
 const surahUrl=(s,br)=>`https://cdn.islamic.network/quran/audio-surah/${br}/${S.reciter}/${s}.mp3`;
 async function surahName(s){try{return (await surahs())[s-1].englishName}catch{return 'Surah '+s}}
-function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;MP.setPlaying($('#pPlay'),!audio.paused,{play:'Play',pause:'Pause'});
+function playerUI(){const p=$('#player');p.hidden=!cur||!!cur.quiet;if(!cur)return;SP.paint();MP.setPlaying($('#pPlay'),!audio.paused,{play:'Play',pause:'Pause'});
  $('#pInfo').textContent=cur.clip?cur.name:`${cur.name} ${cur.s}${cur.whole?'':':'+(cur.i+1)}`+(hifzCfg&&hifzPos?` · 🔁 ${hifzPos.c+1}/${hifzCfg.each}${hifzCfg.range>1?' · R'+(hifzPos.r+1)+'/'+hifzCfg.range:''}`:'');markPlaying()}
 function markPlaying(){try{markPlaying_()}catch(e){console.warn('highlight',e)}}
 // Visual only (highlight, glide, follow-scroll): never awaited, never throws into the audio path.
@@ -374,20 +376,19 @@ function audioBar(p){const u=S.ui==='ur';const show=S.amode!=='ar';
 function bindAudioBar(p){const re=()=>{const was=cur&&!cur.clip&&!audio.paused?cur:null;if(was){stop();playPos(was.s,was.i)}};
  $('#'+p+'_am').onchange=e=>{S.amode=e.target.value;save();$('#'+p+'_talW').hidden=S.amode==='ar';re()};
  $('#'+p+'_tal').onchange=e=>{S.talang=e.target.value;S.talangFor=trLangOf(S.trans);save();re()}}
-async function settings(){setTitle(t('settings'));const [trs,recs,tfs]=await Promise.all([editions('translation'),audioEds(),editions('tafsir')]);
+async function settings(){setTitle(t('settings'));const root=app;const [trs,recs,tfs]=await Promise.all([editions('translation'),audioEds(),editions('tafsir')]);if(app!==root)return;
  app.innerHTML=`<div class="form"><label>${t('uiLang')}<select id="s_ui"><option value="en">English</option><option value="ur" ${S.ui==='ur'?'selected':''}>اردو</option></select></label>
  <label>${t('tlang')}<select id="s_tlang">${PK.langOptions(PK.transLangs(trs),PK.langOfEdition(trs,S.trans),S.ui)}</select></label><label>${t('translator')}<select id="s_trans">${PK.translatorOptions(trs,PK.langOfEdition(trs,S.trans),S.trans,S.ui)}</select></label><label>${t('reciter')}<select id="s_reciter">${PK.reciterOptions(recs,S.reciter,S.ui)}</select></label><label>${t('tafsir')}<select id="s_tafsir">${opt(tfs,S.tafsir)}</select></label>
- ${audioBar('s')}<label>${t('size')} <input type="range" min="20" max="48" id="s_size" value="${S.size}"></label><label><input type="checkbox" id="s_dark" ${S.dark?'checked':''}> ${t('dark')}</label><label><input type="checkbox" id="s_cont" ${S.continuous?'checked':''}> ${t('cont')}</label><label><input type="checkbox" id="s_next" ${S.autoNext?'checked':''}> ${t('autoNext')}</label><label><input type="checkbox" id="s_sa" ${S.surahAudio?'checked':''}> ${t('surahAudio')}</label>
- <label>${S.ui==='ur'?'مصحف رسم الخط':'Mushaf script'}<select id="s_script"><option value="uthmani">Uthmani</option><option value="indopak" ${S.script==='indopak'?'selected':''}>Indo-Pak</option></select></label>
- <label>${S.ui==='ur'?'لفظ بہ لفظ زبان':'Word-by-word language'}<select id="s_wbwLang"><option value="">Auto</option>${orderLangs(['en','ur','hi','bn','id','tr']).map(v=>`<option value="${v}" ${S.wbwLang===v?'selected':''}>${esc(langName(v,S.ui))}</option>`).join('')}</select></label>
+ ${audioBar('s')}<label>${t('size')} <input type="range" min="20" max="48" id="s_size" value="${S.size}"></label><label><input type="checkbox" id="s_dark" ${S.dark?'checked':''}> ${t('dark')}</label><label><input type="checkbox" id="s_cont" ${S.continuous?'checked':''}> ${t('cont')}</label><label><input type="checkbox" id="s_next" ${S.autoNext?'checked':''}> ${t('autoNext')}</label><label><input type="checkbox" id="s_sa" ${S.surahAudio?'checked':''}> ${t('surahAudio')}</label><div class="row" id="s_cust"><span class="grow">${S.ui==='ur'?'شارٹ کٹس ترتیب دیں (عبادات) — مثلاً حفظ ٹیسٹ لائیو':'Customize shortcuts (Ibadat) — e.g. Hifz Test Live'}</span><button class="btn" id="s_custBtn" type="button">${S.ui==='ur'?'ترتیب دیں':'Customize'}</button></div>
+ <label>${S.ui==='ur'?'مصحف رسم الخط':'Mushaf script'}<select id="s_script"><option value="uthmani">${S.ui==='ur'?'عثمانی':'Uthmani'}</option><option value="indopak" ${S.script==='indopak'?'selected':''}>${S.ui==='ur'?'انڈو پاک':'Indo-Pak'}</option></select></label>
+ <label>${S.ui==='ur'?'لفظ بہ لفظ زبان':'Word-by-word language'}<select id="s_wbwLang"><option value="">${S.ui==='ur'?'خودکار':'Auto'}</option>${orderLangs(['en','ur','hi','bn','id','tr']).map(v=>`<option value="${v}" ${S.wbwLang===v?'selected':''}>${esc(langName(v,S.ui))}</option>`).join('')}</select></label>
  <label><input type="checkbox" id="s_aotd" ${S.aotd?'checked':''}> ${S.ui==='ur'?'روزانہ آیت کی اطلاع':'Daily ayah-of-the-day notification'} <input type="time" id="s_aotdT" value="${S.aotdT||'07:00'}" aria-label="Time"></label><small id="aMsg" class="muted"></small>
- 
- <p class="muted">Android home-screen widget: on the roadmap (native work).</p></div>`;
+</div>`;
  bindAudioBar('s');['script','wbwLang'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;save()});
- const aot=async()=>{S.aotd=$('#s_aotd').checked;S.aotdT=$('#s_aotdT').value||'07:00';save();const r=await scheduleAotd();$('#aMsg').textContent=r.ok?`✓ ${r.count}`:r.reason};$('#s_aotd').onchange=aot;$('#s_aotdT').onchange=aot;
+ const aot=async()=>{S.aotd=$('#s_aotd').checked;S.aotdT=$('#s_aotdT').value||'07:00';save();const r=await scheduleAotd();const u=S.ui==='ur';$('#aMsg').textContent=!S.aotd?(u?'روزانہ آیت کی اطلاع بند':'Daily ayah notification off'):r.ok?(u?`✓ روزانہ ${S.aotdT||'07:00'} بجے اطلاع آئے گی`:`✓ You'll be notified daily at ${S.aotdT||'07:00'}`):/denied/.test(r.reason||'')?(u?'اطلاع کی اجازت نہیں ملی — براؤزر کی ترتیبات میں اجازت دیں':'Notifications are blocked — allow them in your browser settings'):(u?'یہ ڈیوائس اطلاعات نہیں دکھا سکتی':'This device can’t show notifications')};$('#s_aotd').onchange=aot;$('#s_aotdT').onchange=aot;
  ['ui','trans','reciter','tafsir'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;if(k==='trans')trChanged();if(k==='reciter')S.reciterName=e.target.selectedOptions[0].dataset.en||'';save();applyUI();if(k==='ui')settings()});
  $('#s_tlang').onchange=e=>{S.trans=PK.defaultTranslator(trs,e.target.value)||S.trans;trChanged();settings()};
- $('#s_size').oninput=e=>{S.size=+e.target.value;save();applyUI()};$('#s_dark').onchange=e=>{S.dark=e.target.checked;save();applyUI()};[['cont','continuous'],['next','autoNext'],['sa','surahAudio']].forEach(([id,k])=>$('#s_'+id).onchange=e=>{S[k]=e.target.checked;save()})}
+ (()=>{const b=document.getElementById('s_custBtn');if(b)b.onclick=()=>F.ibPicker()})();$('#s_size').oninput=e=>{S.size=+e.target.value;save();applyUI()};$('#s_dark').onchange=e=>{S.dark=e.target.checked;save();applyUI()};[['cont','continuous'],['next','autoNext'],['sa','surahAudio']].forEach(([id,k])=>$('#s_'+id).onchange=e=>{S[k]=e.target.checked;save()})}
 
 // Each navigation renders into a fresh container, so a slow, stale render (e.g. a surah still loading) can never overwrite the newer screen.
 async function route(){// iOS WebKit fires no focusout when the focused field is removed with the old page, so 'kb' (keyboard open: hides nav + player) stuck forever. A new page never has the keyboard open.

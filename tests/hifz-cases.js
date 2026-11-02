@@ -10,9 +10,9 @@ const feed=(page,t)=>page.evaluate(t=>window.__recite.feed(t),t);
 const start=async(page,{tr=false}={})=>{await page.goto('./#/hifztest/1');await expect(page.locator('.hz-s[data-s="1"]')).toBeVisible();if(tr){await page.click('.hz-gear summary');await page.check('#zTr')}await page.click('.hz-s[data-s="1"]');
  await expect(page.locator('#recite')).toBeVisible();await expect(page.locator('#recite .rc-t b')).toHaveText(/Hifz Test/);await expect.poll(()=>page.evaluate(()=>window.__recite.raw().listening)).toBe(true)};
 
-test('Hifz Test has its own More tile and a Home card',async({page})=>{
+test('Hifz Test has its own More tile; no Home card (Home has only Quran Live and Qaida Live)',async({page})=>{
  await page.goto('./#/more');await expect(page.locator('a[href="#/hifztest"]')).toBeVisible();
- await page.goto('./#/');await expect(page.locator('#app a#homeHifz[href="#/hifztest"]')).toHaveCount(1);
+ await page.goto('./#/');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('#app a#homeHifz')).toHaveCount(0);
  await page.goto('./#/surah/1');await expect(page.locator('#toHzT')).toHaveCount(0)});
 test('v3.7.3: reader tool row has only Play, Word by word, Tajweed; removed entries stay reachable',async({page})=>{
  await page.goto('./#/surah/1');await expect(page.locator('.rtiles .tile')).toHaveCount(3);

@@ -32,8 +32,19 @@ export function reciterLabel(e,ui='en'){const en=nameOf(e),ar=isArabicName(e.nam
 /** Reciters only (Arabic recitations; translation audio has its own picker). The default reciter first, then A–Z.
  *  The currently selected id is always kept, even if it is not an Arabic reciter, so nobody loses their choice. */
 export function reciters(list,sel,def='ar.alafasy'){
- const l=list.filter(e=>e.language==='ar'||e.identifier===sel).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),'en'));
+ const l=uniqReciters(list,sel).filter(e=>e.language==='ar'||e.identifier===sel).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),'en'));
  const p=l.findIndex(e=>e.identifier===def);if(p>0)l.unshift(l.splice(p,1)[0]);return l}
+
+/** The audio API lists some reciters twice: a mirror copy with a "-2" id and the same names (ar.husary + ar.husary-2).
+ *  Stable id = the id without that suffix. A stored mirror id maps to its base when the base exists. */
+const baseId=id=>String(id||'').replace(/-\d+$/,'');
+export function canonReciter(list,id){const b=baseId(id);if(b===id)return id;const m=list.find(e=>e.identifier===id),o=list.find(e=>e.identifier===b);
+ return o&&(!m||(nameOf(m)===nameOf(o)&&(m.name||'')===(o.name||'')))?b:id} // a real different edition ("Kuliev 2") keeps its id
+/** One entry per stable id and per name; the base id wins over its mirror. The selected id is never dropped. */
+export function uniqReciters(list,sel){const seen=new Map();
+ for(const e of list){if(!e||!e.identifier)continue;const k=baseId(e.identifier)+'|'+nameOf(e)+'|'+(e.name||''),o=seen.get(k);
+  if(!o||(o.identifier!==sel&&(e.identifier===sel||e.identifier===baseId(e.identifier))))seen.set(k,e)}
+ const byId=new Map();for(const e of seen.values())if(!byId.has(e.identifier))byId.set(e.identifier,e);return [...byId.values()]}
 
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 export const langOptions=(langs,sel,ui)=>langs.map(l=>`<option value="${esc(l)}" ${l===sel?'selected':''}>${esc(langName(l,ui))}</option>`).join('');

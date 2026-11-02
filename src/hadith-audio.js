@@ -1,6 +1,6 @@
 // Hadith Audio: listen to the TRANSLATION of a hadith (English or Urdu only), picked by book / chapter / hadith number.
 // Uses the phone's own voices (hadith-tts.js). This page reads the translation only (Arabic is played from the hadith reading screens, when the user picks Arabic).
-import*as H from'./hadith-tts.js';
+import*as H from'./hadith-tts.js';import*as SP from'./speed.js';
 const TX={en:{title:'Hadith Audio',lang:'Translation language',book:'Book',chapter:'Chapter',num:'Hadith number',go:'Go',play:'Play',pause:'Pause',resume:'Resume',stop:'Stop',next:'Next',prev:'Previous',cont:'Play through the whole chapter',speed:'Speed',
   intro:'Pick a language, a book and a chapter, or jump to a hadith number, then press Play. This page reads the translation. To hear the Arabic, open a hadith and pick Arabic.',
   noRec:'Urdu is played from recordings only, and they could not be reached. Check your connection and open this page again.',
@@ -37,7 +37,7 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){H.load
  if(!root.isConnected)return;
  const has=(book,l)=>!!eds[book]?.collection.some(c=>c.name===`${l}-${book}`);
  const books=Object.keys(L2.HCOL).filter(k=>eds[k]);
- const S={lang:P.lang,book:books.includes(b0)?b0:'bukhari',sec:'',items:[],idx:-1,rate:P.rate,cont:P.cont,msg:'',busy:false};
+ const S={lang:P.lang,book:books.includes(b0)?b0:'bukhari',sec:'',items:[],idx:-1,rate:SP.get(),cont:P.cont,msg:'',busy:false};
  if(!books.includes(S.book))S.book=books[0];
  if(!has(S.book,S.lang)){S.book=books.find(k=>has(k,S.lang))||S.book}
  const lname=l=>names(l==='eng'?'eng':'urd',ui,true);
@@ -53,7 +53,7 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){H.load
  </div>
  <div class="card ha-now" id="haNow"><p class="ha-ref" id="haRef" aria-live="polite"></p>
   <div class="ha-ctl" role="group"><button type="button" class="ha-c" id="haPrev" aria-label="${t.prev}">${IC.prev}<span>${t.prev}</span></button><button type="button" class="ha-c ha-main" id="haPlay" aria-label="${t.play}">${IC.play}<span>${t.play}</span></button><button type="button" class="ha-c" id="haStop" aria-label="${t.stop}">${IC.stop}<span>${t.stop}</span></button><button type="button" class="ha-c" id="haNext" aria-label="${t.next}">${IC.next}<span>${t.next}</span></button></div>
-  <div class="ha-row ha-opts"><label><input type="checkbox" id="haCont" ${S.cont?'checked':''}> ${t.cont}</label><label>${t.speed} <select id="haRate" aria-label="${t.speed}">${[0.8,1,1.2].map(r=>`<option value="${r}" ${r===S.rate?'selected':''}>${r}×</option>`).join('')}</select></label></div>
+  <div class="ha-row ha-opts"><label><input type="checkbox" id="haCont" ${S.cont?'checked':''}> ${t.cont}</label><span class="sp-wrap" id="haRate"><span class="sp-lbl">${t.speed}</span>${SP.pill(t===TX.ur)}</span></div>
   <p class="muted" id="haMsg" role="status"></p></div>
  <div id="haList"></div></section>`;
  const q=s=>root.querySelector(s),list=q('#haList');
@@ -123,7 +123,7 @@ export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){H.load
  q('#haSec').onchange=e=>loadSec(e.target.value);
  const go=()=>{const v=q('#haNum').value.trim();if(v)jump(v)};
  q('#haGo').onclick=go;q('#haNum').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
- q('#haRate').onchange=e=>{S.rate=+e.target.value||1;savePref({...pref(),rate:S.rate});H.setRate(S.rate)};
+ {const off=SP.on(r=>{if(!document.contains(q('#haRate')))return off();S.rate=r;H.setRate(r)})}
  q('#haCont').onchange=e=>{S.cont=e.target.checked;savePref({...pref(),cont:S.cont})};
  q('#haPlay').onclick=()=>{const s=st();if(s.state==='playing'||s.state==='starting')H.pause();else if(s.state==='paused')H.resume();else{let i=S.idx;if(!ready(i))i=nextOk(i,1)>=0?nextOk(i,1):nextOk(i,-1);if(i>=0)speak(i)}};
  q('#haStop').onclick=()=>{H.stop();msg('');paintNow()};

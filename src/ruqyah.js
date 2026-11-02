@@ -4,7 +4,7 @@ import*as H from'./hadith-tts.js';
 import {ayahText} from'./lib.js';
 import {kick as glide} from'./glide.js';
 import {follow} from'./follow.js';
-import*as MP from'./miniplayer.js';
+import*as MP from'./miniplayer.js';import*as SP from'./speed.js';
 const API='https://api.alquran.cloud/v1';
 /** Quranic sections: [surah, fromAyah, toAyah]. */
 export const RQ=[[1,1,7],[2,1,5],[2,102,102],[2,163,164],[2,255,255],[2,285,286],[3,18,19],[7,54,56],[7,117,122],[10,81,82],[20,69,69],[23,115,118],[37,1,10],[46,29,32],[55,33,36],[59,21,24],[72,1,9],[112,1,4],[113,1,5],[114,1,6]];
@@ -22,11 +22,11 @@ const arN=n=>(+n).toLocaleString('ar-EG');
 // Same display text as the reader (lib.ayahText): the Bismillah prefix of ayah 1 is matched without diacritics, because the
 // Quran file writes shadda+fatha in the other mark order than BISM, so a plain startsWith never matched and it showed twice.
 export const ayahTxt=(s,a,t)=>s===9?t:ayahText(s,a,t);
-let off=[];const au=new Audio();au.preload='auto';const pre=new Audio();pre.preload='auto';
+let off=[];const au=SP.bind(new Audio());au.preload='auto';const pre=SP.bind(new Audio());pre.preload='auto';
 export function leave(){au.pause();pre.removeAttribute('src');H.stop();if(typeof navigator!=='undefined'&&'mediaSession' in navigator&&au.src){try{navigator.mediaSession.metadata=null;for(const a of['play','pause','stop','previoustrack','nexttrack'])navigator.mediaSession.setActionHandler(a,null)}catch{/* ignore */}try{dispatchEvent(new Event('qs:media-restore'))}catch{/* ignore */}}document.body.classList.remove('mp-alt');off.forEach(f=>f());off=[]}
 export async function page(C,tt,ur,I){
  leave();C.setTitle(tt('Ruqyah Shariah','رقیہ شرعیہ'));
- const ML={prev:tt('Previous ayah','پچھلی آیت'),next:tt('Next ayah','اگلی آیت'),play:tt('Play','چلائیں'),pause:tt('Pause','وقفہ'),close:tt('Stop and close','بند کریں')};
+ const ML={prev:tt('Previous ayah','پچھلی آیت'),next:tt('Next ayah','اگلی آیت'),play:tt('Play','چلائیں'),pause:tt('Pause','وقفہ'),close:tt('Stop and close','بند کریں'),ur,speed:true};
  const app=C.app();app.innerHTML=`<p class="muted c">${tt('Loading…','لوڈ ہو رہا ہے…')}</p>`;
  const [txt,list]=await Promise.all([C.arabic([...new Set(RQ.map(x=>x[0]))]),C.surahs()]);
  if(!app.isConnected)return;
@@ -48,7 +48,7 @@ q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))
   if(st.i>=0&&st.state!=='idle'){const e=app.querySelector(`[data-i="${st.i}"]`);e?.classList.add('rq-on');const x=seq[st.i];
    q('#rqSt').textContent=x.k==='q'?`${list[x.s-1].name} ${arN(x.a)} · ${st.i+1} / ${seq.length}`:`${tt('Dua','دعا')} ${x.j+1} · ${st.i+1} / ${seq.length}`}};
  const top=q('.rq-top'),mini=q('#rqMini');let topVis=true;
- const mp=()=>{mini.hidden=topVis||st.state==='idle';app.classList.toggle('rq-live',st.state!=='idle');document.body.classList.toggle('mp-alt',st.state!=='idle');MP.setPlaying(q('#rqMP'),st.state!=='paused',ML);q('#rqMS').textContent=q('#rqSt').textContent};
+ const mp=()=>{SP.paint();mini.hidden=topVis||st.state==='idle';app.classList.toggle('rq-live',st.state!=='idle');document.body.classList.toggle('mp-alt',st.state!=='idle');MP.setPlaying(q('#rqMP'),st.state!=='paused',ML);q('#rqMS').textContent=q('#rqSt').textContent};
  try{new IntersectionObserver(([e])=>{topVis=e.isIntersecting;mp()}).observe(top)}catch{/* old browsers: no mini player */}
  const end=()=>{st.state='idle';st.i=-1;paint();mediaOff();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
  const paint0=paint;paint=()=>{paint0();mp()};

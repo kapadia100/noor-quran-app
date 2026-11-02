@@ -1,5 +1,5 @@
 // Listen to a hadith with the voices already on the phone (speechSynthesis). Nothing is downloaded and nothing is claimed unless the device really starts speaking.
-import{codeOf,bcpOf}from'./hadith-lang.js';
+import{codeOf,bcpOf}from'./hadith-lang.js';import*as SP from'./speed.js';
 import{ttsLangOk,stripArabic,utteranceOk,install as guardTTS}from'./tts-guard.js';
 guardTTS();
 const SS=()=>globalThis.speechSynthesis||null,UT=()=>globalThis.SpeechSynthesisUtterance||null;
@@ -40,7 +40,7 @@ let IDX=null,idxFor='',IDXP=Promise.resolve();export const indexReady=()=>Promis
  IDXP=fetch(`${b}/index.json`).then(r=>r.ok?r.json():null).then(d=>{if(d&&idxFor===b)IDX=Object.fromEntries(Object.entries(d).map(([k,v])=>[k,new Set(v.map(String))]))}).catch(()=>{})}
 export function audioUrl(book,n,lang='urd'){const b=audioBase();if(!b||codeOf(lang)!==codeOf('urd')||n===undefined||n===null||n==='')return '';loadIndex();
  if(IDX&&idxFor===b&&!IDX[book]?.has(String(n).replace(/\//g,'_')))return '';return `${b}/${encodeURIComponent(book)}/${String(n).replace(/\//g,'_')}.m4a`}
-let el=null;const A=()=>{if(!el&&globalThis.Audio){el=new Audio();el.preload='auto';globalThis.__qsHA=el}return el};
+let el=null;const A=()=>{if(!el&&globalThis.Audio){el=SP.bind(new Audio());el.preload='auto';globalThis.__qsHA=el}return el};
 function playFile(my,c){const a=A();if(!a){fallback(my,c);return}
  c.state='starting';emit();
  const rt=()=>{try{a.defaultPlaybackRate=c.rate||1;a.playbackRate=c.rate||1}catch{/* ignore */}};

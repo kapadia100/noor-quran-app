@@ -11,7 +11,9 @@ const ROWS=[
  ['uzb','uz','Uzbek','Oʻzbekcha','ازبک'],['kaz','kk','Kazakh','Қазақша','قازق'],['aze','az','Azerbaijani','Azərbaycanca','آذربائیجانی'],['tgl','fil','Filipino','Filipino','فلپینی'],
  ['sqi','sq','Albanian','Shqip','البانوی'],['bos','bs','Bosnian','Bosanski','بوسنیائی'],['mal','ml','Malayalam','മലയാളം','ملیالم'],['tel','te','Telugu','తెలుగు','تیلگو'],
  ['kan','kn','Kannada','ಕನ್ನಡ','کنڑ'],['guj','gu','Gujarati','ગુજરાતી','گجراتی'],['pan','pa','Punjabi','ਪੰਜਾਬੀ','پنجابی'],['mar','mr','Marathi','मराठी','مراٹھی'],
- ['nep','ne','Nepali','नेपाली','نیپالی'],['amh','am','Amharic','አማርኛ','امہاری']];
+ ['nep','ne','Nepali','नेपाली','نیپالی'],['amh','am','Amharic','አማርኛ','امہاری'],
+ ['tat','tt','Tatar','Татарча','تاتاری'],['uig','ug','Uyghur','ئۇيغۇرچە','ایغور'],['tgk','tg','Tajik','Тоҷикӣ','تاجک'],['div','dv','Divehi','ދިވެހި','دیویہی'],
+ ['mya','my','Burmese','မြန်မာ','برمی'],['bak','ba','Bashkir','Башҡортса','باشکیر'],['ber','ber','Amazigh (Berber)','Tamaziɣt','امازیغی'],['che','ce','Chechen','Нохчийн','چیچن']];
 export const LANGS=Object.fromEntries(ROWS.map(([c,b,en,nat,ur])=>[c,{bcp:b,en,nat,ur}]));
 const BY2=Object.fromEntries(ROWS.map(r=>[r[1],r[0]])),ALIAS={in:'ind',iw:'heb',jw:'jav',no:'nor',nb:'nor',tl:'tgl',cmn:'zho',zlm:'msa',ur:'urd'};
 /** Normalise any language code ("eng", "en", "en-US", "en_US", "ara-bukhari") to the three-letter code used in the data, or '' when unknown. */
