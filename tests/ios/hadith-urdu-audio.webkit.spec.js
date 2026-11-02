@@ -8,5 +8,5 @@ test('Bukhari 59 Urdu: speaker enabled and recorded audio actually plays, speed 
  await page.click('#hlRate [data-sp]');await page.click('.sp-pop .sp-c[data-r="1.25"]');await b.click();
  await expect(b).toHaveAttribute('data-st','playing',{timeout:40000});
  const t0=await page.evaluate(()=>window.__qsHA?.currentTime??-1);await page.waitForTimeout(2500);const t1=await page.evaluate(()=>window.__qsHA?.currentTime??-1);
- expect(t1).toBeGreaterThan(t0);expect(await page.evaluate(()=>window.__qsHA.playbackRate)).toBe(1.2);
+ expect(t1).toBeGreaterThan(t0);expect(await page.evaluate(()=>window.__qsHA.playbackRate)).toBe(1.25);
  expect(await page.evaluate(()=>window.__qsHA.src)).toMatch(/bukhari\/59\.m4a$/)});
