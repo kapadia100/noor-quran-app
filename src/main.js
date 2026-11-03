@@ -5,6 +5,7 @@ import*as HL from './hadith-listen.js';
 import*as MP from './miniplayer.js';import*as SP from './speed.js';
 import*as HA from './hadith-audio.js';
 import*as PK from './pickers.js';
+import * as N from './notify.js';
 import * as PR from './prayer.js';
 import * as QB from './qibla.js';
 import {hifzNext,surahMatch,JUZ,JUZN,ayahText,parseRef,validSurah,validJuz,juzRanges,nextPos,clampAdj,highlight,AYAH_COUNTS,TRANS_AUDIO,AUDIO_MODES,ayahClips} from './lib.js';
@@ -115,9 +116,10 @@ function prayer(){const ur=S.ui==='ur',T=(e,u)=>ur?u:e;setTitle(T('Prayer Times'
  ${heroAt?`<small class="ph-lbl">${isMk?T('Makrooh time — avoid salah until','مکروہ وقت — نماز سے پرہیز، تک'):hs?.mode==='current'?T('Fajr ends at sunrise','فجر کا وقت طلوع تک'):T('Next prayer','اگلی نماز')}</small>
  <div class="ph-next"><b>${isMk?`<bdi dir="ltr">${PR.fmt12(hs.until)}</bdi>`:pn(nx.key)}</b>${isMk?'':`<span dir="ltr">${PR.fmt12(nx.time)}</span>`}</div><div class="cd ph-cd" data-at="${+heroAt}"></div>
  <div class="ph-bar" data-from="${+heroFrom}" data-at="${+heroAt}"><i style="--w:${Math.max(0,Math.min(100,100*(now-heroFrom)/(heroAt-heroFrom))).toFixed(1)}%"></i></div>`:''}</section>
+${(()=>{const st=nState();if(LS.get('nAskDone',0)||!Object.values(P.alerts).some(Boolean)||(st!=='default'&&st!=='ios-tab'))return '';return `<div class="card ntf-ask" id="nAsk" role="region" aria-label="${T('Prayer notifications','نماز کی اطلاعات')}"><span class="ntf-ic">${I_('bell')}</span><div class="grow"><b>${T('Get a notification at each prayer time?','ہر نماز کے وقت اطلاع چاہیے؟')}</b><small>${st==='ios-tab'?IOS_TIP():T('Choose which prayers in Settings → Prayer notifications.','کون سی نمازیں — سیٹنگز ← نماز کی اطلاعات میں منتخب کریں۔')}</small></div><div class="ntf-ab">${st==='ios-tab'?'':`<button class="btn" id="nAskOn">${T('Turn on','فعال کریں')}</button>`}<button class="btn ghost" id="nAskNo">${st==='ios-tab'?T('OK','ٹھیک ہے'):T('Not now','ابھی نہیں')}</button></div></div>`})()}
  <div class="card ph-loc"><span class="ph-pin">${I_('pin')}</span><span class="grow"><b id="pPlace">${esc(placeName())}</b><small id="gmsg" class="muted"></small></span>
  <button class="icon-btn mq-loc" id="gps" aria-label="${T('Refresh my location','لوکیشن دوبارہ لیں')}" title="${T('Refresh my location','لوکیشن دوبارہ لیں')}">${I_('gps')}</button>
- <label class="ph-chip">${T('Choose city','شہر')}<select id="city" aria-label="City"><option value="">${T('Choose city…','شہر منتخب کریں')}</option>${PR.CITIES.map(c=>`<option ${P.src!=='gps'&&c[0]===P.city?'selected':''}>${c[0]}</option>`).join('')}</select></label></div>
+ <label class="ph-chip">${T('Choose city','شہر')}<select id="city" aria-label="${T('City','شہر')}"><option value="">${T('Choose city…','شہر منتخب کریں')}</option>${PR.CITIES.map(c=>`<option ${P.src!=='gps'&&c[0]===P.city?'selected':''}>${c[0]}</option>`).join('')}</select></label></div>
  ${phView==='today'?`<div class="card ph-list"><div class="ph-head"><span></span><span></span><span class="t">${T('Time','وقت')}</span><span class="ph-c">${I_('bell')}</span></div><ul class="list ptimes">${PR.PRAYERS.map(row).join('')}</ul></div>`:tt()}
  <div class="ph-seg" role="tablist">${[['today',T('Today','آج')],['week',T('Week','ہفتہ')],['month',T('Month','مہینہ')]].map(([v,l])=>`<button role="tab" data-v="${v}" class="${phView===v?'on':''}" aria-selected="${phView===v}">${l}</button>`).join('')}</div>
  <details class="card ph-set" id="pSet"${LS.get('phSetOpen',false)?' open':''}><summary>${I_('settings')} ${T('Settings','سیٹنگز')}<small class="muted">${esc(PR.METHODS[P.method]||P.method)} · ${P.madhab==='Hanafi'?'Hanafi':"Shafi'i"}</small></summary><div class="form">
@@ -128,13 +130,14 @@ function prayer(){const ur=S.ui==='ur',T=(e,u)=>ur?u:e;setTitle(T('Prayer Times'
  <label class="ph-ck"><input type="checkbox" id="adh" ${P.adhan?'checked':''}> ${T('Adhan sound with alerts','اذان کی آواز')}</label>
  <label>${T('Hijri date adjustment','ہجری تاریخ میں تبدیلی')} <span><button class="btn ghost" id="hm">−1</button> <b id="hv">${P.hijriAdj>0?'+':''}${P.hijriAdj}</b> <button class="btn ghost" id="hp">+1</button></span></label>
  <button class="btn" id="sched">${I_('bell')} ${T('Enable / refresh prayer alerts','الرٹس فعال کریں')} (${P.days} days)</button><small id="smsg" class="muted"></small></div></details>`;tick();
- const re=async()=>{PR.saveP();prayer();const r=await PR.schedule().catch(e=>({ok:false,reason:e.message}));const m=$('#smsg');if(m)m.textContent=r.ok?`✓ ${r.count} alerts scheduled (${r.mode})`:'Alerts: '+r.reason};
+ const re=async()=>{PR.saveP();prayer();const r=await PR.schedule().catch(e=>({ok:false,reason:e.message}));const m=$('#smsg');if(m)m.textContent=nMsg(r);if(r.ok)LS.set('nAskDone',1)};
  const msg=(h)=>{const g=$('#gmsg');if(g)g.innerHTML=h};
  const relocate=async(manual)=>{const g=$('#gps');if(!g||g.disabled)return;g.disabled=true;g.classList.add('spin');msg(`<span class="mq-locating">${T('Locating…','لوکیشن معلوم کی جا رہی ہے…')}</span>`);const o=`${P.lat},${P.lng},${P.src}`;
   try{await PR.locate();P.manual=false;P.method=P.method||'Karachi';const changed=o!==`${P.lat},${P.lng},${P.src}`;const named=await reverseGeo();if(!location.hash.startsWith('#/prayer'))return;if(changed||manual)re();else if(named){const e=$('#pPlace');if(e)e.textContent=placeName();msg('')}else msg('')}
   catch(e){if(!$('#gps'))return;const d=/denied/i.test(e.message);msg(`<span class="mq-warn">${d?T('Location permission is off — allow it in your phone/browser settings, or choose a city.','لوکیشن کی اجازت بند ہے — سیٹنگ میں اجازت دیں یا شہر منتخب کریں۔'):T('Could not get your location — showing your saved place.','لوکیشن نہیں مل سکی — محفوظ جگہ کے اوقات۔')}</span> <button class="btn ghost mq-retry" id="pRetry">${T('Retry','دوبارہ کوشش')}</button>`);$('#pRetry').onclick=()=>relocate(true)}
   finally{const b=$('#gps');if(b){b.disabled=false;b.classList.remove('spin')}}};
  $('#gps').onclick=()=>relocate(true);
+ {const na=$('#nAsk');if(na)na.parentElement.append(na);const on=$('#nAskOn'),no=$('#nAskNo');if(no)no.onclick=()=>{LS.set('nAskDone',1);$('#nAsk')?.remove()};if(on)on.onclick=async()=>{const r=await nArm(null);const a=$('#nAsk');if(a){LS.set('nAskDone',1);a.querySelector('small').textContent=nMsg(r);a.querySelector('.ntf-ab').remove();setTimeout(()=>a.remove(),4000)}}}
  $('#city').onchange=e=>{if(e.target.value){PR.setCity(e.target.value);P.manual=true;re()}};$('#meth').onchange=e=>{P.method=e.target.value;re()};$('#madh').onchange=e=>{P.madhab=e.target.value;re()};$('#hlr').onchange=e=>{P.hlr=e.target.value;re()};
  $('#adh').onchange=e=>{P.adhan=e.target.checked;re()};$('#hm').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj-1);PR.saveP();prayer()};$('#hp').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj+1);PR.saveP();prayer()};
  $('#pSet').ontoggle=e=>LS.set('phSetOpen',e.target.open);
@@ -354,7 +357,7 @@ async function hadithSection(book,sec){if(!L2.hasBook(book)){location.replace('#
 
 // ---------- Search ----------
 async function search(q=''){setTitle(t('search'));const trs=await editions('translation');
- app.innerHTML=`<form id="sf" class="bar"><input class="inp" id="q" aria-label="${t('q')}" value="${esc(q)}" placeholder="${t('q')}"><select id="se" aria-label="${t('edition')}">${opt(trs.filter(e=>langRank(e.language)<2),S.searchEd||S.trans)}<option value="quran-simple-clean">AR · Arabic text</option>${opt(trs.filter(e=>langRank(e.language)>=2),S.searchEd||S.trans)}</select><button class="btn">${I_('search')}</button></form><div id="sr"></div>`;
+ app.innerHTML=`<form id="sf" class="bar"><input class="inp" id="q" aria-label="${t('q')}" value="${esc(q)}" placeholder="${t('q')}"><select id="se" aria-label="${t('edition')}">${opt(trs.filter(e=>langRank(e.language)<2),S.searchEd||S.trans)}<option value="quran-simple-clean">AR · Arabic text</option>${opt(trs.filter(e=>langRank(e.language)>=2),S.searchEd||S.trans)}</select><button class="btn" aria-label="${S.ui==='ur'?'تلاش':'Search'}">${I_('search')}</button></form><div id="sr"></div>`;
  $('#sf').onsubmit=e=>{e.preventDefault();S.searchEd=$('#se').value;save();run()};if(S.searchEd==='quran-simple-clean')$('#se').value='quran-simple-clean';
  const run=async()=>{const v=$('#q').value.trim();if(!v)return;history.replaceState(null,'','#/search/'+encodeURIComponent(v));$('#sr').innerHTML=t('loading');
   // also allow direct ref "2:255"
@@ -376,6 +379,30 @@ function audioBar(p){const u=S.ui==='ur';const show=S.amode!=='ar';
 function bindAudioBar(p){const re=()=>{const was=cur&&!cur.clip&&!audio.paused?cur:null;if(was){stop();playPos(was.s,was.i)}};
  $('#'+p+'_am').onchange=e=>{S.amode=e.target.value;save();$('#'+p+'_talW').hidden=S.amode==='ar';re()};
  $('#'+p+'_tal').onchange=e=>{S.talang=e.target.value;S.talangFor=trLangOf(S.trans);save();re()}}
+// ---- prayer notifications (web/PWA) ----
+function nState(){if(PR.isNative())return 'native';if(N.needsHomeScreen())return 'ios-tab';if(!N.supported())return 'unsupported';return N.permission()}
+function nMsg(r){const u=S.ui==='ur';if(!r)return '';if(!r.ok)return /denied/.test(r.reason||'')?(u?'اطلاعات بلاک ہیں — فون/براؤزر کی سیٹنگ میں قرآن سفر کے لیے اجازت دیں':'Notifications are blocked — allow them for Quran Safar in your phone/browser settings'):r.reason==='unsupported'?(u?'یہ براؤزر اطلاعات نہیں دکھا سکتا':'This browser can’t show notifications'):(u?'اطلاعات کی اجازت نہیں دی گئی':'Notification permission was not given');
+ if(r.mode==='native'||r.mode==='scheduled')return u?`✓ ${r.count} اطلاعات مقرر ہو گئیں`:`✓ ${r.count} notifications scheduled`;
+ return u?`✓ ${r.count} اطلاعات تیار — ایپ کو دن میں ایک بار کھولیں تاکہ وقت پر آئیں`:`✓ ${r.count} notifications ready — open the app once a day so they stay on time`}
+const IOS_TIP=()=>S.ui==='ur'?'آئی فون/آئی پیڈ پر اطلاعات کے لیے: Safari میں شیئر ⬆︎ ← "Add to Home Screen" دبائیں، پھر ہوم اسکرین سے قرآن سفر کھولیں (iOS 16.4 یا نیا)۔':'To get notifications on iPhone/iPad: in Safari tap Share ⬆︎ → “Add to Home Screen”, then open Quran Safar from your Home Screen (iOS 16.4 or later).';
+function ntfSection(){const u=S.ui==='ur',st=nState(),P=PR.P;const T=(e,r)=>u?r:e;
+ const status={native:T('On this phone','اس فون پر فعال'),granted:T('Allowed ✓','اجازت ہے ✓'),denied:T('Blocked — allow notifications for this app in your phone/browser settings','بلاک — فون/براؤزر سیٹنگ میں اجازت دیں'),default:T('Not turned on yet','ابھی فعال نہیں'),unsupported:T('This browser can’t show notifications','یہ براؤزر اطلاعات نہیں دکھا سکتا'),'ios-tab':T('Add to Home Screen first','پہلے ہوم اسکرین پر شامل کریں')}[st];
+ return `<fieldset class="ntf" id="s_ntf"><legend>${I_('bell')} ${T('Prayer notifications','نماز کی اطلاعات')}</legend>
+ <p class="ntf-st" id="ntfSt" role="status"><span>${T('Status','حالت')}:</span> <b>${status}</b></p>
+ ${st==='ios-tab'?`<p class="ntf-tip" id="ntfIos">${IOS_TIP()}</p>`:''}
+ <div class="ntf-grid" role="group" aria-label="${T('Notify me for','ان اوقات پر اطلاع')}">${PR.PRAYERS.map(k=>`<label class="ntf-ck"><input type="checkbox" data-nal="${k}" ${P.alerts[k]?'checked':''}> <span>${k==='sunrise'?T('Sunrise (Fajr ends)','طلوع (فجر ختم)'):(u?PR.PNAME[k][1]:PR.PNAME[k][0])}</span></label>`).join('')}</div>
+ <label class="ntf-ck wide"><input type="checkbox" id="s_nEnd" ${P.endAlert?'checked':''}> <span>${T('Also remind me 15 min before Fajr, Dhuhr, Asr and Maghrib time ends','فجر، ظہر، عصر اور مغرب کا وقت ختم ہونے سے 15 منٹ پہلے بھی یاد دلائیں')}</span></label>
+ <label class="ntf-ck wide"><input type="checkbox" id="s_nAdh" ${P.adhan?'checked':''}> <span>${T('Play the adhan when the app is open','ایپ کھلی ہو تو اذان چلائیں')}</span></label>
+ <div class="ntf-btns"><button class="btn" type="button" id="s_nOn" ${st==='ios-tab'||st==='unsupported'?'disabled':''}>${st==='granted'||st==='native'?T('Refresh notifications','اطلاعات تازہ کریں'):T('Turn on notifications','اطلاعات فعال کریں')}</button><button class="btn ghost" type="button" id="s_nTest" ${st==='granted'?'':'hidden'}>${T('Send a test','آزمائشی اطلاع')}</button></div>
+ <small class="muted" id="nMsg" role="status"></small>
+ <small class="muted ntf-note">${T('Times are worked out on this device for your saved location. Phones can delay or skip notifications while an app is fully closed for a long time — opening the app once a day keeps them on time.','اوقات اسی ڈیوائس پر آپ کی محفوظ جگہ کے مطابق نکالے جاتے ہیں۔ ایپ زیادہ دیر مکمل بند رہے تو فون اطلاع دیر سے دے سکتا ہے — دن میں ایک بار ایپ کھولنے سے اطلاعات وقت پر رہتی ہیں۔')}</small></fieldset>`}
+async function nArm(msgEl){const r=await PR.schedule().catch(e=>({ok:false,reason:e.message}));if(r.ok)LS.set('nAskDone',1);if(msgEl&&document.contains(msgEl))msgEl.textContent=nMsg(r);return r}
+function bindNtf(){const P=PR.P,m=$('#nMsg');if(!$('#s_ntf'))return;
+ app.querySelectorAll('[data-nal]').forEach(c=>c.onchange=()=>{P.alerts[c.dataset.nal]=c.checked;PR.saveP();if(nState()==='granted'||nState()==='native')nArm(m)});
+ $('#s_nEnd').onchange=e=>{P.endAlert=e.target.checked;PR.saveP();if(nState()==='granted'||nState()==='native')nArm(m)};
+ $('#s_nAdh').onchange=e=>{P.adhan=e.target.checked;PR.saveP()};
+ $('#s_nOn').onclick=async()=>{await nArm(m);const keep=m.textContent;if(location.hash.startsWith('#/settings')){settings().then(()=>{const n=$('#nMsg');if(n)n.textContent=keep})}};
+ const t=$('#s_nTest');if(t)t.onclick=()=>N.test(S.ui==='ur').then(()=>{m.textContent=S.ui==='ur'?'آزمائشی اطلاع بھیج دی گئی':'Test notification sent'}).catch(()=>{m.textContent=nMsg({ok:false,reason:'unsupported'})})}
 async function settings(){setTitle(t('settings'));const root=app;const [trs,recs,tfs]=await Promise.all([editions('translation'),audioEds(),editions('tafsir')]);if(app!==root)return;
  app.innerHTML=`<div class="form"><label>${t('uiLang')}<select id="s_ui"><option value="en">English</option><option value="ur" ${S.ui==='ur'?'selected':''}>اردو</option></select></label>
  <label>${t('tlang')}<select id="s_tlang">${PK.langOptions(PK.transLangs(trs),PK.langOfEdition(trs,S.trans),S.ui)}</select></label><label>${t('translator')}<select id="s_trans">${PK.translatorOptions(trs,PK.langOfEdition(trs,S.trans),S.trans,S.ui)}</select></label><label>${t('reciter')}<select id="s_reciter">${PK.reciterOptions(recs,S.reciter,S.ui)}</select></label><label>${t('tafsir')}<select id="s_tafsir">${opt(tfs,S.tafsir)}</select></label>
@@ -383,7 +410,8 @@ async function settings(){setTitle(t('settings'));const root=app;const [trs,recs
  <label>${S.ui==='ur'?'مصحف رسم الخط':'Mushaf script'}<select id="s_script"><option value="uthmani">${S.ui==='ur'?'عثمانی':'Uthmani'}</option><option value="indopak" ${S.script==='indopak'?'selected':''}>${S.ui==='ur'?'انڈو پاک':'Indo-Pak'}</option></select></label>
  <label>${S.ui==='ur'?'لفظ بہ لفظ زبان':'Word-by-word language'}<select id="s_wbwLang"><option value="">${S.ui==='ur'?'خودکار':'Auto'}</option>${orderLangs(['en','ur','hi','bn','id','tr']).map(v=>`<option value="${v}" ${S.wbwLang===v?'selected':''}>${esc(langName(v,S.ui))}</option>`).join('')}</select></label>
  <label><input type="checkbox" id="s_aotd" ${S.aotd?'checked':''}> ${S.ui==='ur'?'روزانہ آیت کی اطلاع':'Daily ayah-of-the-day notification'} <input type="time" id="s_aotdT" value="${S.aotdT||'07:00'}" aria-label="Time"></label><small id="aMsg" class="muted"></small>
-</div>`;
+ ${ntfSection()}
+</div>`;bindNtf();
  bindAudioBar('s');['script','wbwLang'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;save()});
  const aot=async()=>{S.aotd=$('#s_aotd').checked;S.aotdT=$('#s_aotdT').value||'07:00';save();const r=await scheduleAotd();const u=S.ui==='ur';$('#aMsg').textContent=!S.aotd?(u?'روزانہ آیت کی اطلاع بند':'Daily ayah notification off'):r.ok?(u?`✓ روزانہ ${S.aotdT||'07:00'} بجے اطلاع آئے گی`:`✓ You'll be notified daily at ${S.aotdT||'07:00'}`):/denied/.test(r.reason||'')?(u?'اطلاع کی اجازت نہیں ملی — براؤزر کی ترتیبات میں اجازت دیں':'Notifications are blocked — allow them in your browser settings'):(u?'یہ ڈیوائس اطلاعات نہیں دکھا سکتی':'This device can’t show notifications')};$('#s_aotd').onchange=aot;$('#s_aotdT').onchange=aot;
  ['ui','trans','reciter','tafsir'].forEach(k=>$('#s_'+k).onchange=e=>{S[k]=e.target.value;if(k==='trans')trChanged();if(k==='reciter')S.reciterName=e.target.selectedOptions[0].dataset.en||'';save();applyUI();if(k==='ui')settings()});
@@ -412,7 +440,9 @@ function armMidnight(){clearTimeout(midT);midT=setTimeout(()=>{refreshDates();ar
 armMidnight();setInterval(()=>{if(!document.hidden&&dateKey()!==shownDay)refreshDates()},30000);
 if(S.aotd&&(PR.isNative()||('Notification' in window&&Notification.permission==='granted')))scheduleAotd();
 // Re-arm alerts on launch only if permission was already granted (no permission prompt without a user gesture).
-if(Object.values(PR.P.alerts).some(Boolean)&&localStorage.getItem('prayer')&&(PR.isNative()||('Notification' in window&&Notification.permission==='granted')))PR.schedule().catch(()=>{});
+if(Object.values(PR.P.alerts).some(Boolean)&&(PR.isNative()||('Notification' in window&&Notification.permission==='granted')))PR.schedule().catch(()=>{});
+// Re-arm on resume (plans cover 7 days; times shift with location) and let the service worker show anything missed while closed.
+{let last=Date.now();addEventListener('visibilitychange',()=>{if(document.hidden)return;N.wake();if(Date.now()-last>6*36e5&&Object.values(PR.P.alerts).some(Boolean)&&!PR.isNative()&&'Notification' in window&&Notification.permission==='granted'){last=Date.now();PR.schedule().catch(()=>{})}})}
 if('serviceWorker' in navigator&&import.meta.env.PROD){const had=!!navigator.serviceWorker.controller;let reloaded=false;
  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!reloaded){reloaded=true;location.reload()}});
  addEventListener('load',()=>navigator.serviceWorker.register(import.meta.env.BASE_URL+'sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(!document.hidden)r.update()})}))}

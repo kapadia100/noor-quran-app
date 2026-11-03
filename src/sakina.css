@@ -584,3 +584,28 @@ html body .hcards.med .hc-live{position:absolute!important;top:auto!important;bo
 [data-theme=dark] .hcards.med .md::after{border-color:rgba(216,181,106,.55)}[data-theme=dark] .hcards.med .md-ar{color:#E9CB7C}
 @media (min-width:700px){.hcards.med .md{width:140px}.hcards.med .md-ar{font-size:34px}}
 @media (prefers-reduced-motion:reduce){.hcards.med .md{transition:none}.hcards.med .hc:active .md{transform:none}}
+/* v92 (t245u): prayer notifications — Settings section + soft prompt on Prayer page */
+.ntf{border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);border-radius:16px;padding:12px 14px 14px;margin:6px 0 0;display:flex;flex-direction:column;gap:10px;min-width:0;background:var(--card)}
+.ntf legend{display:flex;align-items:center;gap:6px;font-weight:700;padding:0 6px}.ntf legend svg{width:18px;height:18px;color:var(--acc)}
+.ntf-st{margin:0;font-size:14px}.ntf-st span{opacity:.7}
+.ntf-tip{margin:0;font-size:13px;line-height:1.5;padding:9px 11px;border-radius:12px;background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.ntf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+html body .form .ntf-ck{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 10px;border-radius:12px;background:color-mix(in srgb,var(--fg) 4%,transparent);flex-direction:row;margin:0}
+.ntf-ck input{width:20px;height:20px;flex:none;margin:0;accent-color:var(--acc)}.ntf-ck span{line-height:1.35;min-width:0}
+.ntf-btns{display:flex;flex-wrap:wrap;gap:8px}.ntf-btns .btn{min-height:44px}
+.ntf-note{line-height:1.5}
+.ntf-ask{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid color-mix(in srgb,var(--acc) 40%,transparent)}
+.ntf-ask .ntf-ic svg{width:26px;height:26px;color:var(--acc)}.ntf-ask .grow{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:3px}.ntf-ask small{opacity:.8;line-height:1.45}
+.ntf-ask .ntf-ab{display:flex;gap:8px;margin-inline-start:auto}.ntf-ask .btn{min-height:44px}
+.ntf-ask{position:fixed;z-index:40;inset-inline:12px;bottom:calc(84px + env(safe-area-inset-bottom));margin:0!important;max-width:560px;margin-inline:auto!important;box-shadow:0 10px 30px rgba(0,0,0,.22);background:var(--card)}
+@media (prefers-reduced-motion:no-preference){.ntf-ask{animation:ntfIn .35s ease both}@keyframes ntfIn{from{opacity:0;transform:translateY(12px)}}}
+
+.ntf-ask{position:static!important;inset:auto!important;margin-top:12px}
+
+/* v92 audit: tap targets */
+a.badge{display:inline-flex;align-items:center;min-height:28px;position:relative}
+a.badge::after{content:'';position:absolute;inset:-8px -4px}
+.nm-open{min-height:40px}
+#city{min-height:36px}
+html body :is(#player,.qs-mp) .pl-pw .sp-pill::after,.sp-pill::after{content:'';position:absolute;inset:-12px -6px}
+.sp-pill{position:relative}
