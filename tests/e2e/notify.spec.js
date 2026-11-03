@@ -14,6 +14,7 @@ test('Settings → Prayer notifications: per-prayer toggles, tap targets, status
 test('Turn on → plan saved for the service worker, test + catch-up notifications are shown', async ({ page }, ti) => {
   test.skip(ti.project.name === 'iphone', 'iPhone Safari tab: needs Home Screen install');
   await page.goto('/#/settings'); await swReady(page);
+  test.skip(await page.evaluate(() => Notification.permission) === 'denied', 'headless CI browser denies notifications');
   await page.locator('#s_nOn').click(); await expect(page.locator('#nMsg')).toContainText(/notifications/);
   const p = await plans(page); expect(p.prayer.length).toBeGreaterThanOrEqual(30); expect(p.prayer[0].url).toBe('./#/prayer');
   await page.locator('#s_nTest').click(); await expect(page.locator('#nMsg')).toContainText('Test notification sent');
