@@ -625,3 +625,6 @@ html body .lv .hc-live{display:inline-flex!important;align-items:center;gap:4px;
 @keyframes lvp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 @media (prefers-reduced-motion:reduce){.lv .hc-live i{animation:none}}
 .hgrid .fcard.feat.lv:focus-visible{outline:3px solid #E9CB7C;outline-offset:2px}
+/* v95 CI fix: keep live cards exactly feature-card height even when the title + LIVE badge wraps; the calligraphy tile gives up the space */
+.hgrid .fcard.feat.lv{height:150px;min-height:150px}
+.hgrid .fcard.feat.lv .fi.lv-ar{flex:0 1 50px!important;height:auto!important;min-height:30px;overflow:hidden;display:flex;align-items:center;justify-content:center}
