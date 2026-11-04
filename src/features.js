@@ -6,6 +6,7 @@ import{view as mushafView}from'./mushaf.js';
 import * as L from './lib.js';
 import * as DT from './dates.js';
 import * as PR from './prayer.js';
+import * as PL from './places.js';
 import * as I from './icons.js';
 import * as GC from './analytics.js';
 import {weakLoad,dueItems} from './coach.js';
@@ -53,7 +54,7 @@ function pcard(nx0){const n=new Date(),pt=PR.times(n),cur=nowPrayer(),y=PR.times
  const cell=k=>{const[t,ap]=PR.fmt12(pt[k]).split(' ');const st=k===hl?'cur':(nx&&!fj&&nx.key===k?'nx':(pt[k]<n&&k!==hl?'past':''));return `<div class="pc-i ${st}"><span class="pc-ic">${I.icon(PIC[k])}</span><b>${C.pn(k)}</b><span class="pc-t">${t}<small>${ap||''}</small></span></div>`};
  const MKN={sunrise:['After sunrise','طلوعِ آفتاب'],zawal:['Zawal','زوال'],sunset:['Before sunset','غروبِ آفتاب']};
  return `<a class="pcard${mk?' pc-mk':''}" href="#/prayer" id="homePrayer" aria-label="${tt('Prayer times','اوقاتِ نماز')}">${I.mosqueArt}
-  <div class="pc-top"><span class="pc-badge"><i></i>${mk?tt('Makrooh time','مکروہ وقت'):fj?tt('Current prayer','موجودہ نماز'):nx?tt('Next prayer','اگلی نماز'):tt('Now','اب')+' · '+C.pn(cur)}</span><span class="pc-loc">${I.icon('pin')}${esc(PR.P.city||'')}</span></div>
+  <div class="pc-top"><span class="pc-badge"><i></i>${mk?tt('Makrooh time','مکروہ وقت'):fj?tt('Current prayer','موجودہ نماز'):nx?tt('Next prayer','اگلی نماز'):tt('Now','اب')+' · '+C.pn(cur)}</span><span class="pc-loc" title="${tt('Location — change','مقام — تبدیل کریں')}: ${esc(PL.label())}">${I.icon('pin')}<span class="pc-place" data-place>${esc(PL.label())}</span></span></div>
   ${mk?`<div class="pc-main"><div class="pc-mkn" role="status"><b>${tt('Makrooh time — no sajda','مکروہ وقت — سجدہ منع ہے')}</b><small>${tt(MKN[hs.kind][0],MKN[hs.kind][1])} · ${tt('ends','ختم')} <bdi dir="ltr">${PR.fmt12(hs.until)}</bdi></small><span class="pc-cdw"><bdi dir="ltr" class="cd" data-at="${+hs.until}"></bdi><small>${tt('left','باقی')}</small></span></div></div>
   <div class="pc-bar" data-from="${+hs.from}" data-at="${+hs.until}"><i style="--w:${Math.max(0,Math.min(100,100*(n-hs.from)/(hs.until-hs.from))).toFixed(1)}%"></i></div>`:''}
   ${nx?`<div class="pc-main"><div class="pc-nx"><b>${C.pn(nx.key)}</b><bdi dir="ltr" class="pc-at">${PR.fmt12(fj?hs.from:nx.time)}</bdi><span class="pc-cdw"><bdi dir="ltr" class="cd" data-at="${+nx.time}"></bdi><small>${fj?tt('left · until sunrise','باقی · طلوع تک'):tt('left','باقی')}</small></span><span class="pc-arch" aria-hidden="true">${I.icon(PIC[nx.key])}<span class="ar" lang="ar" dir="rtl">${PAR[nx.key]}</span></span></div></div>
@@ -325,7 +326,7 @@ export function calendar(off=0){C.setTitle(tt('Islamic calendar','اسلامی �
 export function ramadan(){C.setTitle(tt('Ramadan','رمضان'));const adj=+PR.P.hijriAdj||0;const R=L.nextRamadan(new Date(),adj);const F=LS.get('fasts_'+R.hy,{});const today=ymd(new Date());
  const rows=R.days.map(({date,hd})=>{const pt=PR.times(date);return `<tr class="${ymd(date)===today?'on':''}"><th>${hd}</th><td>${DT.gregText(date,ur()?'ur':'en',{day:true,month:'short',weekday:'short'})}</td><td>${PR.fmt12(pt.fajr)}</td><td>${PR.fmt12(pt.maghrib)}</td><td><input type="checkbox" data-f="${hd}" aria-label="Fasted day ${hd}" ${F[hd]?'checked':''}></td></tr>`}).join('');
  const n=Object.values(F).filter(Boolean).length;const start=R.days[0]?.date;const inD=start?Math.ceil((start-new Date())/864e5):0;
- app().innerHTML=`<div class="card c"><b>${I_('ramadan')} ${tt(`Ramadan ${R.hy} AH`,`رمضان ${R.hy} ھ`)}</b><br><small class="muted">${inD>0?tt(`Starts in ~${inD} days (${start.toDateString()})`,`تقریباً ${inD} دن میں`):tt('Ramadan Mubarak','رمضان مبارک')} · ${I_('pin')} ${esc(PR.P.city)}</small><p>${tt('Fasts kept','روزے رکھے')}: <b id="fN">${n}</b>/${R.days.length}</p><div class="prog"><i style="width:${n/R.days.length*100}%"></i></div></div>
+ app().innerHTML=`<div class="card c"><b>${I_('ramadan')} ${tt(`Ramadan ${R.hy} AH`,`رمضان ${R.hy} ھ`)}</b><br><small class="muted">${inD>0?tt(`Starts in ~${inD} days (${start.toDateString()})`,`تقریباً ${inD} دن میں`):tt('Ramadan Mubarak','رمضان مبارک')} · ${I_('pin')} <span data-place>${esc(PL.label())}</span></small><p>${tt('Fasts kept','روزے رکھے')}: <b id="fN">${n}</b>/${R.days.length}</p><div class="prog"><i style="width:${n/R.days.length*100}%"></i></div></div>
  <p class="muted">${tt('Sehri ends at Fajr; Iftar at Maghrib (your prayer settings). Many people stop eating a few minutes earlier for caution.','سحری فجر پر ختم؛ افطار مغرب پر (آپ کی نماز کی ترتیبات کے مطابق)۔')}</p>
  <table class="grid rt"><thead><tr><th>#</th><th>${tt('Date','تاریخ')}</th><th>${tt('Sehri ends','سحری')}</th><th>${tt('Iftar','افطار')}</th><th>✓</th></tr></thead><tbody>${rows}</tbody></table>`;
  app().querySelectorAll('[data-f]').forEach(c=>c.onchange=()=>{F[c.dataset.f]=c.checked;LS.set('fasts_'+R.hy,F);$('#fN').textContent=Object.values(F).filter(Boolean).length})}
@@ -347,14 +348,14 @@ export function zakat(){C.setTitle(tt('Zakat calculator','زکوٰۃ کیلکو�
 let mqWatch=null;
 export async function mosques(){C.setTitle(tt('Mosque Finder','مسجد فائنڈر'));const M=await import('./mosques-core.js');const rad=M.RAD;let seq=0;
  app().innerHTML=`<div class="bar mq-bar"><button class="icon-btn mq-loc" id="mGps" aria-label="${tt('Refresh my location','لوکیشن دوبارہ لیں')}" title="${tt('Refresh my location','لوکیشن دوبارہ لیں')}">${I_('gps')}</button><small class="muted mq-rad">${tt('Within 2 km','2 کلومیٹر کے اندر')}</small></div>
- <small class="muted" id="mWhere">${I_('pin')} ${esc(PR.P.city)}</small><p class="muted mq-warn" id="mLoc" hidden></p><p class="muted" id="mNote" hidden></p><ul class="list" id="ml" aria-live="polite"><li class="muted">${C.t('loading')}</li></ul>`;
+ <small class="muted" id="mWhere">${I_('pin')} <span data-place>${esc(PL.label())}</span></small><p class="muted mq-warn" id="mLoc" hidden></p><p class="muted" id="mNote" hidden></p><ul class="list" id="ml" aria-live="polite"><li class="muted">${C.t('loading')}</li></ul>`;
  const note=(s,cls)=>{const n=$('#mNote');if(!n)return;n.textContent=s||'';n.hidden=!s;n.className='muted '+(cls||'')};
  const nm=m=>m.named?(ur()&&m.alt.ur)||m.name:tt('Mosque','مسجد');
  const render=(r,refreshing)=>{const ml=$('#ml');if(!ml)return;const ua=navigator.userAgent||'';const cnt=r.list.length;
   ml.innerHTML=cnt?`<li class="muted mq-count">${cnt} ${tt(cnt===1?'mosque':'mosques','مساجد')} · ${tt('nearest first','قریب ترین پہلے')}</li>`+r.list.map(m=>{const L=M.dirLinks(m.lat,m.lng,nm(m),ua);
    return `<li class="row mq-item"><span class="grow"><b>${I_('mosques')} <bdi>${esc(nm(m))}</bdi></b><small>${M.fmtDist(m.d)}</small></span><span class="mq-act">${L.map((l,i)=>`<a class="btn ${i?'ghost mq-alt':'pri mq-dir'}" data-mq="${l.k}" target="_blank" rel="noopener" href="${esc(l.href)}">${i?(l.k==='g'?'Google Maps':tt('Other map','دوسرا میپ')):`${I_('pin')} ${tt('Directions','راستہ')}`}</a>`).join('')}</span></li>`}).join(''):`<li class="muted mq-empty">${tt('No mosques found within 2 km of this place.','اس جگہ کے 2 کلومیٹر کے اندر کوئی مسجد نہیں ملی۔')}</li>`;
   note(refreshing?tt('Showing saved results — updating…','محفوظ شدہ نتائج — تازہ کیے جا رہے ہیں…'):r.fromCache?tt('Offline — showing saved results from ','آف لائن — محفوظ شدہ نتائج، ')+DT.gregText(new Date(Date.now()-r.age),ur()?'ur':'en',{day:true,month:'short',year:true}):'')};
- const run=async()=>{const id=++seq,lat=PR.P.lat,lng=PR.P.lng;if(!$('#ml'))return;$('#mWhere').innerHTML=`${I_('pin')} ${esc(PR.P.city)}`;note('');
+ const run=async()=>{const id=++seq,lat=PR.P.lat,lng=PR.P.lng;if(!$('#ml'))return;$('#mWhere').innerHTML=`${I_('pin')} <span data-place>${esc(PL.label())}</span>`;PL.refresh().catch(()=>{});note('');
   const c=M.cached(lat,lng,rad);if(c){render(c,c.age>M.TTL&&navigator.onLine!==false);if(c.age<=M.TTL||navigator.onLine===false)return}else $('#ml').innerHTML=`<li class="muted">${C.t('loading')}</li>`;
   try{const r=await M.find(lat,lng,rad,{onPartial:p=>{if(id===seq&&!(c&&c.list.length>p.list.length)){render(p);note(tt('Finding more mosques…','مزید مساجد تلاش کی جا رہی ہیں…'))}}});if(id===seq){if(r.bundled&&c&&c.list.length)return note('');render(r);if(r.bundled)note(tt('Live search is busy — showing the built-in list (may be incomplete).','لائیو تلاش مصروف ہے — محفوظ فہرست دکھائی جا رہی ہے (نامکمل ہو سکتی ہے)۔'))}}
   catch(e){if(id!==seq)return;if(c){note('');return}$('#ml').innerHTML=`<li class="muted mq-err">${e.code==='offline'?tt('You are offline and nothing is saved for this place yet. Connect to the internet and try again.','آپ آف لائن ہیں اور اس جگہ کے لیے کچھ محفوظ نہیں۔ انٹرنیٹ سے جڑ کر دوبارہ کوشش کریں۔'):tt('Could not load mosques right now.','مساجد ابھی لوڈ نہیں ہو سکیں۔')}</li><li><button class="btn" id="mRetry">${tt('Try again','دوبارہ کوشش')}</button></li>`;$('#mRetry').onclick=run}};
@@ -362,9 +363,9 @@ export async function mosques(){C.setTitle(tt('Mosque Finder','مسجد فائن
  const follow=()=>{if(mqWatch!=null||!navigator.geolocation?.watchPosition||PR.P.src!=='gps')return;let last=0;
   mqWatch=navigator.geolocation.watchPosition(p=>{if(!location.hash.startsWith('#/mosques')){navigator.geolocation.clearWatch(mqWatch);mqWatch=null;return}
    const la=+p.coords.latitude.toFixed(4),ln=+p.coords.longitude.toFixed(4);if(M.hav(la,ln,PR.P.lat,PR.P.lng)<M.MOVE||Date.now()-last<60000)return;last=Date.now();
-   PR.P.lat=la;PR.P.lng=ln;PR.P.city='GPS '+la+', '+ln;PR.saveP();run()},()=>{},{enableHighAccuracy:false,maximumAge:60000,timeout:20000})};
+   PR.P.lat=la;PR.P.lng=ln;PR.P.city='GPS '+la+', '+ln;PR.saveP();PL.refresh();run()},()=>{},{enableHighAccuracy:false,maximumAge:60000,timeout:20000})};
  // t168u: auto-locate on open — saved position renders instantly, then live GPS refines; small relocate icon; denied → message + retry
- const where=()=>{const w=$('#mWhere');if(w)w.innerHTML=`${I_('pin')} ${esc(PR.P.city)}`};
+ const where=()=>{const w=$('#mWhere');if(w)w.innerHTML=`${I_('pin')} <span data-place>${esc(PL.label())}</span>`};
  const locate=async()=>{const g=$('#mGps');if(!g||g.disabled)return;g.disabled=true;g.classList.add('spin');const w=$('#mWhere');if(w)w.innerHTML=`${I_('gps')} <span class="mq-locating">${tt('Locating…','لوکیشن معلوم کی جا رہی ہے…')}</span>`;
   const o={lat:PR.P.lat,lng:PR.P.lng};let warn='';
   try{await PR.locate()}catch(e){const denied=/denied/i.test(e.message);warn=denied?tt('Location permission is off. Allow location for this app in your phone/browser settings, then tap Retry. Showing results for your saved place.','لوکیشن کی اجازت بند ہے۔ فون/براؤزر کی سیٹنگ میں اجازت دیں، پھر دوبارہ کوشش دبائیں۔ محفوظ جگہ کے نتائج دکھائے جا رہے ہیں۔'):tt('Could not get your live location. Showing results for your saved place.','لائیو لوکیشن نہیں مل سکی۔ محفوظ جگہ کے نتائج دکھائے جا رہے ہیں۔')}

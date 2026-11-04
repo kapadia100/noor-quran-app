@@ -30,6 +30,7 @@ import * as L2 from './lib.js';
 import * as PH from './play-hl.js';
 import {kick as glide} from './glide.js';
 import * as FW from './follow.js';
+import * as PL from './places.js';
 const mem={};
 async function j(url){if(mem[url])return mem[url];const r=await fetch(url);if(!r.ok)throw new Error(r.status);const d=await r.json();return mem[url]=d.data??d}
 const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(API+'/surah'));
@@ -95,10 +96,10 @@ let tickT;function tick(){clearInterval(tickT);const f=()=>{const els=document.q
 const PIC={fajr:'<path d="M3 17h18M6 17a6 6 0 0 1 12 0"/><path d="M12 5v3M5.6 9.6l1.6 1.6M18.4 9.6l-1.6 1.6"/><path d="M8 20.5h8"/>',sunrise:'<path d="M3 18h18M7 18a5 5 0 0 1 10 0"/><path d="M12 3v5M9.5 5.5 12 3l2.5 2.5"/>',dhuhr:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',asr:'<circle cx="10" cy="11" r="3.6"/><path d="M10 3.5v1.8M3 11h1.8M5 6l1.3 1.3M15 6l-1.3 1.3"/><path d="M13 19.5c0-2.2 1.9-3.8 4-3.8s4 1.6 4 3.8"/>',maghrib:'<path d="M3 16h18M7 16a5 5 0 0 1 10 0"/><path d="M12 8v4M9.5 10 12 12.5 14.5 10"/><path d="M6 19.5h12"/>',isha:'<path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5z"/><path d="M17 4.5l.6 1.3 1.4.2-1 1 .2 1.4-1.2-.7-1.2.7.2-1.4-1-1 1.4-.2z"/>'};
 const picon=k=>`<svg class="ph-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PIC[k]}</svg>`;
 let phView='today';
-function placeName(){const P=PR.P;if(P.src!=='gps')return P.city;return (P.placeAt===`${P.lat},${P.lng}`&&P.place)||(S.ui==='ur'?'موجودہ مقام':'Current location')}
-async function reverseGeo(){const P=PR.P,key=`${P.lat},${P.lng}`;if(P.src!=='gps'||(P.placeAt===key&&P.place))return false;
+function placeName(){const P=PR.P;if(P.src==='gps'&&P.placeAt===`${P.lat},${P.lng}`&&P.place&&P.placeLang===(S.ui||'en'))return P.place;return PL.label()}
+async function reverseGeo(){const P=PR.P,key=`${P.lat},${P.lng}`;if(P.src!=='gps'||(P.placeAt===key&&P.place&&P.placeLang===(S.ui||'en')))return false;
  try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&lat=${P.lat}&lon=${P.lng}&accept-language=${S.ui==='ur'?'ur,en':'en'}`,{signal:AbortSignal.timeout?.(8000)});if(!r.ok)return false;const a=(await r.json()).address||{};
-  const area=a.suburb||a.neighbourhood||a.quarter||a.city_district||a.district||a.village,city=a.city||a.town||a.municipality||a.county||a.state;const n=[area,city].filter((v,i,x)=>v&&x.indexOf(v)===i).join(', ');if(!n)return false;P.place=n;P.placeAt=key;PR.saveP();return true}catch{return false}}
+  const area=a.suburb||a.neighbourhood||a.quarter||a.city_district||a.district||a.village,city=a.city||a.town||a.municipality||a.county||a.state;const n=[area,city].filter((v,i,x)=>v&&x.indexOf(v)===i).join(', ');if(!n)return false;P.place=n;P.placeAt=key;P.placeLang=S.ui||'en';PR.saveP();return true}catch{return false}}
 function prayer(){const ur=S.ui==='ur',T=(e,u)=>ur?u:e;setTitle(T('Prayer Times','اوقاتِ نماز'));const P=PR.P,now=new Date(),pt=PR.times(),nx=PR.next(),hs=PR.headerState(pt,now,nx);
  P.adj=P.adj||{fajr:0,sunrise:0,dhuhr:0,asr:0,maghrib:0,isha:0};
  const FIVE=['fajr','dhuhr','asr','maghrib','isha'];const prev=(()=>{let f=null;for(const k of FIVE)if(pt[k]<=now)f=pt[k];if(!f){const y=PR.times(new Date(+now-864e5));f=y.isha}return f})();
@@ -138,7 +139,7 @@ ${(()=>{const st=nState();if(LS.get('nAskDone',0)||!Object.values(P.alerts).some
   finally{const b=$('#gps');if(b){b.disabled=false;b.classList.remove('spin')}}};
  $('#gps').onclick=()=>relocate(true);
  {const na=$('#nAsk');if(na)na.parentElement.append(na);const on=$('#nAskOn'),no=$('#nAskNo');if(no)no.onclick=()=>{LS.set('nAskDone',1);$('#nAsk')?.remove()};if(on)on.onclick=async()=>{const r=await nArm(null);const a=$('#nAsk');if(a){LS.set('nAskDone',1);a.querySelector('small').textContent=nMsg(r);a.querySelector('.ntf-ab').remove();setTimeout(()=>a.remove(),4000)}}}
- $('#city').onchange=e=>{if(e.target.value){PR.setCity(e.target.value);P.manual=true;re()}};$('#meth').onchange=e=>{P.method=e.target.value;re()};$('#madh').onchange=e=>{P.madhab=e.target.value;re()};$('#hlr').onchange=e=>{P.hlr=e.target.value;re()};
+ $('#city').onchange=e=>{if(e.target.value){PR.setCity(e.target.value);P.manual=true;re()}};$('#meth').onchange=e=>{P.method=e.target.value;P.methodUser=true;re()};$('#madh').onchange=e=>{P.madhab=e.target.value;P.madhabUser=true;re()};$('#hlr').onchange=e=>{P.hlr=e.target.value;re()};
  $('#adh').onchange=e=>{P.adhan=e.target.checked;re()};$('#hm').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj-1);PR.saveP();prayer()};$('#hp').onclick=()=>{P.hijriAdj=clampAdj(P.hijriAdj+1);PR.saveP();prayer()};
  $('#pSet').ontoggle=e=>LS.set('phSetOpen',e.target.open);
  app.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>{const k=b.dataset.adj;P.adj[k]=Math.max(-30,Math.min(30,(+P.adj[k]||0)+ +b.dataset.d));re()});
@@ -426,7 +427,8 @@ async function route(){// iOS WebKit fires no focusout when the focused field is
  const FR={kalimas:F.kalimas,janazah:F.janazah,qaida:()=>F.qaida(p[1],p[2]),quran:()=>home(),more:F.more,ibadat:F.ibadat,help:F.help,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:()=>F.names(p[1]),tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz,hifztest:()=>F.hifzTest(p[1]),progress:F.progress,dict:()=>F.dict(p[1],p[2]),ruqyah:F.ruqyah};
  try{document.body.classList.remove('enter');void document.body.offsetWidth;document.body.classList.add('enter');if(FR[p[0]])await FR[p[0]]();else if(p[0]==='recite')p[1]==='review'?await weakPage():p[1]?(AUTOT=true,await reader(+p[1],p[2])):await tutorPage();else if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='haudio')await hadithAudio(p[1],p[2],p[3]);else if(p[0]==='hsearch')await hadithSearch(p[1]||'bukhari',p[2]||'');else if(p[0]==='hadith')p[2]==='n'?await hadithNo(p[1],p[3]):p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
   else if(p[0]==='search')await search(p[1]||'');else if(p[0]==='bookmarks')bookmarks();else if(p[0]==='prayer')prayer();else if(p[0]==='qibla')qibla();else if(p[0]==='juz')p[1]?await juzReader(+p[1]):await home('juz');else if(p[0]==='settings'){await settings();app.insertAdjacentHTML('beforeend',`<p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`)}else await F.dashboard()}
- catch(e){if(v!==app)return;console.error(e);v.innerHTML=`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}}
+ catch(e){if(v!==app)return;console.error(e);v.innerHTML=`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}
+ PL.refresh().then(()=>{const e=$('#pPlace');if(e)e.textContent=placeName()}).catch(()=>{})}
 F.init({app:()=>app,S,save,t,setTitle,loading,toast,weakDrill,resetModel:()=>RC?.resetModel?.(),j,arabic,transFor,surahs,dateCard,tick,pn,playUrl,startHifz,startHifzTest});
 if('scrollRestoration' in history)history.scrollRestoration='manual';addEventListener('hashchange',route);applyUI();route();
 // v3.6.2 dates: refresh on app resume and at local midnight so the shown date is always today's (device clock + timezone).

@@ -10,8 +10,17 @@ export const METHODS={Karachi:'Karachi (Univ. of Islamic Sciences)',MuslimWorldL
 export const PRAYERS=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
 export const PNAME={fajr:['Fajr','فجر'],sunrise:['Sunrise','طلوع'],dhuhr:['Dhuhr','ظہر'],asr:['Asr','عصر'],maghrib:['Maghrib','مغرب'],isha:['Isha','عشاء']};
 export const P=Object.assign({city:'Karachi',lat:24.8607,lng:67.0011,tz:'Asia/Karachi',src:'city',method:'Karachi',madhab:'Hanafi',hijriAdj:0,alerts:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true,sunrise:false},adhan:true,days:7},LS.get('prayer',{}));
+// Official/default method + Asr school by time zone (country). South Asia follows Hanafi Asr; elsewhere the standard (Shafi'i) Asr the national authorities publish.
+const TZM=[[/^Asia\/(Karachi|Kolkata|Calcutta|Dhaka|Kabul|Kathmandu|Colombo)$/,'Karachi','Hanafi'],[/^Asia\/Dubai$/,'Dubai'],[/^Asia\/Muscat$/,'Dubai'],[/^Asia\/Riyadh$/,'UmmAlQura'],[/^Asia\/(Aden|Bahrain)$/,'UmmAlQura'],[/^Asia\/Qatar$/,'Qatar'],[/^Asia\/Kuwait$/,'Kuwait'],[/^Africa\/Cairo$/,'Egyptian'],[/^(Europe\/Istanbul|Asia\/Istanbul)$/,'Turkey'],[/^Asia\/Tehran$/,'Tehran'],[/^Asia\/(Kuala_Lumpur|Kuching|Singapore|Brunei|Jakarta|Pontianak|Makassar|Jayapura)$/,'Singapore'],[/^(America\/|Canada\/|US\/)/,'NorthAmerica']];
+export function defaultsFor(tz){for(const [re,m,h] of TZM)if(re.test(tz||''))return{method:m,madhab:h||'Shafi'};return{method:'MuslimWorldLeague',madhab:'Shafi'}}
+/** Apply the country default method/Asr school unless the user picked their own. */
+export function autoMethod(){const d=defaultsFor(P.tz);if(!P.methodUser)P.method=d.method;if(!P.madhabUser)P.madhab=d.madhab}
 export const saveP=()=>LS.set('prayer',P);
-export function params(){const p=(CalculationMethod[P.method]||CalculationMethod.Karachi)();p.madhab=P.madhab==='Hanafi'?Madhab.Hanafi:Madhab.Shafi;if(P.hlr&&P.hlr!=='auto'&&HighLatitudeRule[P.hlr])p.highLatitudeRule=HighLatitudeRule[P.hlr];else if(Math.abs(P.lat)>48)p.highLatitudeRule=HighLatitudeRule.recommended(new Coordinates(P.lat,P.lng));if(P.adj)for(const k of Object.keys(p.adjustments))p.adjustments[k]=+P.adj[k]||0;return p}
+// v93 one-time fix: GPS users were stuck on the Karachi method + Hanafi Asr wherever they were; switch to their country's default (manual choices are kept from now on).
+if(!P.autoV){if(P.src==='gps'&&P.tz)autoMethod();P.autoV=1;try{saveP()}catch{/* storage unavailable */}}
+// Dubai IACAD timetable fitted at 18.2°/18.2° (Nov 2026, max 1 min error): the library preset's +3 Asr made Asr ~2 min late.
+export const DUBAI_ADJ={fajr:0,sunrise:-4,dhuhr:3,asr:1,maghrib:4,isha:0};
+export function params(){const p=(CalculationMethod[P.method]||CalculationMethod.Karachi)();if(P.method==='Dubai')p.methodAdjustments={...DUBAI_ADJ};p.madhab=P.madhab==='Hanafi'?Madhab.Hanafi:Madhab.Shafi;if(P.hlr&&P.hlr!=='auto'&&HighLatitudeRule[P.hlr])p.highLatitudeRule=HighLatitudeRule[P.hlr];else if(Math.abs(P.lat)>48)p.highLatitudeRule=HighLatitudeRule.recommended(new Coordinates(P.lat,P.lng));if(P.adj)for(const k of Object.keys(p.adjustments))p.adjustments[k]=+P.adj[k]||0;return p}
 // Prayer times for the calendar day of `date` in the selected city's timezone (not the device's).
 export function times(date=new Date()){return new PrayerTimes(new Coordinates(P.lat,P.lng),dayIn(P.tz,date),params())}
 export const fmt=d=>d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:P.tz||undefined});
@@ -20,8 +29,8 @@ export function next(now=new Date()){for(let i=0;i<2;i++){const day=new Date(now
 export const qibla=()=>Qibla(new Coordinates(P.lat,P.lng));
 export const hijri=(d=new Date(),lang='en')=>DT.hijriText(d,lang,+P.hijriAdj||0);
 export const greg=(d=new Date(),lang='en')=>DT.gregText(d,lang);
-export function locate(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('no geolocation'));navigator.geolocation.getCurrentPosition(p=>{P.lat=+p.coords.latitude.toFixed(4);P.lng=+p.coords.longitude.toFixed(4);P.src='gps';P.city='GPS '+P.lat+', '+P.lng;P.tz=Intl.DateTimeFormat().resolvedOptions().timeZone;saveP();res(P)},e=>rej(new Error(e.code===1?'permission denied':e.code===3?'timeout':'position unavailable')),{enableHighAccuracy:false,timeout:15000,maximumAge:6e5})})}
-export function setCity(name){const c=CITIES.find(c=>c[0]===name);if(!c)return;[P.city,P.lat,P.lng,P.tz]=c;P.method=c[4];P.src='city';saveP()}
+export function locate(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('no geolocation'));navigator.geolocation.getCurrentPosition(p=>{P.lat=+p.coords.latitude.toFixed(4);P.lng=+p.coords.longitude.toFixed(4);P.src='gps';P.city='GPS '+P.lat+', '+P.lng;P.tz=Intl.DateTimeFormat().resolvedOptions().timeZone;autoMethod();saveP();res(P)},e=>rej(new Error(e.code===1?'permission denied':e.code===3?'timeout':'position unavailable')),{enableHighAccuracy:false,timeout:15000,maximumAge:6e5})})}
+export function setCity(name){const c=CITIES.find(c=>c[0]===name);if(!c)return;[P.city,P.lat,P.lng,P.tz]=c;P.src='city';autoMethod();if(!P.methodUser)P.method=c[4];saveP()}
 // ---- notifications ----
 const native=()=>Capacitor.isNativePlatform();export const isNative=native;
 export async function schedule(){const now=new Date();const items=[];

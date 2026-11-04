@@ -5,7 +5,7 @@ test('mosques: auto-locates on open (no tap), shows Locating…, small relocate 
  await page.addInitScript(()=>{const g=navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);navigator.geolocation.getCurrentPosition=(a,b,c)=>setTimeout(()=>g(a,b,c),700)});
  await page.goto('./#/mosques');await expect(page.locator('.mq-locating')).toBeVisible();await expect(page.locator('#mGps')).toHaveClass(/mq-loc/);
  expect(await page.locator('#app').innerText()).not.toMatch(/Use my location/);const bb=await page.locator('#mGps').boundingBox();expect(bb.width).toBeLessThan(50);
- await expect(page.locator('#mWhere')).toContainText('GPS 24.9005');await expect(page.locator('#ml .mq-item').first()).toContainText('Masjid Gulshan');await expect(page.locator('.mq-locating')).toHaveCount(0)});
+ await expect(page.locator('#mWhere')).toContainText('Karachi');await expect(page.locator('#ml .mq-item').first()).toContainText('Masjid Gulshan');await expect(page.locator('.mq-locating')).toHaveCount(0)});
 test('mosques: cached last position shows results instantly before GPS answers',async({page,context})=>{await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:24.9005,longitude:67.0500});
  await page.route(/overpass|interpreter|photon|nominatim|mosques-khi/,r=>r.fulfill({json:{elements:MQ}}));await page.goto('./#/mosques');await expect(page.locator('#ml .mq-item').first()).toBeVisible({timeout:15000});
  await page.addInitScript(()=>{navigator.geolocation.getCurrentPosition=()=>{}});await page.goto('./#/more');await page.reload();const t=Date.now();await page.goto('./#/mosques');

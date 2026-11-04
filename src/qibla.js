@@ -1,3 +1,4 @@
+import * as PL from './places.js';
 // Qibla Finder: great-circle bearing (true north), WMM2025 declination grid (epoch 2026.8, 10° grid), compass UI.
 export const KAABA=[21.422487,39.826206];
 const R=Math.PI/180;
@@ -20,7 +21,7 @@ const tick=()=>{let s='';for(let a=0;a<360;a+=5){const m=a%30===0,r1=m?126:a%10=
 
 export function render(app,{P,ur,icon,esc}){const tt=(e,u)=>ur?u:e,q=bearing(+P.lat,+P.lng),km=distKm(+P.lat,+P.lng),dec=declination(+P.lat,+P.lng);
  app.innerHTML=`<div class="qf" id="qf">
- <div class="qf-loc card"><span>${icon('pin')} <b>${esc(P.city)}</b><small class="muted">${(+P.lat).toFixed(4)}, ${(+P.lng).toFixed(4)}</small></span><span class="qf-km"><b>${Math.round(km).toLocaleString('en')}</b> <small>${tt('km to Makkah','کلومیٹر مکہ تک')}</small></span></div>
+ <div class="qf-loc card"><span>${icon('pin')} <b data-place>${esc(PL.label())}</b><small class="muted" dir="ltr">${(+P.lat).toFixed(2)}°, ${(+P.lng).toFixed(2)}°</small></span><span class="qf-km"><b>${Math.round(km).toLocaleString('en')}</b> <small>${tt('km to Makkah','کلومیٹر مکہ تک')}</small></span></div>
  <div class="qf-wrap"><div class="qf-ptr" aria-hidden="true"></div>
   <div class="qf-dial" id="dial"><svg viewBox="0 0 300 300" aria-hidden="true"><defs><radialGradient id="qfg" cx="50%" cy="45%" r="60%"><stop offset="0" class="qs0"/><stop offset="1" class="qs1"/></radialGradient></defs>
    <g id="qrot" transform="rotate(0 150 150)"><circle cx="150" cy="150" r="146" class="qring"/><circle cx="150" cy="150" r="118" fill="url(#qfg)" class="qin"/>${tick()}

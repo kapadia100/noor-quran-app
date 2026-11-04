@@ -609,3 +609,7 @@ a.badge::after{content:'';position:absolute;inset:-8px -4px}
 #city{min-height:36px}
 html body :is(#player,.qs-mp) .pl-pw .sp-pill::after,.sp-pill::after{content:'';position:absolute;inset:-12px -6px}
 .sp-pill{position:relative}
+/* v93: home location chip = city name, tappable, ellipsis, RTL-safe */
+.pc-loc{text-decoration:none;color:inherit;min-height:32px;padding:0 2px;border-radius:8px}
+.pc-loc .pc-place{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:plaintext}
+.pc-loc:focus-visible{outline:2px solid currentColor;outline-offset:2px}
