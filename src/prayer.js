@@ -14,10 +14,12 @@ export const P=Object.assign({city:'Karachi',lat:24.8607,lng:67.0011,tz:'Asia/Ka
 const TZM=[[/^Asia\/(Karachi|Kolkata|Calcutta|Dhaka|Kabul|Kathmandu|Colombo)$/,'Karachi','Hanafi'],[/^Asia\/Dubai$/,'Dubai'],[/^Asia\/Muscat$/,'Dubai'],[/^Asia\/Riyadh$/,'UmmAlQura'],[/^Asia\/(Aden|Bahrain)$/,'UmmAlQura'],[/^Asia\/Qatar$/,'Qatar'],[/^Asia\/Kuwait$/,'Kuwait'],[/^Africa\/Cairo$/,'Egyptian'],[/^(Europe\/Istanbul|Asia\/Istanbul)$/,'Turkey'],[/^Asia\/Tehran$/,'Tehran'],[/^Asia\/(Kuala_Lumpur|Kuching|Singapore|Brunei|Jakarta|Pontianak|Makassar|Jayapura)$/,'Singapore'],[/^(America\/|Canada\/|US\/)/,'NorthAmerica']];
 export function defaultsFor(tz){for(const [re,m,h] of TZM)if(re.test(tz||''))return{method:m,madhab:h||'Shafi'};return{method:'MuslimWorldLeague',madhab:'Shafi'}}
 /** Apply the country default method/Asr school unless the user picked their own. */
-export function autoMethod(){const d=defaultsFor(P.tz);if(!P.methodUser)P.method=d.method;if(!P.madhabUser)P.madhab=d.madhab}
+export function autoMethod(){const d=defaultsFor(P.tz);if(!P.methodUser)P.method=d.method;if(!P.madhabUser){P.madhab=d.madhab;P.madhabUser=true}}
 export const saveP=()=>LS.set('prayer',P);
-// v93 one-time fix: GPS users were stuck on the Karachi method + Hanafi Asr wherever they were; switch to their country's default (manual choices are kept from now on).
-if(!P.autoV){if(P.src==='gps'&&P.tz)autoMethod();P.autoV=1;try{saveP()}catch{/* storage unavailable */}}
+// v94: a stored Asr school / method is the user's choice and is never overridden (country defaults, city picks, migrations).
+// Old data cannot tell a default from a choice, so any stored value counts as explicit; only users with nothing stored get the country default.
+export function migrate(st){if(P.autoV2)return;if(st.madhab)P.madhabUser=true;if(st.method)P.methodUser=true;P.autoV2=1}
+migrate(LS.get('prayer',{}));
 // Dubai IACAD timetable fitted at 18.2°/18.2° (Nov 2026, max 1 min error): the library preset's +3 Asr made Asr ~2 min late.
 export const DUBAI_ADJ={fajr:0,sunrise:-4,dhuhr:3,asr:1,maghrib:4,isha:0};
 export function params(){const p=(CalculationMethod[P.method]||CalculationMethod.Karachi)();if(P.method==='Dubai')p.methodAdjustments={...DUBAI_ADJ};p.madhab=P.madhab==='Hanafi'?Madhab.Hanafi:Madhab.Shafi;if(P.hlr&&P.hlr!=='auto'&&HighLatitudeRule[P.hlr])p.highLatitudeRule=HighLatitudeRule[P.hlr];else if(Math.abs(P.lat)>48)p.highLatitudeRule=HighLatitudeRule.recommended(new Coordinates(P.lat,P.lng));if(P.adj)for(const k of Object.keys(p.adjustments))p.adjustments[k]=+P.adj[k]||0;return p}

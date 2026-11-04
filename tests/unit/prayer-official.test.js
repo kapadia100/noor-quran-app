@@ -17,7 +17,7 @@ const REF=[
 const K=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
 const mins=s=>{const [h,m]=s.split(':');return h*60+ +m};
 describe('prayer times match official/reference timetables (±2 min, Dubai ±1)',()=>{
- beforeEach(()=>{delete PR.P.methodUser;delete PR.P.madhabUser;delete PR.P.adj;delete PR.P.hlr});
+ beforeEach(()=>{delete PR.P.methodUser;delete PR.P.madhabUser;PR.P.autoV2=1;delete PR.P.adj;delete PR.P.hlr});
  for(const [n,lat,lng,tz,ref] of REF)it(n,()=>{Object.assign(PR.P,{lat,lng,tz});PR.autoMethod();
   const t=PR.times(new Date('2026-11-04T09:00:00Z')),r=ref.split(' ');
   K.forEach((k,i)=>{const got=mins(PR.fmt(t[k]));expect(Math.abs(got-mins(r[i])),`${n} ${k} ${PR.fmt(t[k])} vs ${r[i]}`).toBeLessThanOrEqual(n.startsWith('Dubai')?1:2)})});
