@@ -45,7 +45,7 @@ test('home v3.5: Quran row, then Quran Live, Qaida Live and Hifz Test in one row
   expect(q.y+q.height).toBeLessThanOrEqual(t.y+1);expect(Math.abs(t.y-a.y)).toBeLessThanOrEqual(1);expect(Math.abs(t.width-a.width)).toBeLessThanOrEqual(1);expect(Math.abs(t.height-a.height)).toBeLessThanOrEqual(1);
   if(ui==='ur')expect(t.x).toBeGreaterThan(a.x);else expect(t.x).toBeLessThan(a.x);
   for(const b of [q,t,a]){expect(b.x).toBeGreaterThanOrEqual(-1);expect(b.x+b.width).toBeLessThanOrEqual(vw+1)}
-  await expect(page.locator('#homeQaida .hc-live')).toBeVisible();await expect(page.locator('#homeTutor .hc-live')).toBeVisible();await expect(page.locator('#homeHifz')).toHaveCount(0);await expect(page.locator('.hcards .hc')).toHaveCount(2);
+  await expect(page.locator('#homeQaida .hc-live')).toBeVisible();await expect(page.locator('#homeTutor .hc-live')).toBeVisible();await expect(page.locator('#homeHifz')).toHaveCount(0);await expect(page.locator('.lvgrid .lv')).toHaveCount(2);
   await expect(page.locator('#homeQaida')).toHaveAttribute('href','#/qaida');
   const ov=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);expect(ov).toBeLessThanOrEqual(1)}
  await page.click('#homeQaida');await expect(page).toHaveURL(/#\/qaida$/);await expect(page.locator('#qChoose .q-choice')).toHaveCount(2);
@@ -61,10 +61,10 @@ for(const w of [360,390,430])test(`prayer header: arch sits in the top row, no o
 
 for(const [ui,dark] of [['en',false],['ur',true]])
 test('t239: Home always shows exactly two live cards; Settings Customize adds Hifz Test Live to Ibadat, never to Home '+ui,async({page})=>{
- await init(page,{ui,dark});await page.goto('./');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('.hcards .hc')).toHaveCount(2);
+ await init(page,{ui,dark});await page.goto('./');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('.lvgrid .lv')).toHaveCount(2);
  const [t,a]=await Promise.all(['#homeTutor','#homeQaida'].map(s=>box(page,s)));expect(Math.abs(t.width-a.width)).toBeLessThanOrEqual(1);expect(Math.abs(t.y-a.y)).toBeLessThanOrEqual(1);
  const vw=page.viewportSize().width;for(const b of [t,a]){expect(b.x).toBeGreaterThanOrEqual(-1);expect(b.x+b.width).toBeLessThanOrEqual(vw+1)}
  await page.goto('./#/settings');await page.click('#s_custBtn');const cb=page.locator('#ibPick input[data-ib="#/hifztest"]');await expect(cb).toBeVisible();
  await expect(page.locator('#ibPick li',{has:page.locator('input[data-ib="#/hifztest"]')})).toContainText(ui==='ur'?'حفظ ٹیسٹ لائیو':'Hifz Test Live');await cb.check();await page.click('#ibDone');
  await page.goto('./#/ibadat');await expect(page.locator('.ib-tile[data-h="#/hifztest"]')).toBeVisible();await page.click('.ib-tile[data-h="#/hifztest"]');await expect(page).toHaveURL(/#\/hifztest$/);
- await page.goto('./#/');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('.hcards .hc')).toHaveCount(2);await expect(page.locator('#homeHifz')).toHaveCount(0)});
+ await page.goto('./#/');await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('.lvgrid .lv')).toHaveCount(2);await expect(page.locator('#homeHifz')).toHaveCount(0)});

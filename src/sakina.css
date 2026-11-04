@@ -201,7 +201,7 @@ main small{opacity:1}
 /* v3.7.2: per-hadith Arabic / Urdu / English row, speaker at the top corner of the text, chapter pager, auto-translated label */
 .hd-sel{margin:4px 0 8px;display:flex;gap:6px}.hd-sel .btn{flex:1;min-height:44px;white-space:nowrap;padding-inline:8px}
 .hd-body{display:flex;gap:10px;align-items:flex-start;direction:ltr}
-.hd-ctl{display:flex;flex-direction:column;gap:6px;flex:none}
+.hd-ctl{display:flex;flex-direction:column;gap:6px;flex:none;order:2;position:static!important;margin:0!important}
 .hd-tx{flex:1;min-width:0}.hd-tx .tr,.hd-tx .ar{margin-top:0}.hd-tx .ar{text-align:right}
 .hd-ctl .hl-b{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--bd);border-radius:999px;padding:0;width:40px;height:40px;min-height:40px;color:var(--pri);background:var(--card)}
 .hd-ctl .hl-b:disabled{opacity:.4}
@@ -468,7 +468,7 @@ html[data-theme=dark] #qsGlide{background:radial-gradient(120% 140% at 50% 0%,rg
 :is(#player,.qs-mp){background:linear-gradient(135deg,rgba(20,52,40,.82),rgba(14,40,31,.88))!important;-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);
  border:1px solid rgba(214,180,96,.55);border-radius:26px!important;padding:8px 10px!important;gap:10px!important;box-shadow:0 10px 30px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,236,190,.12)!important;
  margin-bottom:env(safe-area-inset-bottom,0)}
-html body :is(#player,.qs-mp) .pl-ctl{display:flex;align-items:center;gap:10px;flex:none}
+html body :is(#player,.qs-mp) .pl-ctl{display:flex;align-items:center;gap:10px;flex:none;order:2;position:static!important;margin:0!important}
 html body :is(#player,.qs-mp) .pl-b{display:grid;place-items:center;border-radius:50%!important;padding:0!important;cursor:pointer;transition:transform .15s ease,box-shadow .25s ease,filter .2s;-webkit-tap-highlight-color:transparent}
 html body :is(#player,.qs-mp) .pl-b svg{fill:currentColor}
 html body :is(#player,.qs-mp) .pl-s{width:44px;height:44px;min-width:44px;background:#1F4A3A!important;color:#F3EBD6!important;box-shadow:0 0 0 1.5px rgba(214,180,96,.8),0 2px 6px rgba(0,0,0,.25)}
@@ -613,3 +613,15 @@ html body :is(#player,.qs-mp) .pl-pw .sp-pill::after,.sp-pill::after{content:'';
 .pc-loc{text-decoration:none;color:inherit;min-height:32px;padding:0 2px;border-radius:8px}
 .pc-loc .pc-place{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:plaintext}
 .pc-loc:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+
+/* v95 (t254u): Quran Live / Qaida Live as feature cards (same size as Mosque/Qibla) with gold border + Arabic calligraphy tile */
+.lvgrid{margin:6px -2px 0!important}
+.hgrid .fcard.feat.lv{border:1.5px solid #C9A54A!important;text-decoration:none}
+.hgrid .fcard.feat.lv .fi.lv-ar{width:auto!important;min-width:50px;padding:0 12px;border-radius:12px;background:rgba(212,175,55,.16)!important;box-shadow:inset 0 0 0 1px rgba(233,203,124,.6)!important}
+.lv .md-ar{font-family:'Amiri','Scheherazade New','Noto Naskh Arabic',serif;font-size:22px;line-height:1.25;color:#F3D98C;white-space:nowrap}
+.lv b{display:flex!important;flex-direction:row!important;justify-content:flex-start!important;align-items:center;flex-wrap:wrap;gap:4px 6px}.lv .lv-t{min-width:0}
+html body .lv .hc-live{display:inline-flex!important;align-items:center;gap:4px;background:#C8553D!important;color:#fff!important;font:700 9.5px/1.35 system-ui,sans-serif!important;letter-spacing:.4px;border-radius:9px;padding:2px 6px!important;flex:none;order:2!important;position:static!important;margin:0!important}
+.lv .hc-live i{width:6px;height:6px;border-radius:50%;background:#fff;animation:lvp 1.4s ease-in-out infinite}
+@keyframes lvp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+@media (prefers-reduced-motion:reduce){.lv .hc-live i{animation:none}}
+.hgrid .fcard.feat.lv:focus-visible{outline:3px solid #E9CB7C;outline-offset:2px}
