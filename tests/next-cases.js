@@ -51,7 +51,7 @@ test('live entry exists on every surah page, before and after sessions and route
  await page.evaluate(()=>{location.hash='#/surah/5'});await page.click('#recT');await expect(page.locator('#recite')).toBeVisible();
  await page.evaluate(()=>{location.hash='#/surah/6'});await expect(page.locator('#recite')).toHaveCount(0);await expect(page.locator('#recT')).toBeVisible();
  // v3.7.4: no floating Live pill; resuming mid-surah, Live is still one tap away in the top bar
- await page.goto('./#/surah/2/200');await expect(page.locator('#recFab')).toHaveCount(0);await expect(page.locator('.recfab')).toHaveCount(0);await expect(page.locator('#tutor')).toBeVisible();await page.click('#tutor');await expect(page).toHaveURL(/#\/recite$/);await page.goto('./#/surah/2/200');await page.evaluate(()=>document.querySelector('#recT').click());await expect(page.locator('#recite')).toBeVisible();
+ await page.goto('./#/surah/2/200');await expect(page.locator('#recFab')).toHaveCount(0);await expect(page.locator('.recfab')).toHaveCount(0);await expect(page.locator('#tutor')).toBeVisible();await page.click('#tutor');await page.click('#vsRecite');await expect(page).toHaveURL(/#\/recite$/);await page.goto('./#/surah/2/200');await page.evaluate(()=>document.querySelector('#recT').click());await expect(page.locator('#recite')).toBeVisible();
  await page.goto('./#/surah/2');await expect(page.locator('#recT')).toBeVisible()});
 
 test('hifz test: finishing a surah offers the next one, repeat, choose another',async({page})=>{
@@ -67,4 +67,4 @@ test('hifz test: finishing a surah offers the next one, repeat, choose another',
 
 test('home live cards still work after a session on later surahs',async({page})=>{
  await live(page,3);await page.click('.rc-x');
- await page.goto('./#/');await expect(page.locator('#app a#homeTutor')).toBeVisible();await expect(page.locator('#app a#homeQaida')).toBeVisible();await page.click('#tutor');await expect(page).toHaveURL(/#\/recite$/);await expect(page.locator('#sl a')).toHaveCount(114)});
+ await page.goto('./#/');await expect(page.locator('#app a#homeTutor')).toBeVisible();await expect(page.locator('#app a#homeQaida')).toBeVisible();await page.click('#tutor');await page.click('#vsRecite');await expect(page).toHaveURL(/#\/recite$/);await expect(page.locator('#sl a')).toHaveCount(114)});
