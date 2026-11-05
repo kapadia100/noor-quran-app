@@ -105,7 +105,7 @@ test('translation-only audio with language picker plays continuously',async({pag
  const ui=await page.locator('#r_abar, #s_abar').first().innerText();expect(ui).not.toMatch(/khan|walk|islamic|everyayah/i)});
 test('Recite & Learn: prominent entry on Home (header icon + card), picker, reader strip, live panel (fed words, no model)',async({page})=>{
  await page.addInitScript(()=>{window.__reciteFake=true});await page.goto('./');
- await expect(page.locator('#tutor')).toBeVisible();await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('#homeTutor')).toContainText('Recite & Learn');
+ await expect(page.locator('#tutor')).toHaveCount(0);await expect(page.locator('#homeTutor')).toBeVisible();await expect(page.locator('#homeTutor')).toContainText('Recite & Learn');
  const hb=await page.locator('#homeTutor').boundingBox();expect(hb.y).toBeLessThan(420);
  await page.click('#homeTutor');await expect(page).toHaveURL(/#\/recite$/);await expect(page.locator('#sl li').first()).toBeVisible();
  await page.locator('#sl a[href="#/recite/1"]').click();await expect(page.locator('#recite')).toBeVisible();await expect(page.locator('#recite')).toContainText('not full tajweed');
@@ -117,7 +117,7 @@ test('Recite & Learn: prominent entry on Home (header icon + card), picker, read
 test('Recite & Learn: strip at the very top of the reader and header icon on every page',async({page})=>{
  await page.addInitScript(()=>{window.__reciteFake=true});await page.goto('./#/surah/1');await page.waitForSelector('.ayah');
  const a=await page.locator('#recT').boundingBox(),b=await page.locator('.ayah').first().boundingBox();expect(a.y).toBeLessThan(b.y);expect(a.y).toBeLessThan(200);
- await expect(page.locator('#tutor')).toBeVisible();await page.goto('./#/more');await expect(page.locator('#tutor')).toBeVisible();
+ await expect(page.locator('#tutor')).toHaveCount(0);await page.goto('./#/more');await expect(page.locator('#tutor')).toHaveCount(0);
  await page.goto('./#/surah/1');await page.click('#recT');await expect(page.locator('#recite')).toBeVisible()});
 test('Recite & Learn: no red flags for a correct recitation fed in chunks',async({page})=>{
  await page.addInitScript(()=>{window.__reciteFake=true});await page.goto('./#/recite/1');await expect(page.locator('#recite')).toBeVisible();await page.click('#rcMic');

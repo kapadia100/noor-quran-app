@@ -16,7 +16,7 @@ test('more: Recite & Learn hub lists every tutor feature at the top',async({page
  await expect(page.locator('#mrcHow')).toBeVisible();await expect(page.locator('#mdlSt')).toHaveText(/Not downloaded/);
  const hubTop=(await hub.boundingBox()).y,gridTop=(await page.locator('.dsec .mlist, .dsec .fgrid, .dsec .cgrid').first().boundingBox()).y;expect(hubTop).toBeLessThan(gridTop);
  // header icon + Home card still exist
- await expect(page.locator('#tutor')).toBeVisible();
+ await expect(page.locator('#tutor')).toHaveCount(0);
  await page.click('#mrcPick');await expect(page.locator('h1,.pagetitle,#ptitle').first()).toBeVisible();expect(page.url()).toContain('#/recite');
 });
 test('more: how-it-works explainer opens and links to the FAQ',async({page})=>{

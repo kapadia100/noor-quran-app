@@ -628,24 +628,3 @@ html body .lv .hc-live{display:inline-flex!important;align-items:center;gap:4px;
 /* v95 CI fix: keep live cards exactly feature-card height even when the title + LIVE badge wraps; the calligraphy tile gives up the space */
 .hgrid .fcard.feat.lv{height:150px;min-height:150px}
 .hgrid .fcard.feat.lv .fi.lv-ar{flex:0 1 50px!important;height:auto!important;min-height:30px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-/* v96 (t257u): Voice Search panel — gold theme */
-.vs-ov{position:fixed;inset:0;z-index:9000;background:rgba(10,18,14,.55);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top) + 64px) 14px 14px}
-.vs-card{width:min(440px,100%);background:var(--card,#fffaf0);color:var(--fg,#1d2a22);border:1.5px solid #C9A54A;border-radius:22px;padding:14px 16px 16px;box-shadow:0 18px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px}
-[data-theme=dark] .vs-card{background:linear-gradient(160deg,#22392c,#18291f);color:#f4ecd8}
-.vs-hd{display:flex;align-items:center;justify-content:space-between}.vs-hd b{font-size:17px;color:#B8913A}[data-theme=dark] .vs-hd b{color:#E9CB7C}
-.vs-x{width:36px;height:36px;border-radius:50%;border:1px solid rgba(201,165,74,.5);background:transparent;color:inherit;font-size:22px;line-height:1}
-.vs-chips{display:flex;gap:8px;justify-content:center}.vs-chip{min-height:36px;padding:4px 14px;border-radius:999px;border:1px solid rgba(201,165,74,.6);background:transparent;color:inherit;font:inherit;font-size:14px}
-.vs-chip.on{background:#C9A54A;color:#1b1406;border-color:#C9A54A;font-weight:700}
-.vs-mic{align-self:center;width:84px;height:84px;border-radius:50%;border:2px solid #E9CB7C;background:radial-gradient(circle at 50% 35%,#E3C373,#B48A33);color:#1b1406;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(212,175,55,.18)}
-.vs-mic svg{width:38px;height:38px}.vs-mic.on{animation:vsPulse 1.2s ease-in-out infinite;background:radial-gradient(circle at 50% 35%,#E98A72,#C8553D);color:#fff}
-@keyframes vsPulse{0%,100%{box-shadow:0 0 0 6px rgba(200,85,61,.25)}50%{box-shadow:0 0 0 16px rgba(200,85,61,.08)}}
-@media (prefers-reduced-motion:reduce){.vs-mic.on{animation:none}}
-.vs-st{text-align:center;margin:0;font-size:14px;opacity:.9;min-height:20px}.vs-st b{color:#B8913A}[data-theme=dark] .vs-st b{color:#E9CB7C}
-.vs-f .inp{width:100%;box-sizing:border-box}
-.vs-ask{text-align:center}.vs-ask p{margin:2px 0 8px;font-weight:600}.vs-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.vs-gold{min-height:48px;border-radius:14px;border:1.5px solid #E9CB7C;background:linear-gradient(160deg,#D9B65C,#A97F2C);color:#1b1406;font:inherit;font-weight:700;font-size:16px}
-.vs-say{margin-top:8px;background:none;border:0;color:inherit;opacity:.8;text-decoration:underline;font:inherit;font-size:13px;min-height:32px}
-.vs-link{text-align:center;font-size:13px;color:inherit;opacity:.75}
-.vs-res .vs-q{margin:4px 2px}.vs-res .vs-q b{color:#B8913A}[data-theme=dark] .vs-res .vs-q b{color:#E9CB7C}
-.vs-dict{display:flex;gap:14px;align-items:center;border:1.5px solid #C9A54A!important}.vs-dict .ar{font-size:30px}.vs-dm{display:flex;flex-direction:column;gap:2px}
-.vs-hit .ar{font-size:calc(var(--ar,30px)*.8);line-height:1.9;margin:6px 0}.vs-tr{margin:0;opacity:.85}
