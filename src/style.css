@@ -737,3 +737,26 @@ li.ph-row.cur{box-shadow:none!important;background:none!important}
 [dir=rtl] .ph-next{margin-top:6px}[dir=rtl] .ph-hero .ph-sub{margin-top:10px}
 li.ph-row.nextp{color:inherit;text-align:start}li.ph-row.nextp b{display:inline;font-size:inherit}
 .ph-head{display:none!important}
+/* v99 (t263u): settings page — themed fields, toggle rows, aligned buttons, clear of bottom nav */
+#app .form{padding-bottom:calc(var(--nh) + 48px)}
+.form>label,.form .abar>label{font-size:14px;font-weight:600;color:var(--fg)}
+.form .abar{display:block;padding:0;margin:0;background:none;border:0}
+.form .abar>label{display:block;margin:12px 0}
+.form select,.form input[type=time]{background-color:color-mix(in srgb,var(--fg) 4%,var(--bg))!important;border:1px solid color-mix(in srgb,var(--acc) 28%,transparent)!important;border-radius:14px!important;min-height:46px;margin-top:6px;font-weight:400}
+.form input[type=range]{accent-color:var(--acc);margin-top:8px}
+.form input[type=time]:disabled{opacity:.45}
+.set-grp{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+html body .form .set-row{display:flex;align-items:center;gap:10px;margin:10px 0;padding:6px 10px}
+.set-row .grow{flex:1;min-width:0;display:flex;align-items:center;gap:10px;margin:0;font-weight:500}
+.set-row .grow input{width:20px;height:20px;flex:none;margin:0;accent-color:var(--acc)}
+.ntf-ck span small,.set-row small{display:block;font-size:12px;font-weight:400;color:var(--mut);line-height:1.3}
+.set-aotd input[type=time]{width:auto!important;flex:none;min-width:118px;max-width:132px;margin:0!important;min-height:40px;padding:6px 10px}
+.set-row .btn{flex:none;min-height:40px}
+.ntf-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ntf-btns .btn{min-height:46px;height:auto;margin:0;padding:8px 12px;border-radius:999px;font-size:15px;font-weight:600;line-height:1.2;width:100%}
+.ntf-btns .btn[hidden]{display:none}.ntf-btns .btn:only-child,.ntf-btns:has(.btn[hidden]) .btn:not([hidden]){grid-column:1/-1}
+.ntf-btns .btn.ghost{border:1.5px solid var(--pri);color:var(--pri);background:transparent}
+[data-theme=dark] .ntf-btns .btn.ghost{border-color:var(--acc);color:var(--acc)}
+#ver{margin-bottom:calc(var(--nh) + 24px)}
+#s_cust .grow{flex-direction:column;align-items:flex-start;gap:1px}
+.set-aotd .grow span{white-space:nowrap}@media(max-width:359px){.set-aotd{flex-wrap:wrap}.set-aotd input[type=time]{max-width:none!important;flex:1 1 100%!important;margin-inline-start:30px!important}}
+html body .form .ntf-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}html body .form .ntf-btns .btn{justify-content:center;text-align:center}[dir=rtl] .ntf-ck span small,[dir=rtl] .set-row small{font-size:13px;line-height:1.7}
