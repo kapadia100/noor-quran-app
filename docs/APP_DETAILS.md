@@ -14,7 +14,7 @@ Before you pick one, search Play and the App Store for the name to check it isn'
 
 ## 2. Store text
 **Short description (Play, 80 chars max):**
-Quran with 100+ translations, tafsir, 30+ reciters and hadith. Ad-free.
+Quran, tafsir, 17 reciters and six hadith books. Ad-free.
 
 **iOS subtitle (30 chars):** Quran, Tafsir, Audio & Hadith
 
@@ -24,12 +24,12 @@ Quran Safar gives you the Holy Quran with a clean, distraction-free reader.
 • All 114 surahs in clear Uthmani Arabic script
 • 100+ translations in 40+ languages, including Urdu, English, Hindi, Bengali, Indonesian, Turkish, French and more
 • Tafsir for every ayah, with many tafsir editions to choose from
-• Audio from 30+ famous reciters. Play one ayah or the whole surah, and the current ayah is highlighted as it plays
-• Hadith collections (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasai, Ibn Majah and more) with Arabic text and translations
+• Audio from 17 reciters (the list in Settings). Play one ayah or the whole surah, and the current ayah is highlighted as it plays
+• Six hadith books — Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud, Jami` at-Tirmidhi, Sunan an-Nasa'i and Sunan Ibn Majah — with Arabic text and translations
 • Fast search across the Quran in Arabic or any translation. Type 2:255 to jump straight to an ayah
 • Bookmarks and "continue reading"
 • Dark mode, adjustable Arabic font size, and an English or Urdu interface
-• No account, no tracking, no ads
+• No account and no ads. Anonymous, cookie-free usage counts (GoatCounter) show which screens are opened. No personal data is collected
 
 Text sources: Tanzil.net (Quran text), AlQuran.cloud, everyayah.com, hadith-api (open data). See Credits in the app.
 
@@ -45,17 +45,18 @@ Text sources: Tanzil.net (Quran text), AlQuran.cloud, everyayah.com, hadith-api 
 - Apple "Unrestricted web access": **No**. The app only loads fixed APIs and doesn't include a general browser.
 
 ## 4. Privacy policy
-See `privacy.html`. You need to host it at a public URL (GitHub Pages, Netlify, or Google Sites) and paste that URL into both stores.
-Summary: no personal data is collected. Settings, bookmarks and last-read position stay in the device's local storage only. Network requests go only to public content APIs (api.alquran.cloud, cdn.jsdelivr.net, cdn.islamic.network / everyayah audio, Google Fonts). Those servers can see standard request data like IP addresses, under their own policies. There are no analytics, no ads, and no accounts.
+See `public/privacy.html`. It is already on the live site at https://kapadia100.github.io/noor-quran-app/privacy.html — use that URL in both stores. The app links to the same page. There is no separate support email yet.
+Summary: no account and no ads. Settings, bookmarks and last-read position stay in the device's local storage only. Anonymous, cookie-free page and event counts go to GoatCounter (see section 5). Network requests also go to public content APIs (api.alquran.cloud, cdn.jsdelivr.net, cdn.islamic.network / everyayah audio). Those servers can see standard request data like IP addresses, under their own policies. Fonts are bundled with the app.
 
 ## 5. Play Data Safety form answers
-- Does your app collect or share any of the required user data types? **No**
+- Does your app collect or share any of the required user data types? **Yes — App activity only.** Anonymous page and event counts (GoatCounter). Not "no data collected".
+- Location is used on the device for prayer times and Qibla. Mosque search sends approximate coordinates to OpenStreetMap. Declare location as shared with a service provider for app functionality, not collected by us into an account.
 - Is all user data encrypted in transit? **Yes** (HTTPS only)
-- Can users request data deletion? Not applicable, since no data is collected. Uninstalling or clearing app data removes the local settings.
+- Can users request data deletion? Nothing personal is stored by us, and there is no account. Uninstalling or clearing app data removes the local settings. GoatCounter does not store a personal record to delete.
 - Ads: **No** · Target audience: **13+** (or "All ages". If you pick under 13, the Families policy applies, so 13+ is simpler.)
 - Government app: No · Financial features: No · Health: No
-**Apple App Privacy ("nutrition label"):** **Data Not Collected**.
-Note: if you add analytics, Crashlytics, ads or login later, you must update both forms.
+**Apple App Privacy ("nutrition label"):** Data Used to Track You: **None**. Data Linked to You: **None**. Data Not Linked to You: **Usage Data → Product Interaction (Analytics)**. Do not answer "Data Not Collected".
+Microphone (Quran Live / Qaida Live) and location are used for app functionality, on device, and are not used for tracking.
 
 
 ### Update v2.5.0: anonymous analytics (GoatCounter)
@@ -79,7 +80,7 @@ Note: if you add analytics, Crashlytics, ads or login later, you must update bot
 |---|---|
 | Surah list with filter, Meccan/Medinan, ayah counts | ✅ |
 | Reader: Uthmani Arabic, bismillah handling, translation picker (100+) | ✅ |
-| Audio: per-ayah and full surah, 30+ reciters, highlight and auto-scroll, mini player | ✅ |
+| Audio: per-ayah and full surah, 17 reciters in Settings, highlight and auto-scroll, mini player | ✅ |
 | Tafsir bottom sheet per ayah, edition picker | ✅ |
 | Hadith: collections, books/sections, Arabic + chosen language, grades | ✅ |
 | Search: Arabic or any translation, ref jump (2:255) | ✅ |
@@ -124,7 +125,7 @@ Note: if you add analytics, Crashlytics, ads or login later, you must update bot
 1. Join the Apple Developer Program (developer.apple.com/programs). You need an Apple ID with 2FA. Choose Individual or Organization (an organization needs a D-U-N-S number).
 2. **You need a Mac with Xcode** (or a cloud Mac like MacinCloud, or a CI service like Codemagic, Ionic Appflow, or GitHub Actions macOS runners). Copy the `quran-app` folder, run `npm install && npx cap sync ios`, then `npx cap open ios`.
 3. In Xcode: set the Team, the Bundle ID and the version. The AppIcon is already set to the 1024 icon. Run on a simulator or device to test.
-4. In App Store Connect: My Apps → New App (bundle ID, name, SKU). Add the screenshots (6.7"/6.9": `mockups/ios/` at 1290×2796), description, keywords, support URL, privacy policy URL, App Privacy = Data Not Collected, and age rating 4+.
+4. In App Store Connect: My Apps → New App (bundle ID, name, SKU). Add the screenshots (6.7"/6.9": `mockups/ios/` at 1290×2796), description, keywords, support URL, privacy policy URL (https://kapadia100.github.io/noor-quran-app/privacy.html), App Privacy = Usage Data (Product Interaction), not linked and not used for tracking, and age rating 4+. A support email is still needed for App Store Connect; do not invent one.
 5. In Xcode: Product → Archive → Distribute → App Store Connect → Upload. Test it with TestFlight, then Submit for Review.
 6. **Guideline 4.2 (minimum functionality) risk:** Apple can reject apps that are just wrapped websites. To avoid this, add offline content, native features (notifications for prayer times, background audio) and a polished native feel before you submit.
 
@@ -155,14 +156,14 @@ Note: if you add analytics, Crashlytics, ads or login later, you must update bot
 - [ ] Enable Play App Signing (default). Your keystore becomes the *upload* key.
 - [ ] Build: `VERSION_NAME=1.0.0 VERSION_CODE=1 npm run android:aab`, or use the Android Action with secrets.
 - [ ] Exact alarms: the app uses `SCHEDULE_EXACT_ALARM` for prayer alerts. Fill in the Play Console "exact alarm" declaration (prayer-time alarms), or alerts may be delayed on Android 14+.
-- [ ] Data Safety: location (approximate/precise, on-device only, not collected), no account, no ads, no analytics.
+- [ ] Data Safety: location (approximate/precise, on-device, and shared with OpenStreetMap for mosque search), anonymous app-interaction analytics (GoatCounter), microphone for Quran Live / Qaida Live, no account, no ads.
 - [ ] Upload to Internal testing, then Closed testing (12 testers / 14 days), then Production.
 
 ### iOS
 - [ ] Create the Distribution certificate, App Store provisioning profile and App Store Connect API key. Add them as GitHub secrets (see `.github/workflows/ios.yml`).
 - [ ] Run the iOS Action, install from TestFlight, and test on a real iPhone (audio with screen locked, alerts, compass).
 - [ ] Guideline 4.2 (minimum functionality): the Quran text + Urdu/English translations, prayer times, Qibla and bookmarks all work offline. Point this out in the review notes.
-- [ ] Privacy nutrition label: Location, used for app functionality, not linked to the user, not used for tracking.
+- [ ] Privacy nutrition label: Usage Data (Product Interaction / Analytics), not linked and not used for tracking. Location and microphone, used for app functionality, not linked to the user, not used for tracking.
 - [ ] Screenshots: 6.9" (1320×2868) and 6.5" iPhone. Mockups are in `store-assets/mockups`.
 
 ### Content / legal

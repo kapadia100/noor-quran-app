@@ -59,7 +59,7 @@ CI option: run **Actions › Android release (AAB)** after adding the secrets li
 ## iOS
 Mac: `npx cap sync ios && npx cap open ios`, then pick your Team and run it on your iPhone.
 No Mac: add the secrets listed in `.github/workflows/ios.yml`, then run **Actions › iOS build (TestFlight)**.
-`Info.plist` already declares location, motion and background audio (for recitation when the screen is locked).
+`Info.plist` already declares the microphone (Quran Live and Qaida Live), location, motion and background audio (for recitation when the screen is locked). Android declares `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS` for the same on-device tutors.
 
 ## App ID
 `com.aamir.quranapp` is a **placeholder**. Choose your final reverse-domain ID before the first store upload, because it can never be changed afterwards.

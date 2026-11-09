@@ -12,6 +12,8 @@
 	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used to calculate prayer times and Qibla direction.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Quran Safar uses the microphone for Quran Live and Qaida Live so it can listen to your recitation on this device. Your voice is processed on the device and is not recorded or uploaded.</string>
   <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
