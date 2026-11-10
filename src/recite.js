@@ -14,6 +14,7 @@ import {esc,ayahText} from './lib.js';
 import {QIndex,WrongWatch,WR} from './hz-wrong.js';
 import * as I from './icons.js';
 import {finalPass} from './recite-final.js';
+import {isOffline} from './net.js';
 import {weakKey,weakLoad,weakSave,recMiss,recFix,recReviewFail,attempt,syllables,syllWeights,syllAt,estimateSlice,letters,ENCOURAGE,ESCALATE_AT} from './coach.js';
 import {TIPS,SHADDA_TIP,PLAIN_TIP,hardOf,trickyIn,hasShadda} from './tajweed.js';
 const SILENT='data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
@@ -36,10 +37,11 @@ function getWorker(){if(!worker){worker=new Worker((import.meta.env.BASE_URL||'/
 function onMsg(e){const m=e.data;
  if(m.type==='progress'&&st){const p=m.total?Math.min(99,Math.round(100*m.loaded/m.total)):0;$('#rcBar').style.width=p+'%';chip('load',L(`Downloading tutor… ${p}%`,`ٹیوٹر ڈاؤن لوڈ ہو رہا ہے… ${p}%`))}
  if(m.type==='ready'){ready=true;localStorage.setItem('qsCtc','1');if(st){$('#rcDl').hidden=true;$('#rcBar').parentNode.hidden=true;$('#rcMic').disabled=false;chip('ready',readyMsg())}}
- if(m.type==='error'){window.__reciteErr=m.message;window.__reciteErrInfo=m;if(!ready)console.error('[Recite & Learn] tutor load failed at stage "'+(m.stage||'?')+'":',m.name||'',m.message,m.env||'',m.stack||'');if(st){if(!ready){$('#rcDl').disabled=false;$('#rcDl').hidden=false;$('#rcBar').parentNode.hidden=true}chip('warn',L('Could not load the tutor. Check your connection and try again.','ٹیوٹر لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔'))}}
+ if(m.type==='error'){window.__reciteErr=m.message;window.__reciteErrInfo=m;if(!ready)console.error('[Recite & Learn] tutor load failed at stage "'+(m.stage||'?')+'":',m.name||'',m.message,m.env||'',m.stack||'');if(st){if(!ready){$('#rcDl').disabled=false;$('#rcDl').hidden=false;$('#rcBar').parentNode.hidden=true}chip('warn',isOffline()?tutorOff():L('Could not load the tutor. Check your connection and try again.','ٹیوٹر لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔'))}}
  if(m.type==='run'&&finalWait.has(m.id)){const f=finalWait.get(m.id);finalWait.delete(m.id);f(m);return}
  if(m.type==='run'&&st){st.busy=false;const job=st.job;st.job=null;st.decMs=st.decMs?st.decMs*0.7+m.ms*0.3:m.ms;if(job&&job.gen===st.gen)result(job,m.words,m.ms,m.lp?{lp:m.lp,T:m.T,off:job?job.off:0}:null)}}
 const readyMsg=()=>st?.drill?L('Ready — tap the mic. You will hear each word, then repeat it.','تیار — مائیک دبائیں۔ ہر لفظ سنیں، پھر دہرائیں۔'):L('Ready — tap the mic and recite','تیار — مائیک دبائیں اور پڑھیں');
+const tutorOff=()=>L('The Live tutor needs a one-time download (about 19 MB). Connect to the internet, then tap Download.','لائیو ٹیوٹر کو پہلی بار ڈاؤن لوڈ چاہیے (تقریباً 19 MB)۔ انٹرنیٹ سے جڑیں، پھر ڈاؤن لوڈ دبائیں۔');
 function chip(kind,text){if(!panel)return;const c=$('#rcChip');c.className='rc-chip '+kind;c.querySelector('span').textContent=text}
 
 /** Spaced-repetition review of saved weak words (items from the weak store). */
@@ -74,11 +76,12 @@ export function open(n,a,ctx){close();st={n,ctx,flat:[],gen:1,idc:0,chunks:[],en
  $('#rcHelp').onclick=()=>{unlockAudio();helpTap()};
 $('#rcMic').onclick=async()=>{if(st.listening){stopMic();endOrSummary();return}await startMic();if(!st||!st.listening)return;if(st.coach&&!st.coach.done)listen();else if(st.drill)drillNext();else if(st.mode==='lr')lrPlay(true)};
  if(st.drill){$('#rcLine').hidden=true;$('.rc-ref').textContent=L('Review','دہرائی');$('.rc-key').hidden=true}
- $('#rcDl').onclick=()=>{$('#rcDl').disabled=true;$('#rcBar').parentNode.hidden=false;load()};
+ $('#rcDl').onclick=()=>{if(isOffline()&&!localStorage.getItem('qsCtc')){chip('warn',tutorOff());return}$('#rcDl').disabled=true;$('#rcBar').parentNode.hidden=false;load()};
  st.timer=setInterval(tick,100);
  if(window.__reciteFake){ready=true;$('#rcMic').disabled=false;chip('ready','Ready');return}
  if(ready){$('#rcMic').disabled=false;chip('ready',readyMsg())}
  else if(localStorage.getItem('qsCtc')){$('#rcBar').parentNode.hidden=false;chip('load',L('Preparing tutor…','ٹیوٹر تیار ہو رہا ہے…'));load()}
+ else if(isOffline()){$('#rcDl').hidden=false;chip('warn',tutorOff())}
  else{$('#rcDl').hidden=false;chip('info',L('First use downloads a small tutor once. After that it works from your phone.','پہلی بار ایک چھوٹا ٹیوٹر ڈاؤن لوڈ ہوگا، پھر یہ فون پر ہی چلے گا۔'))}}
 function load(){getWorker().postMessage({type:'load',base:localStorage.getItem('qsAsrBase')||MODEL_BASE})}
 /** Forget the in-memory worker/model (used after the downloaded model is deleted from the More tab). */

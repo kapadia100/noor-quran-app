@@ -36,19 +36,47 @@ export function locate(){return new Promise((res,rej)=>{if(!navigator.geolocatio
 export function setCity(name){const c=CITIES.find(c=>c[0]===name);if(!c)return;[P.city,P.lat,P.lng,P.tz]=c;P.src='city';autoMethod();if(!P.methodUser)P.method=c[4];saveP()}
 // ---- notifications ----
 const native=()=>Capacitor.isNativePlatform();export const isNative=native;
-export async function schedule(){const now=new Date();const items=[];
+/** iOS keeps at most 64 pending local notifications and silently drops anything past that. */
+export const IOS_PENDING_LIMIT=64;
+export const PRAYER_ID_BASE=1000;
+export const REMINDER_ID_BASE=5000;
+export const REMINDER_SPAN=200;
+export const REMINDER_GROUPS=['khatam','aotd','events','ramadan'];
+const COORD_LABEL=/^(?:GPS\s+)?-?\d{1,3}\.\d+\s*,\s*-?\d{1,3}\.\d+$/i;
+export const isCoordLabel=s=>COORD_LABEL.test(String(s||'').trim());
+export const isPrayerNotifId=id=>id>=PRAYER_ID_BASE&&id<REMINDER_ID_BASE;
+export function reminderRange(group){const i=REMINDER_GROUPS.indexOf(group);if(i<0)return null;const base=REMINDER_ID_BASE+i*REMINDER_SPAN;return {base,end:base+REMINDER_SPAN}}
+/** Split pending notifications into the ones this scheduler owns and the ones it must leave alone. */
+export function partitionPending(pending,owns){const mine=[],keep=[];for(const n of pending||[])(owns(n.id)?mine:keep).push(n);return {mine,keep}}
+/** How many of `items` fit without pushing the kept notifications past the iOS cap. */
+export function fitPending(items,kept,limit=IOS_PENDING_LIMIT){return (items||[]).slice(0,Math.max(0,limit-(kept|0)))}
+/** City name for an alert. Never a GPS coordinate string. */
+export function alertPlace(p=P,ur=false){
+ if(p.src==='gps'){const key=`${p.lat},${p.lng}`,nr=p.near&&p.near.at===key?p.near:null;
+  if(nr){const n=ur&&nr.ur?nr.ur:nr.en;if(n&&!isCoordLabel(n))return nr.km>60?(ur?`${n} کے قریب`:`Near ${n}`):n}
+  if(p.place&&p.placeAt===key&&!isCoordLabel(p.place))return p.place;return ''}
+ const n=String(p.city||'').trim();return isCoordLabel(n)?'':n}
+async function ensureAlertPlace(){if(P.src!=='gps')return;const key=`${P.lat},${P.lng}`;
+ if(P.near&&P.near.at===key&&P.near.en&&!isCoordLabel(P.near.en))return;
+ try{const m=await import('./places.js');await m.resolve(P)}catch{}}
+// One native schedule at a time, so a prayer refresh and a reminder refresh cannot both read a stale pending list and exceed 64.
+let nativeQueue=Promise.resolve();
+const nativeTurn=fn=>{const run=nativeQueue.then(fn);nativeQueue=run.then(()=>{},()=>{});return run};
+const cancelIds=list=>list.length?LocalNotifications.cancel({notifications:list.map(n=>({id:n.id}))}):Promise.resolve();
+export async function schedule(){await ensureAlertPlace();const now=new Date();const items=[];
  for(let d=0;d<(P.days||7);d++){const pt=times(new Date(now.getTime()+d*864e5));for(const k of PRAYERS){if(!P.alerts[k]||pt[k]<=now)continue;items.push({k,at:pt[k]})}}
  if(native()){const perm=await LocalNotifications.requestPermissions();if(perm.display!=='granted')return {ok:false,reason:'permission denied'};
   try{await LocalNotifications.createChannel({id:'adhan',name:'Adhan',importance:5,sound:'adhan.wav',vibration:true});await LocalNotifications.createChannel({id:'prayer',name:'Prayer alerts',importance:4,vibration:true})}catch{}
-  const pend=await LocalNotifications.getPending();if(pend.notifications.length)await LocalNotifications.cancel({notifications:pend.notifications.map(n=>({id:n.id}))});
-  const list=items.slice(0,60).map((x,i)=>({id:1000+i,title:`${PNAME[x.k][0]} · ${PNAME[x.k][1]}`,body:`It's time for ${PNAME[x.k][0]} (${fmt12(x.at)}) — ${P.city}`,schedule:{at:x.at,allowWhileIdle:true},channelId:P.adhan&&x.k!=='sunrise'?'adhan':'prayer',sound:P.adhan&&x.k!=='sunrise'?'adhan.wav':undefined}));
-  if(list.length)await LocalNotifications.schedule({notifications:list});return {ok:true,count:list.length,mode:'native'}}
+  const place=alertPlace(P,false);
+  return nativeTurn(async()=>{const pend=(await LocalNotifications.getPending()).notifications||[];const {mine,keep}=partitionPending(pend,isPrayerNotifId);await cancelIds(mine);
+   const list=fitPending(items,keep.length).map((x,i)=>({id:PRAYER_ID_BASE+i,title:`${PNAME[x.k][0]} · ${PNAME[x.k][1]}`,body:`It's time for ${PNAME[x.k][0]} (${fmt12(x.at)})${place?` — ${place}`:''}`,schedule:{at:x.at,allowWhileIdle:true},channelId:P.adhan&&x.k!=='sunrise'?'adhan':'prayer',sound:P.adhan&&x.k!=='sunrise'?'adhan.wav':undefined}));
+   if(list.length)await LocalNotifications.schedule({notifications:list});return {ok:true,count:list.length,mode:'native'}})}
  return webArm('prayer',plan(now),true)}
 // When each prayer's time ends (used for the optional "ends soon" reminder). Isha is left out: its end differs by fiqh.
 const ENDS={fajr:'sunrise',dhuhr:'asr',asr:'maghrib',maghrib:'isha'};
 const uiUr=()=>{try{return JSON.parse(localStorage.getItem('settings'))?.ui==='ur'}catch{return false}};
 /** Web notification plan for the next P.days days: prayer start (+ optional "ends in N min") for each enabled prayer. */
-export function plan(now=new Date()){const ur=uiUr(),out=[],em=+P.endMin||15,place=P.src==='gps'?'':P.city;
+export function plan(now=new Date()){const ur=uiUr(),out=[],em=+P.endMin||15,place=alertPlace(P,ur);
  for(let d=0;d<(P.days||7);d++){const pt=times(new Date(now.getTime()+d*864e5));
   for(const k of PRAYERS){if(!P.alerts[k])continue;const at=pt[k],n=PNAME[k],tm=fmt12(at);
    if(at>now)out.push({id:`p-${k}-${+at}`,at,lang:ur?'ur':'en',dir:ur?'rtl':'ltr',url:'./#/prayer',
@@ -61,14 +89,18 @@ async function webArm(group,items,adhan){if(!N.supported())return {ok:false,reas
  const perm=await N.ask();if(perm!=='granted')return {ok:false,reason:perm==='denied'?'permission denied':'permission not given'};
  const r=await N.arm(group,items,{onFire:x=>{if(adhan&&P.adhan&&/^p-/.test(x.id)&&!/^p-sunrise/.test(x.id)&&!document.hidden)new Audio(import.meta.env.BASE_URL+'adhan.wav').play().catch(()=>{})}});
  return {...r,mode:r.mode==='trigger'?'scheduled':r.bg?'background':'open'}}
-export async function cancelAll(){if(!native()&&N.supported())await N.clear('prayer').catch(()=>{});if(native()){const p=await LocalNotifications.getPending();if(p.notifications.length)await LocalNotifications.cancel({notifications:p.notifications.map(n=>({id:n.id}))})}}
-// ---- generic reminders (khatam, ayah of the day, calendar events) ----
-// group: string key; items: [{at:Date,title,body}]. Native ids: 5000 + group slot*200 + i.
-const GROUPS=['khatam','aotd','events','ramadan'];
-export async function setReminders(group,items){const now=new Date();items=items.filter(x=>x.at>now).slice(0,group==='events'?20:14);const base=5000+GROUPS.indexOf(group)*200;
+export async function cancelAll(){if(!native()&&N.supported())await N.clear('prayer').catch(()=>{});
+ if(!native())return;return nativeTurn(async()=>{const pend=(await LocalNotifications.getPending()).notifications||[];const mine=pend.filter(n=>isPrayerNotifId(n.id));await cancelIds(mine);return {ok:true,count:mine.length}})}
+// ---- generic reminders (khatam, ayah of the day, calendar events, Ramadan) ----
+// group: string key; items: [{at:Date,title,body}]. Native ids: REMINDER_ID_BASE + group slot*REMINDER_SPAN + i.
+// Prayer alerts occupy 1000–4999 and never cancel these.
+export async function setReminders(group,items){const now=new Date(),range=reminderRange(group);items=(items||[]).filter(x=>x.at>now).slice(0,group==='events'?20:14);
+ if(!range)return {ok:false,reason:'unknown group'};
  if(native()){const perm=await LocalNotifications.requestPermissions();if(perm.display!=='granted')return {ok:false,reason:'permission denied'};
-  const pend=await LocalNotifications.getPending();const mine=pend.notifications.filter(n=>n.id>=base&&n.id<base+200);if(mine.length)await LocalNotifications.cancel({notifications:mine.map(n=>({id:n.id}))});
-  if(items.length)await LocalNotifications.schedule({notifications:items.map((x,i)=>({id:base+i,title:x.title,body:x.body,schedule:{at:x.at,allowWhileIdle:true},channelId:'prayer'}))});return {ok:true,count:items.length,mode:'native'}}
+  return nativeTurn(async()=>{const pend=(await LocalNotifications.getPending()).notifications||[];const owns=id=>id>=range.base&&id<range.end;const {mine,keep}=partitionPending(pend,owns);await cancelIds(mine);
+   const fit=fitPending(items,keep.length);
+   if(fit.length)await LocalNotifications.schedule({notifications:fit.map((x,i)=>({id:range.base+i,title:x.title,body:x.body,schedule:{at:x.at,allowWhileIdle:true},channelId:'prayer'}))});
+   return {ok:true,count:fit.length,mode:'native'}})}
  if(!items.length){if(N.supported())await N.clear(group).catch(()=>{});return {ok:true,count:0}}
  return webArm(group,items.map((x,i)=>({id:`r-${group}-${+x.at}-${i}`,at:x.at,title:x.title,body:x.body,grace:2*36e5,url:x.url})),false)}
 /** Daily times at HH:MM for the next n days. */

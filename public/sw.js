@@ -1,7 +1,7 @@
-const C='qsafar-v99'; // bump on every release
+const C='qsafar-v100'; // bump on every release
 const EDS=['ar','en.sahih','ur.jalandhry','ur.kanzuliman'];
 const SHELL0=['./fonts/fraunces-la.woff2','./fonts/fraunces-lx.woff2','./fonts/dmsans-la.woff2','./fonts/dmsans-lx.woff2','./fonts/amiriquran-ar.woff2','./fonts/amiriquran-la.woff2','./fonts/amiri-ar.woff2','./fonts/schehera-ar.woff2','./fonts/nastaliq-ar.woff2','./','./index.html','./offline/rukus.json','./manifest.webmanifest','./icon.svg','./icon-192.png','./offline/surahs.json','./offline/cities.json','./offline/ed.json','./offline/translations.json','./offline/x/duas.json','./offline/x/hisn.json','./offline/x/names.json','./offline/x/dict.json','./offline/x/dict-idx.json','./offline/x/pages.json','./offline/x/muslim-map.json','./icon-512.png','./icon-maskable-512.png','./favicon-32.png','./apple-touch-icon.png','./vad/silero16k.bin','./img/st-ayah.webp','./img/st-dua.webp','./img/st-names.webp','./img/st-tasbeeh.webp','./img/st-ramadan.webp'];
-const SHELL=[...SHELL0,...EDS.flatMap(e=>Array.from({length:114},(_,i)=>`./offline/s/${e}/${i+1}.json`))];
+const SHELL=[...SHELL0,...EDS.flatMap(e=>Array.from({length:114},(_,i)=>`./offline/s/${e}/${i+1}.json`)),...Array.from({length:114},(_,i)=>`./offline/tj/${i+1}.json`)];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(SHELL)))});
 self.addEventListener('message',e=>{if(e.data==='skip')self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C&&x.startsWith('qsafar-')).map(x=>caches.delete(x)))));self.clients.claim()});

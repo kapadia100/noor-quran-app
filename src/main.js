@@ -32,6 +32,7 @@ import * as PH from './play-hl.js';
 import {kick as glide} from './glide.js';
 import * as FW from './follow.js';
 import * as PL from './places.js';
+import * as NET from './net.js';
 const mem={};
 async function j(url){if(mem[url])return mem[url];const r=await fetch(url);if(!r.ok)throw new Error(r.status);const d=await r.json();return mem[url]=d.data??d}
 const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(API+'/surah'));
@@ -40,7 +41,10 @@ async function editions(type){try{const l=await j(`${API}/edition?type=${type}`)
 async function audioEds(){try{const l=await j(API+'/edition?format=audio&type=versebyverse');const c=PK.canonReciter(l,S.reciter);if(c!==S.reciter){S.reciter=c;save()}return l}catch{return [{identifier:S.reciter,language:'ar',englishName:S.reciterName||S.reciter}]}}
 const loading=()=>app.innerHTML=`<p class="muted c">${t('loading')}</p>`;
 function applyUI(){document.documentElement.dataset.theme=S.dark?'dark':'light';{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=S.dark?'#1B2118':'#F6F0E2'}document.documentElement.lang=S.ui;document.documentElement.dir=S.ui==='ur'?'rtl':'ltr';
- document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));$('#lang').textContent=S.ui==='en'?'اردو':'EN';document.documentElement.style.setProperty('--ar',S.size+'px')}
+ document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));$('#lang').textContent=S.ui==='en'?'اردو':'EN';document.documentElement.style.setProperty('--ar',S.size+'px');NET.refreshLabel()}
+const offSearch=()=>S.ui==='ur'?'تلاش کے لیے انٹرنیٹ چاہیے۔ قرآن، نماز کے اوقات اور محفوظ پڑھائی آف لائن چلتی رہتی ہے۔':'Search needs the internet. The Quran, prayer times and your saved reading keep working offline.';
+const offAudio=()=>S.ui==='ur'?'تلاوت کی آواز کے لیے انٹرنیٹ چاہیے۔ پڑھنا بغیر آواز جاری رہتا ہے۔':'Recitation audio needs the internet. You can keep reading without it.';
+const offHadith=()=>S.ui==='ur'?'حدیث کی آواز اور حدیث کے متن کے لیے انٹرنیٹ چاہیے۔ جو صفحات پہلے کھل چکے ہوں وہ محفوظ رہتے ہیں۔':'Hadith audio and hadith text need the internet. Pages you already opened stay on this phone.';
 const thIc=()=>{$('#theme').innerHTML=icon(S.dark?'sun':'moon')};$('#theme').onclick=()=>{S.dark=!S.dark;save();applyUI();thIc()};thIc();
 $('#lang').onclick=()=>{S.ui=S.ui==='en'?'ur':'en';save();applyUI();route()};
 $('#back').onclick=()=>history.back();
@@ -184,7 +188,7 @@ PH.follow(()=>{if(!cur||cur.whole||!cur.urls||!cur.segs)return null;const c=cur.
  const segs=cur.segs[cur.i+1];if(!segs)return null;if(el._ws?.[0]?.isConnected!==true)el._ws=PH.wordEls(el);const ws=el._ws;if(!ws||ws.length!==Math.max(...segs.map(x=>x[0])))return null;return {audio,segs,ws}});
 // One sound at a time across the app: the Qaida player (qaida-play.js) and this player tell each other when they start.
 addEventListener('qs:audio',e=>{if((e.detail==='qaida'||e.detail==='hadith'||e.detail==='ruqyah'||e.detail==='janazah')&&!audio.paused)audio.pause()});addEventListener('qs:media-restore',msHandlers);
-async function playPos(s,i,whole=S.surahAudio){whole=isWhole(whole);if(!validSurah(s))return stop();const name=await surahName(s);errs=whole?errs:0;
+async function playPos(s,i,whole=S.surahAudio){if(NET.isOffline()){toast(offAudio());return stop()}whole=isWhole(whole);if(!validSurah(s))return stop();const name=await surahName(s);errs=whole?errs:0;
  if(whole){cur={s,i:0,name,whole:true,br:cur?.br||128};audio.src=surahUrl(s,cur.br)}
  else{let urls;try{urls=await urlsFor(s)}catch{toast(t('err'));return stop()}if(!urls[i])return stop();if(hifzCfg&&hifzCfg.s===s)urls=urls.map(c=>c.filter(x=>!x.bas));cur={s,i,name,urls,part:0};setClip();{const c=cur;PH.segmentsFor(S.reciter,s).then(m=>{c.segs=m}).catch(()=>{})}
   const n=nextPos(s,i);if(n&&n.s===s)pre.src=urls[n.i][0].u;else if(n&&S.autoNext)urlsFor(n.s).then(u=>pre.src=u[0][0].u).catch(()=>{})}
@@ -206,7 +210,8 @@ audio.onended=()=>{if(oneShot){oneShot=false;cur=null;return playerUI()}if(cur&&
 function playUrl(url,label,quiet){hifzCfg=null;oneShot=true;cur={s:0,i:0,name:label||'Audio',whole:true,clip:true,quiet:!!quiet};audio.src=url;audio.play().catch(()=>{});if(!quiet)playerUI()}
 const hifzNextPos=()=>{const p=hifzNext(hifzCfg,hifzPos);hifzPos=p;return p?p.a:null};
 audio.onplay=()=>{dispatchEvent(new CustomEvent('qs:audio',{detail:'app'}));if('mediaSession' in navigator)navigator.mediaSession.playbackState='playing';playerUI()};audio.onpause=()=>{if('mediaSession' in navigator)navigator.mediaSession.playbackState='paused';playerUI()};
-audio.onerror=()=>{if(!cur||!audio.src)return;if(cur.whole){if(cur.br===128){cur.br=64;audio.src=surahUrl(cur.s,64);audio.play().catch(()=>{});return}toast('Whole-surah audio unavailable for this reciter; playing ayah by ayah');return playPos(cur.s,0,false)}
+audio.onerror=()=>{if(!cur||!audio.src)return;const netErr=audio.error&&audio.error.code===2;if(netErr)NET.noteResult(audio.currentSrc||audio.src,false);
+ if(NET.isOffline()){toast(offAudio());return stop()}if(cur.whole){if(cur.br===128){cur.br=64;audio.src=surahUrl(cur.s,64);audio.play().catch(()=>{});return}toast('Whole-surah audio unavailable for this reciter; playing ayah by ayah');return playPos(cur.s,0,false)}
  const c=cur.urls?.[cur.i]?.[cur.part];if(c&&c.alt&&!cur.altOn){cur.altOn=true;setClip();audio.play().catch(()=>{});return}
  if(++errs>3){toast(t('err'));return stop()}if(cur.urls&&cur.part+1<cur.urls[cur.i].length){cur.part++;cur.altOn=false;setClip();audio.play().catch(()=>{});return}advance(true)};
 $('#pPlay').onclick=()=>{if(audio.paused){audio.play().catch(()=>{})}else audio.pause()};
@@ -364,11 +369,15 @@ async function hadithSection(book,sec){if(!L2.hasBook(book)){location.replace('#
 async function search(q=''){setTitle(t('search'));const trs=await editions('translation');
  app.innerHTML=`<form id="sf" class="bar"><input class="inp" id="q" aria-label="${t('q')}" value="${esc(q)}" placeholder="${t('q')}"><select id="se" aria-label="${t('edition')}">${opt(trs.filter(e=>langRank(e.language)<2),S.searchEd||S.trans)}<option value="quran-simple-clean">AR · Arabic text</option>${opt(trs.filter(e=>langRank(e.language)>=2),S.searchEd||S.trans)}</select><button class="btn" aria-label="${S.ui==='ur'?'تلاش':'Search'}">${I_('search')}</button></form><div id="sr"></div>`;
  $('#sf').onsubmit=e=>{e.preventDefault();S.searchEd=$('#se').value;save();run()};if(S.searchEd==='quran-simple-clean')$('#se').value='quran-simple-clean';
- const run=async()=>{const v=$('#q').value.trim();if(!v)return;history.replaceState(null,'','#/search/'+encodeURIComponent(v));$('#sr').innerHTML=t('loading');
-  // also allow direct ref "2:255"
+ const run=async()=>{const v=$('#q').value.trim();if(!v)return;history.replaceState(null,'','#/search/'+encodeURIComponent(v));
   const ref=parseRef(v);if(ref){location.hash=`#/surah/${ref.s}${ref.a?'/'+ref.a:''}`;return}if(/^\d+([:.\s]\d+)?$/.test(v)){$('#sr').innerHTML=`<p class="muted">Invalid reference. Surah 1–114, ayah within the surah.</p>`;return}
+  if(NET.isOffline()){$('#sr').innerHTML=`<p class="card off-note" id="offNote">${offSearch()}</p>`;return}
+  $('#sr').innerHTML=t('loading');
   try{const r=await fetch(`${API}/search/${encodeURIComponent(v)}/all/${$('#se').value}`).then(r=>r.json());if(r.code===404||typeof r.data==='string')r.data={count:0,matches:[]};const ms=r.data?.matches||[];
-   $('#sr').innerHTML=`<p class="muted">${r.data?.count||0} ${t('results')}</p>`+ms.slice(0,300).map(x=>`<a class="card" href="#/surah/${x.surah.number}/${x.numberInSurah}"><span class="badge">${x.surah.englishName} ${x.surah.number}:${x.numberInSurah}</span><p dir="auto">${highlight(x.text,v)}</p></a>`).join('')}catch{$('#sr').textContent=t('err')}};
+   $('#sr').innerHTML=`<p class="muted">${r.data?.count||0} ${t('results')}</p>`+ms.slice(0,300).map(x=>`<a class="card" href="#/surah/${x.surah.number}/${x.numberInSurah}"><span class="badge">${x.surah.englishName} ${x.surah.number}:${x.numberInSurah}</span><p dir="auto">${highlight(x.text,v)}</p></a>`).join('')}catch{$('#sr').innerHTML=`<p class="card off-note" id="offNote">${offSearch()}</p>`}};
+ if(window.__offSearch)removeEventListener('qs-net',window.__offSearch);
+ window.__offSearch=()=>{if(!NET.isOffline()&&document.getElementById('offNote'))run()};
+ addEventListener('qs-net',window.__offSearch);
  if(q)run()}
 
 function bookmarks(){setTitle(t('bookmarks'));const l=LS.get('bookmarks',[]);app.innerHTML=l.length?l.map(b=>`<a class="card" href="#/surah/${b.ref.replace(':','/')}"><span class="badge">${esc(b.name)} ${b.ref}</span><p>${esc(b.text)}…</p></a>`).join(''):`<p class="muted c">${t('none')}</p>`}
@@ -429,12 +438,15 @@ async function route(){// iOS WebKit fires no focusout when the focused field is
  $('#back').style.visibility=p[0]?'visible':'hidden';
  const sec={hsearch:'hadith',haudio:'hadith',surah:'quran',juz:'quran',mushaf:'quran',search:'quran',bookmarks:'quran',notes:'quran',khatam:'quran',hifz:'quran',hifztest:'more',recite:'quran',progress:'more',qaida:'more',dict:'more',ruqyah:'more',kalimas:'more',janazah:'more',prayer:'ibadat',qibla:'ibadat',tracker:'ibadat',ramadan:'ibadat',calendar:'ibadat',tasbeeh:'ibadat',duas:'ibadat',zakat:'ibadat',mosques:'ibadat',names:'ibadat'}[p[0]]??p[0];if(sec!==PREV_SEC||window.__navTop)toTop();window.__navTop=false;PREV_SEC=sec;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',('#/'+sec)===b.dataset.r||(!sec&&b.dataset.r==='#/')));
  const FR={kalimas:F.kalimas,janazah:F.janazah,qaida:()=>F.qaida(p[1],p[2]),quran:()=>home(),more:F.more,ibadat:F.ibadat,help:F.help,tasbeeh:F.tasbeeh,duas:()=>F.duas(p[1]||undefined,p[2]),names:()=>F.names(p[1]),tracker:F.tracker,khatam:F.khatam,mushaf:()=>F.mushaf(p[1]),notes:F.notes,calendar:()=>F.calendar(p[1]||0),ramadan:F.ramadan,zakat:F.zakat,mosques:F.mosques,hifz:F.hifz,hifztest:()=>F.hifzTest(p[1]),progress:F.progress,dict:()=>F.dict(p[1],p[2]),ruqyah:F.ruqyah};
- try{document.body.classList.remove('enter');void document.body.offsetWidth;document.body.classList.add('enter');if(FR[p[0]])await FR[p[0]]();else if(p[0]==='recite')p[1]==='review'?await weakPage():p[1]?(AUTOT=true,await reader(+p[1],p[2])):await tutorPage();else if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='haudio')await hadithAudio(p[1],p[2],p[3]);else if(p[0]==='hsearch')await hadithSearch(p[1]||'bukhari',p[2]||'',p[3]);else if(p[0]==='hadith')p[2]==='n'?await hadithNo(p[1],p[3]):p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
+ try{document.body.classList.remove('enter');void document.body.offsetWidth;document.body.classList.add('enter');
+  if(NET.isOffline()&&/^(hadith|hsearch|haudio)$/.test(p[0])&&!mem[HAD+'/editions.json']){setTitle(t('hadith'));app.innerHTML=`<p class="card off-note" id="offNote">${offHadith()}</p>`}
+  else if(FR[p[0]])await FR[p[0]]();else if(p[0]==='recite')p[1]==='review'?await weakPage():p[1]?(AUTOT=true,await reader(+p[1],p[2])):await tutorPage();else if(p[0]==='surah')await reader(+p[1],p[2]);else if(p[0]==='haudio')await hadithAudio(p[1],p[2],p[3]);else if(p[0]==='hsearch')await hadithSearch(p[1]||'bukhari',p[2]||'',p[3]);else if(p[0]==='hadith')p[2]==='n'?await hadithNo(p[1],p[3]):p[2]?await hadithSection(p[1],p[2]):p[1]?await hadithBook(p[1]):await hadithHome();
   else if(p[0]==='search')await search(p[1]||'');else if(p[0]==='bookmarks')bookmarks();else if(p[0]==='prayer')prayer();else if(p[0]==='qibla')qibla();else if(p[0]==='juz')p[1]?await juzReader(+p[1]):await home('juz');else if(p[0]==='settings'){await settings();app.insertAdjacentHTML('beforeend',`<p class="ver" id="ver">Quran Safar v${__APP_VERSION__}</p>`)}else await F.dashboard()}
- catch(e){if(v!==app)return;console.error(e);v.innerHTML=`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}
+ catch(e){if(v!==app)return;console.error(e);const hadith=/^(hadith|hsearch|haudio)$/.test(p[0]);
+  v.innerHTML=NET.isOffline()&&(p[0]==='search'||hadith)?`<p class="card off-note" id="offNote">${p[0]==='search'?offSearch():offHadith()}</p>`:`<p class="muted c">${t('err')}</p><p class="c"><button class="btn" onclick="location.reload()">↻</button></p>`}
  PL.refresh().then(()=>{const e=$('#pPlace');if(e)e.textContent=placeName()}).catch(()=>{})}
 F.init({app:()=>app,S,save,t,setTitle,loading,toast,weakDrill,resetModel:()=>RC?.resetModel?.(),j,arabic,transFor,surahs,dateCard,tick,pn,playUrl,startHifz,startHifzTest});
-if('scrollRestoration' in history)history.scrollRestoration='manual';addEventListener('hashchange',route);applyUI();route();
+if('scrollRestoration' in history)history.scrollRestoration='manual';addEventListener('hashchange',route);NET.install();applyUI();route();
 // v3.6.2 dates: refresh on app resume and at local midnight so the shown date is always today's (device clock + timezone).
 let shownDay=dateKey(),midT=null;
 function refreshDates(){const k=dateKey(),changed=k!==shownDay;shownDay=k;const now=new Date();

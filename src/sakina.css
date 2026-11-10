@@ -27,6 +27,10 @@ body.indopak .ar,.mushaf-ip .ar{font-family:'Scheherazade New','Amiri Quran',ser
 /* ---------- header ---------- */
 header{background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 header h1{font-family:var(--f-head);font-size:23px;font-weight:600;color:var(--fg)}
+.net-pill{flex:none;display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 7px;border-radius:999px;font:600 11px/1 var(--f-ui,system-ui);letter-spacing:.03em;color:#3a2a08;background:linear-gradient(180deg,#F8E7C0,#D8B56A);border:1px solid #C4A15A;box-shadow:inset 0 1px 0 #fff8}
+.net-pill[hidden]{display:none!important}
+.net-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#8A5A12;box-shadow:0 0 0 2px color-mix(in srgb,#F8E7C0 70%,transparent)}
+.off-note{border-color:color-mix(in srgb,var(--acc,#D8B56A) 60%,var(--bd));background:linear-gradient(180deg,color-mix(in srgb,var(--acc,#D8B56A) 18%,var(--card)),var(--card))}
 header button,header #back,header .hb{background:var(--card)!important;color:var(--fg)!important;border:0!important;border-radius:14px!important;box-shadow:0 0 0 1px var(--bd)!important}
 header::after{content:"";position:absolute;left:50%;bottom:0;width:132px;height:8px;transform:translateX(-50%);pointer-events:none;opacity:.85;
  background:linear-gradient(90deg,transparent,var(--acc)) 0 50%/52px 1px no-repeat,linear-gradient(90deg,var(--acc),transparent) 100% 50%/52px 1px no-repeat}

@@ -1,6 +1,7 @@
 // Hadith Audio: listen to the TRANSLATION of a hadith (English or Urdu only), picked by book / chapter / hadith number.
 // Uses the phone's own voices (hadith-tts.js). This page reads the translation only (Arabic is played from the hadith reading screens, when the user picks Arabic).
 import*as H from'./hadith-tts.js';import*as SP from'./speed.js';
+import {isOffline} from './net.js';
 const TX={en:{title:'Hadith Audio',lang:'Translation language',book:'Book',chapter:'Chapter',num:'Hadith number',go:'Go',play:'Play',pause:'Pause',resume:'Resume',stop:'Stop',next:'Next',prev:'Previous',cont:'Play through the whole chapter',speed:'Speed',
   intro:'Pick a language, a book and a chapter, or jump to a hadith number, then press Play. This page reads the translation. To hear the Arabic, open a hadith and pick Arabic.',
   noRec:'Urdu is played from recordings only, and they could not be reached. Check your connection and open this page again.',
@@ -8,7 +9,7 @@ const TX={en:{title:'Hadith Audio',lang:'Translation language',book:'Book',chapt
   silent:'Nothing played: your device did not speak. Check the volume and the silent switch.',
   noTr:l=>`No ${l} translation for this hadith`,skipped:(n,l)=>`${n} hadith${n===1?'':'s'} in this chapter ${n===1?'has':'have'} no ${l} translation and ${n===1?'is':'are'} skipped.`,
   unavailable:l=>`${l} not available`,notFound:n=>`Hadith ${n} was not found.`,missingJump:(n,l)=>`Hadith ${n} has no ${l} translation.`,
-  autoLbl:'Auto-translated from English',autoNow:'Playing an auto-translated Urdu text (machine translation from English).',done:'End of the chapter.',loading:'Loading…',err:'Could not load. Check your connection.',nowOf:(a,b)=>`${a} of ${b}`,empty:'This chapter has no hadith with a translation in this language.',hadith:'Hadith',noneTr:'No translation to play'},
+  autoLbl:'Auto-translated from English',autoNow:'Playing an auto-translated Urdu text (machine translation from English).',done:'End of the chapter.',loading:'Loading…',err:'Could not load. Check your connection.',off:'Hadith audio needs the internet. Connect, then open this page again. Reading you already opened stays on this phone.',nowOf:(a,b)=>`${a} of ${b}`,empty:'This chapter has no hadith with a translation in this language.',hadith:'Hadith',noneTr:'No translation to play'},
  ur:{title:'حدیث آڈیو',lang:'ترجمے کی زبان',book:'کتاب',chapter:'باب',num:'حدیث نمبر',go:'جائیں',play:'سنیں',pause:'وقفہ',resume:'جاری رکھیں',stop:'بند',next:'اگلی',prev:'پچھلی',cont:'پورا باب مسلسل سنیں',speed:'رفتار',
   intro:'زبان، کتاب اور باب چنیں، یا حدیث نمبر پر جائیں، پھر سنیں دبائیں۔ یہاں ترجمہ پڑھا جاتا ہے۔ عربی سننے کے لیے کوئی حدیث کھول کر عربی چنیں۔',
   noRec:'اردو صرف ریکارڈ شدہ آڈیو سے چلتی ہے، جو اس وقت دستیاب نہیں۔ انٹرنیٹ دیکھ کر صفحہ دوبارہ کھولیں۔',
@@ -16,7 +17,7 @@ const TX={en:{title:'Hadith Audio',lang:'Translation language',book:'Book',chapt
   silent:'آواز نہیں چلی: آپ کے آلے نے آواز نہیں دی۔ والیوم اور سائلنٹ سوئچ دیکھیں۔',
   noTr:l=>`اس حدیث کا ${l} ترجمہ موجود نہیں`,skipped:(n,l)=>`اس باب کی ${n} احادیث کا ${l} ترجمہ موجود نہیں، انہیں چھوڑ دیا جائے گا۔`,
   unavailable:l=>`${l} دستیاب نہیں`,notFound:n=>`حدیث ${n} نہیں ملی۔`,missingJump:(n,l)=>`حدیث ${n} کا ${l} ترجمہ موجود نہیں۔`,
-  autoLbl:'انگریزی سے خودکار ترجمہ',autoNow:'خودکار ترجمہ چل رہا ہے (انگریزی سے مشینی ترجمہ)۔',done:'باب ختم ہوا۔',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',nowOf:(a,b)=>`${a} از ${b}`,empty:'اس باب میں اس زبان کا ترجمہ رکھنے والی کوئی حدیث نہیں۔',hadith:'حدیث',noneTr:'چلانے کے لیے ترجمہ موجود نہیں'}};
+  autoLbl:'انگریزی سے خودکار ترجمہ',autoNow:'خودکار ترجمہ چل رہا ہے (انگریزی سے مشینی ترجمہ)۔',done:'باب ختم ہوا۔',loading:'لوڈ ہو رہا ہے…',err:'لوڈ نہیں ہو سکا۔',off:'حدیث کی آواز کے لیے انٹرنیٹ چاہیے۔ جڑ کر یہ صفحہ دوبارہ کھولیں۔ جو پڑھائی پہلے کھل چکی ہو وہ فون پر رہتی ہے۔',nowOf:(a,b)=>`${a} از ${b}`,empty:'اس باب میں اس زبان کا ترجمہ رکھنے والی کوئی حدیث نہیں۔',hadith:'حدیث',noneTr:'چلانے کے لیے ترجمہ موجود نہیں'}};
 const LANGS=['eng','urd'];
 const LSK='qsHadithAudio';
 const pref=()=>{try{const p={lang:'eng',rate:1,cont:true,...JSON.parse(localStorage.getItem(LSK)||'{}')};if(!LANGS.includes(p.lang))p.lang='eng';return p}catch{return{lang:'eng',rate:1,cont:true}}};
@@ -32,8 +33,9 @@ export function leave(){H.stop();off.forEach(f=>f());off=[]}
  */
 export async function render(root,deps,{book:b0='',sec:s0='',n:n0=''}={}){H.loadIndex();
  const {j,HAD,BASE,esc,ui,L2,names}=deps,t=TX[ui]||TX.en,P=pref();
+ if(isOffline()){root.innerHTML=`<p class="card off-note" id="offNote">${t.off}</p>`;return}
  root.innerHTML=`<p class="muted c">${t.loading}</p>`;
- let eds,info;try{[eds,info]=await Promise.all([j(HAD+'/editions.json'),j(HAD+'/info.json')])}catch{root.innerHTML=`<p class="card">${t.err}</p>`;return}
+ let eds,info;try{[eds,info]=await Promise.all([j(HAD+'/editions.json'),j(HAD+'/info.json')])}catch{root.innerHTML=`<p class="card off-note" id="offNote">${isOffline()?t.off:t.err}</p>`;return}
  if(!root.isConnected)return;
  const has=(book,l)=>!!eds[book]?.collection.some(c=>c.name===`${l}-${book}`);
  const books=Object.keys(L2.HCOL).filter(k=>eds[k]);

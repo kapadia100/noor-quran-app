@@ -59,11 +59,11 @@ CI option: run **Actions › Android release (AAB)** after adding the secrets li
 ## iOS
 Mac: `npx cap sync ios && npx cap open ios`, then pick your Team and run it on your iPhone.
 No Mac: add the secrets listed in `.github/workflows/ios.yml`, then run **Actions › iOS build (TestFlight)**.
-`Info.plist` already declares location, motion and background audio (for recitation when the screen is locked).
+`Info.plist` already declares the microphone (Quran Live and Qaida Live), location, motion and background audio (for recitation when the screen is locked). Android declares `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS` for the same on-device tutors.
 
 ## App ID
 `com.aamir.quranapp` is a **placeholder**. Choose your final reverse-domain ID before the first store upload, because it can never be changed afterwards.
-Change it in `capacitor.config.json`, in `android/app/build.gradle` (`namespace` + `applicationId`), and in the Java package folder under `android/app/src/main/java/`. Then run `npx cap sync`. On iOS, the CI passes it as the bundle ID.
+When it is confirmed, run `scripts/set-app-id.sh com.aamir.quransafar` (or whatever the final id is). That updates `capacitor.config.json`, Android `namespace` / `applicationId` / the Java package path, the iOS bundle id, and the docs. Then run `npx cap sync`. iOS CI reads the id from `capacitor.config.json`. Do not run the script until the id is confirmed.
 
 ## Project layout
 ```
