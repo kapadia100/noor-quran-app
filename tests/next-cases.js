@@ -1,11 +1,12 @@
 // v3.6.2: after a surah finishes, offer the next one; the Live (Recite & Learn) entry exists on every surah page.
 import {test,expect} from '@playwright/test';
-let errors=[];
-test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error'&&!/net::|Failed to load resource|tile\.openstreetmap/.test(m.text()))errors.push(m.text())});
+// Errors are stored on the page, not in a shared array: a console message that arrives
+// after the test (WebKit is slow to deliver them) must not fail the next test.
+test.beforeEach(async({page})=>{const errors=[];page.__errors=errors;page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error'&&!/net::|Failed to load resource|tile\.openstreetmap/.test(m.text()))errors.push(m.text())});
  await page.route('https://gc.zgo.at/count.js',r=>r.fulfill({contentType:'text/javascript',body:'window.goatcounter.count=function(o){}'}));
  await page.route('**/quransafar.goatcounter.com/**',r=>r.fulfill({status:204}));
  await page.addInitScript(()=>{window.__reciteFake=true})});
-test.afterEach(async()=>{expect(errors).toEqual([])});
+test.afterEach(async({page})=>{expect(page.__errors).toEqual([])});
 const sayAll=page=>page.evaluate(()=>{const w=window.__recite.raw().flat.map(x=>x.t);for(let i=0;i<w.length;i+=25)window.__recite.feed(w.slice(i,i+25).join(' '))});
 const live=async(page,n)=>{await page.goto(`./#/recite/${n}`);await expect(page.locator('#recite')).toBeVisible();await expect(page.locator('#recite .rc-ref')).not.toBeEmpty();await page.click('#rcMic');await expect.poll(()=>page.evaluate(()=>window.__recite.raw()?.listening)).toBe(true)};
 
@@ -51,7 +52,9 @@ test('live entry exists on every surah page, before and after sessions and route
  await page.evaluate(()=>{location.hash='#/surah/5'});await page.click('#recT');await expect(page.locator('#recite')).toBeVisible();
  await page.evaluate(()=>{location.hash='#/surah/6'});await expect(page.locator('#recite')).toHaveCount(0);await expect(page.locator('#recT')).toBeVisible();
  // v3.7.4: no floating Live pill; resuming mid-surah, Live is still one tap away in the top bar
- await page.goto('./#/surah/2/200');await expect(page.locator('#recFab')).toHaveCount(0);await expect(page.locator('.recfab')).toHaveCount(0);await expect(page.locator('#tutor')).toHaveCount(0);await page.goto('./#/surah/2/200');await page.evaluate(()=>document.querySelector('#recT').click());await expect(page.locator('#recite')).toBeVisible();
+ await page.goto('./#/surah/2/200');await expect(page.locator('#recFab')).toHaveCount(0);await expect(page.locator('.recfab')).toHaveCount(0);await expect(page.locator('#tutor')).toHaveCount(0);
+ // Same URL again: WebKit does not reload, and the reader is still painting, so wait for the bar before tapping it.
+ await page.goto('./#/surah/2/200');const rec=page.locator('#recT');await expect(rec).toBeVisible();await rec.click();await expect(page.locator('#recite')).toBeVisible();
  await page.goto('./#/surah/2');await expect(page.locator('#recT')).toBeVisible()});
 
 test('hifz test: finishing a surah offers the next one, repeat, choose another',async({page})=>{
@@ -60,7 +63,9 @@ test('hifz test: finishing a surah offers the next one, repeat, choose another',
  await expect(page.locator('#sNx2')).toContainText('Next surah: Al-Baqara');for(const id of ['#sRe','#sPick','#sX'])await expect(page.locator(id)).toBeVisible();
  await page.click('#sNx2');await expect(page.locator('#recite .rc-t b')).toHaveText(/Hifz Test/);await expect.poll(()=>page.evaluate(()=>window.__recite.raw()?.n)).toBe(2);
  await page.click('.rc-x');await expect(page.locator('#recite')).toHaveCount(0);
- await page.goto('./#/hifztest');await page.click('.hz-s[data-s="114"]');await expect.poll(()=>page.evaluate(()=>window.__recite.raw()?.listening)).toBe(true);await sayAll(page);
+ await page.goto('./#/hifztest');const last=page.locator('.hz-s[data-s="114"]');await expect(last).toBeVisible();
+ await last.evaluate(el=>el.scrollIntoView({block:'center'}));await last.click();await expect(page.locator('#recite')).toBeVisible();
+ await expect.poll(()=>page.evaluate(()=>!!(window.__recite&&window.__recite.raw()?.listening))).toBe(true);await sayAll(page);
  await expect(page.locator('#sNx2')).toContainText('Start again: Al-Faatiha');await page.click('#sPick');await expect(page).toHaveURL(/#\/hifztest$/);await expect(page.locator('#recite')).toHaveCount(0);
  await page.click('.hz-s[data-s="2"]');await expect(page.locator('#recite')).toBeVisible();await page.click('.rc-x');
  await page.goto('./#/surah/7');await expect(page.locator('#recT')).toBeVisible();await expect(page.locator('#toHzT')).toHaveCount(0)});

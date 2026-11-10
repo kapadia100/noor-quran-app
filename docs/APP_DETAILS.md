@@ -136,7 +136,10 @@ Microphone (Quran Live / Qaida Live) and location are used for app functionality
 | Play feature graphic 1024×500 | `icons/play-feature-graphic-1024x500.png` |
 | Play phone screenshots (2–8) | `mockups/android/*.png` (1080×1920) |
 | iOS icon 1024×1024 (no alpha) | `icons/ios-icon-1024.png` |
-| iOS 6.7" screenshots | `mockups/ios/*.png` (1290×2796) |
+| iOS 6.9" / 6.7" screenshots (draft) | `store/screenshots/iphone-6.9/*.png` (1290×2796) |
+| iOS 6.5" screenshots (draft) | `store/screenshots/iphone-6.5/*.png` (1242×2688) |
+| iPad 13" screenshots (draft) | `store/screenshots/ipad-13/*.png` (2064×2752) |
+| Android phone screenshots (draft) | `store/screenshots/android-phone/*.png` (1080×1920) |
 | Privacy policy | `privacy.html` (host it publicly) |
 | Debug APK for testing | `build/noor-quran-debug.apk` (not for upload) |
 
@@ -144,17 +147,26 @@ Microphone (Quran Live / Qaida Live) and location are used for app functionality
 ## 10. Launch checklist (v1.0.0)
 
 ### Decide before the first upload (permanent)
-- [ ] **Final app ID.** `com.aamir.quranapp` is a placeholder (see README › App ID); suggested: `com.aamir.quransafar`. It can't be changed after publishing.
-- [ ] Final app name / icon (currently "Quran Safar").
+- [ ] **Final app ID.** Still `com.aamir.quranapp`. Do not change it until you confirm. Then run `scripts/set-app-id.sh com.aamir.quransafar` (the script is in the repo and has not been run). It cannot be changed after publishing.
+- [x] App name is Quran Safar. Native icons and splash use the current mark (not the old star-and-crescent or the Capacitor splash).
 
 ### Accounts
 - [ ] Google Play Console ($25 one-time). New personal accounts need **12 testers for 14 days** of closed testing before production.
 - [ ] Apple Developer Program ($99/year) + App Store Connect app record with the same bundle ID.
 
+### Done in the repo (this branch)
+- [x] Microphone usage text on iOS and `RECORD_AUDIO` / `MODIFY_AUDIO_SETTINGS` on Android.
+- [x] Prayer alerts no longer cancel Khatam, ayah-of-the-day, event or Ramadan reminders, and stay within 64 pending notifications.
+- [x] Native alert text uses a city name, not GPS numbers.
+- [x] Adhan file is in the iOS app bundle (still the short placeholder tone).
+- [x] Proprietary `LICENSE` and the in-app rights line. Listing text matches GoatCounter, six hadith books and 17 reciters. Privacy page is linked in the app and already live at https://kapadia100.github.io/noor-quran-app/privacy.html.
+- [x] Tajweed files are in the service-worker precache (`qsafar-v100`).
+- [x] The app switches to offline mode by itself (Offline mark, bundled reading, a clear note on Search, recitation audio, hadith audio and the first Live-tutor download).
+
 ### Android
 - [ ] Run `scripts/make-keystore.sh` yourself. Back up `release.keystore` and the passwords (password manager + offline copy).
 - [ ] Enable Play App Signing (default). Your keystore becomes the *upload* key.
-- [ ] Build: `VERSION_NAME=1.0.0 VERSION_CODE=1 npm run android:aab`, or use the Android Action with secrets.
+- [ ] Build: `VERSION_NAME=1.0.0 VERSION_CODE=1 npm run android:aab`, or use the Android Action with secrets. Do not upload from this branch until you say so.
 - [ ] Exact alarms: the app uses `SCHEDULE_EXACT_ALARM` for prayer alerts. Fill in the Play Console "exact alarm" declaration (prayer-time alarms), or alerts may be delayed on Android 14+.
 - [ ] Data Safety: location (approximate/precise, on-device, and shared with OpenStreetMap for mosque search), anonymous app-interaction analytics (GoatCounter), microphone for Quran Live / Qaida Live, no account, no ads.
 - [ ] Upload to Internal testing, then Closed testing (12 testers / 14 days), then Production.
@@ -164,7 +176,8 @@ Microphone (Quran Live / Qaida Live) and location are used for app functionality
 - [ ] Run the iOS Action, install from TestFlight, and test on a real iPhone (audio with screen locked, alerts, compass).
 - [ ] Guideline 4.2 (minimum functionality): the Quran text + Urdu/English translations, prayer times, Qibla and bookmarks all work offline. Point this out in the review notes.
 - [ ] Privacy nutrition label: Usage Data (Product Interaction / Analytics), not linked and not used for tracking. Location and microphone, used for app functionality, not linked to the user, not used for tracking.
-- [ ] Screenshots: 6.9" (1320×2868) and 6.5" iPhone. Mockups are in `store-assets/mockups`.
+- [x] **Draft screenshots** of the current UI are in `store/screenshots/` (iPhone 6.9" 1290×2796, iPhone 6.5" 1242×2688, iPad 13" 2064×2752, Android phone 1080×1920). These are Playwright drafts, not real-device shots. Regenerate with `node scripts/store-shots.mjs` while `vite preview` is on port 4173.
+- [ ] Real-device screenshots still need to be taken on an iPhone, iPad and Android phone before upload.
 
 ### Content / legal
 - [ ] **Adhan audio:** `adhan.wav` is a placeholder tone. Replace it with a recording you have rights to (Android: `android/app/src/main/res/raw/`, iOS: `ios/App/App/`, web: `public/`).
@@ -175,7 +188,8 @@ Microphone (Quran Live / Qaida Live) and location are used for app functionality
 ### Final QA on real devices
 - [ ] Android phone: GPS, compass, alerts at the exact prayer minute, adhan sound, reboot keeps alerts.
 - [ ] iPhone: continuous recitation with the screen locked, lock-screen controls, alerts (iOS 64-notification limit means 7 days are scheduled, so open the app weekly).
-- [ ] Airplane mode: reading Juz 1–30 and switching between Urdu and English.
+- [ ] Airplane mode on a real phone: the Offline mark appears by itself, Juz 1–30 and Urdu/English keep working, and Search / recitation / hadith audio explain that they need the internet.
+- [ ] Sentry and a push server are not wired up. Sign up and add them only if you want crash reports or remote push. Local notifications do not need a push server.
 
 
 ---

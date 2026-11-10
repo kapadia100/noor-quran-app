@@ -6,6 +6,7 @@ import * as MP from './miniplayer.js';
 import * as M from './madani-data.js';
 import {esc} from './lib.js';
 import {createLive,modelCached,releaseModel} from './qaida-live.js';
+import {isOffline} from './net.js';
 import {unlock,play,playSeq,stop,playU,lastFail,mountPlayer,lessonHasAudio,nextPlayable,startAuto,lastLesson} from './qaida-play.js';
 /** The two courses share this engine. n = Noorani (the original Qaida), m = Madani. Each has its own lessons and its own saved progress. */
 export const COURSES={
@@ -214,7 +215,7 @@ function liveUI(tt,les,root,kind,sel,reg,note){
  clear();paint(0);
  lp.querySelector('#qlStop').onclick=()=>L.stop();
  lp.querySelector('#qlHear').onclick=()=>{const k=lastNc();playHold(urlOf(k>=0?k:Math.min(L.pos,slots.length-1)))};
- const go=async()=>{chip('listen',check&&!modelCached()&&!window.__qFake?tt('Downloading the word checker once (about 19 MB)…','الفاظ جانچنے والا ایک بار ڈاؤن لوڈ ہو رہا ہے (تقریباً 19 MB)…'):M.warm);
+ const go=async()=>{if(check&&!modelCached()&&!window.__qFake&&isOffline()){chip('warn',tt('The Live tutor needs a one-time download (about 19 MB). Connect to the internet, then try again.','لائیو ٹیوٹر کو پہلی بار ڈاؤن لوڈ چاہیے (تقریباً 19 MB)۔ انٹرنیٹ سے جڑ کر دوبارہ کوشش کریں۔'));bars.forEach(b=>{b.hidden=false});return}chip('listen',check&&!modelCached()&&!window.__qFake?tt('Downloading the word checker once (about 19 MB)…','الفاظ جانچنے والا ایک بار ڈاؤن لوڈ ہو رہا ہے (تقریباً 19 MB)…'):M.warm);
   const r=await L.start();if(r.ok)return;reg(null);
   if(r.err==='model'&&check){bars.forEach(b=>{b.hidden=false});lp.hidden=true;liveUI(tt,les,root,'along',sel,reg,M.model);return}
   chip('warn',M[r.err]||M.denied);bars.forEach(b=>{b.hidden=false})};

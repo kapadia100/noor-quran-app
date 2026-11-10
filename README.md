@@ -63,7 +63,7 @@ No Mac: add the secrets listed in `.github/workflows/ios.yml`, then run **Action
 
 ## App ID
 `com.aamir.quranapp` is a **placeholder**. Choose your final reverse-domain ID before the first store upload, because it can never be changed afterwards.
-Change it in `capacitor.config.json`, in `android/app/build.gradle` (`namespace` + `applicationId`), and in the Java package folder under `android/app/src/main/java/`. Then run `npx cap sync`. On iOS, the CI passes it as the bundle ID.
+When it is confirmed, run `scripts/set-app-id.sh com.aamir.quransafar` (or whatever the final id is). That updates `capacitor.config.json`, Android `namespace` / `applicationId` / the Java package path, the iOS bundle id, and the docs. Then run `npx cap sync`. iOS CI reads the id from `capacitor.config.json`. Do not run the script until the id is confirmed.
 
 ## Project layout
 ```
