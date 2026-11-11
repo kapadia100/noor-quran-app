@@ -9,13 +9,14 @@ test('reader: 2:255 jump, fixes, no basmala dup',async({page})=>{await page.goto
 test('invalid refs handled',async({page})=>{await page.goto('./#/surah/999');await expect(page).toHaveURL(/#\/quran$/);await page.goto('./#/search');await page.fill('#q','1:9');await page.press('#q','Enter');await expect(page.locator('#sr')).toContainText('Invalid')});
 test('translation switch incl. Urdu RTL',async({page})=>{await page.goto('./#/surah/1');for(const [ed,dir] of [['ur.jalandhry','rtl'],['fr.hamidullah','ltr'],['id.indonesian','ltr'],['en.sahih','ltr']]){await page.selectOption('#trL',ed.split('.')[0]);await page.waitForFunction(v=>document.querySelector('#tr')?.value===v||[...document.querySelectorAll('#tr option')].some(o=>o.value===v),ed);await page.selectOption('#tr',ed);await expect(page.locator('#a1 .tr')).toHaveAttribute('dir',dir);await expect(page.locator('#a1 .tr')).not.toBeEmpty()}});
 test('juz 1, 15, 30',async({page})=>{for(const [n,c] of [[1,148],[15,185],[30,564]]){await page.goto('./#/juz/'+n);await expect(page.locator('.ayah')).toHaveCount(c)}await page.goto('./#/juz');await expect(page.locator('.list li')).toHaveCount(30)});
-test('AUDIO continuous play: auto-advance through ayahs and into next surah',async({page})=>{
- await page.goto('./#/surah/112');await page.waitForSelector('.ayah');
- await page.evaluate(()=>{window.__log=[];const a=window.__audio;a.muted=true;let done='';a.addEventListener('timeupdate',()=>{if(done!==a.src&&isFinite(a.duration)&&a.duration>2){done=a.src;window.__log.push(a.src);a.currentTime=a.duration-0.5}})});
- await page.click('#playAll');
- await expect.poll(()=>page.evaluate(()=>window.__log.length),{timeout:60000}).toBeGreaterThanOrEqual(6);
- const log=await page.evaluate(()=>window.__log);expect(new Set(log).size).toBeGreaterThanOrEqual(5);
- await expect(page).toHaveURL(/#\/surah\/113/);await expect(page.locator('#pInfo')).toContainText('113');});
+test('AUDIO continuous play: one recording across ayahs, then the next surah',async({page})=>{
+ await page.goto('./#/surah/112');await page.waitForSelector('.ayah');await page.evaluate(()=>window.__audio.muted=true);await page.click('#playAll');
+ await expect.poll(()=>page.evaluate(()=>window.__audio.readyState>=1&&(window.__cur()?.flow?.verses?.length||0)>2),{timeout:30000}).toBe(true);
+ const src=await page.evaluate(()=>window.__audio.src);expect(src).toMatch(/quranicaudio\.com/);
+ for(const a of [2,3,4]){await page.evaluate(n=>{const v=window.__cur().flow.verses.find(x=>x.a===n);window.__audio.currentTime=v.from/1000+0.04;window.__audio.dispatchEvent(new Event('timeupdate'))},a);
+  await expect(page.locator('#pInfo')).toContainText('112:'+a);expect(await page.evaluate(()=>window.__audio.paused)).toBe(false);expect(await page.evaluate(()=>window.__audio.src)).toBe(src)}
+ await page.evaluate(()=>{const a=window.__audio;a.currentTime=Math.max(0,a.duration-0.25)});
+ await expect(page).toHaveURL(/#\/surah\/113/,{timeout:20000});expect(await page.evaluate(s=>window.__audio.src!==s,src)).toBe(true)});
 test('AUDIO per-ayah play continues, next/prev, reciter switch',async({page})=>{await page.goto('./#/surah/1');await page.waitForSelector('.ayah');
  await page.evaluate(()=>window.__audio.muted=true);await page.click('[data-play="2"]');await expect(page.locator('#pInfo')).toContainText('1:3');
  await page.click('#pNext');await expect(page.locator('#pInfo')).toContainText('1:4');await page.click('#pPrev');await expect(page.locator('#pInfo')).toContainText('1:3');
@@ -42,9 +43,8 @@ test('manifest valid',async({page,request})=>{await page.goto('./');const href=a
 test('offline: Quran reading works with no network after first load',async({page,context})=>{await page.goto('./');await page.evaluate(async()=>{await navigator.serviceWorker.ready});await page.reload();await page.waitForTimeout(1500);
  await context.setOffline(true);await page.reload();await page.goto('./#/surah/18');await expect(page.locator('#a1')).toBeVisible({timeout:20000});await expect(page.locator('#a1 .tr')).not.toBeEmpty();
  await page.goto('./#/juz/30');await expect(page.locator('.ayah')).toHaveCount(564);await page.goto('./#/prayer');await expect(page.locator('.ptimes li')).toHaveCount(6);await context.setOffline(false)});
-test('AUDIO whole-surah mode advances to next surah; unsupported reciter falls back to ayah mode',async({page})=>{
- await page.goto('./');await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('settings')||'{}');s.surahAudio=true;s.reciter='ar.alafasy';localStorage.setItem('settings',JSON.stringify(s))});await page.reload();
- await page.goto('./#/surah/112');await page.waitForSelector('.ayah');
- await page.evaluate(()=>{window.__log=[];const a=window.__audio;a.muted=true;let done='';a.addEventListener('timeupdate',()=>{if(done!==a.src&&isFinite(a.duration)&&a.duration>2){done=a.src;window.__log.push(a.src);a.currentTime=a.duration-0.5}})});
- await page.click('#playAll');await expect.poll(()=>page.evaluate(()=>window.__log.join()),{timeout:60000}).toContain('audio-surah/128/ar.alafasy/113.mp3');
- await page.click('#pClose');await page.selectOption('#rc','ar.husary');await page.click('#playAll');await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/audio\/\d+\/ar\.husary\/\d+\.mp3/)});
+test('AUDIO continuous file is the default; an unmapped reciter falls back to ayah clips',async({page})=>{
+ await page.goto('./#/surah/112');await page.waitForSelector('.ayah');await page.evaluate(()=>window.__audio.muted=true);await page.click('#playAll');
+ await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/quranicaudio\.com\/qdc\/mishari/);
+ await page.click('#pClose');await page.selectOption('#rc','ar.hudhaify');await page.click('#playAll');
+ await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/\/ar\.hudhaify\/\d+\.mp3/)});
