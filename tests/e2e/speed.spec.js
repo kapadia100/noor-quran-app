@@ -4,7 +4,7 @@ let errors=[];test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>e
 async function mock(page,o={}){
  await page.context().route('https://api.quran.com/api/v4/chapter_recitations/**',r=>r.fulfill({json:{audio_file:null}}));
  await page.route('https://api.alquran.cloud/v1/surah/**',r=>{const s=+r.request().url().split('/surah/')[1].split('/')[0];r.fulfill({json:{data:{ayahs:Array.from({length:300},(_,i)=>({audio:`https://audio.test/${s}/${i+1}.mp3`}))}}})});
- await page.route('https://audio.test/**',r=>r.fulfill({status:200,contentType:'audio/mpeg',body:''}));
+ await page.route('https://audio.test/**',r=>r.fulfill({status:200,contentType:'audio/mpeg',body:''}));await page.context().route('https://everyayah.com/**',r=>r.fulfill({status:404,body:''}));// clip-by-clip path
  await page.addInitScript(o=>{localStorage.setItem('instBanner','1');if(!sessionStorage.qsS){sessionStorage.qsS=1;localStorage.setItem('settings',JSON.stringify(o))}
   const P=HTMLMediaElement.prototype;window.__rates=[];P.play=function(){window.__rates.push([this.__src,this.playbackRate,this.preservesPitch]);clearTimeout(this.__t);this.__p=false;this.__t=setTimeout(()=>this.dispatchEvent(new Event('ended')),window.__dur??60000);this.dispatchEvent(new Event('play'));return Promise.resolve()};
   P.pause=function(){clearTimeout(this.__t);this.__p=true;this.dispatchEvent(new Event('pause'))};Object.defineProperty(P,'paused',{configurable:true,get(){return this.__p!==false}});

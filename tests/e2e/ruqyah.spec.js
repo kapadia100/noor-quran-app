@@ -4,6 +4,8 @@ const N=SEC.reduce((n,[,a,b])=>n+b-a+1,0);
 async function mock(page){
  await page.route('https://api.alquran.cloud/v1/surah/**',r=>{const s=+r.request().url().split('/surah/')[1].split('/')[0];r.fulfill({json:{data:{ayahs:Array.from({length:300},(_,i)=>({audio:`https://audio.test/${s}/${i+1}.mp3`}))}}})});
  await page.route('https://audio.test/**',r=>r.fulfill({status:200,contentType:'audio/mpeg',body:''}));
+ // joined (gapless) playback is covered in gapless.spec.js; here the clip host is down, so it plays ayah by ayah
+ await page.route('https://everyayah.com/**',r=>r.fulfill({status:404,body:''}));
  await page.addInitScript(()=>{localStorage.setItem('instBanner','1');
   // Each ayah "plays" for a short moment so the sequence can be observed.
   const P=HTMLMediaElement.prototype;P.play=function(){window.__played=(window.__played||[]);window.__played.push(this.src);clearTimeout(this.__t);this.__t=setTimeout(()=>this.dispatchEvent(new Event('ended')),window.__dur??80);return Promise.resolve()};

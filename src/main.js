@@ -33,7 +33,8 @@ import {kick as glide} from './glide.js';
 import * as FW from './follow.js';
 import * as PL from './places.js';
 import * as NET from './net.js';
-import {chapterId,parseTimings,verse,ayahIndex,segsByAyah} from './flow.js';
+import {chapterId,parseTimings,verse,ayahIndex,segsByAyah,mp3qOf,mp3qUrl,parseMp3q,tidy} from './flow.js';
+import * as SN from './stitch-net.js';
 const mem={};
 async function j(url){if(mem[url])return mem[url];const r=await fetch(url);if(!r.ok)throw new Error(r.status);const d=await r.json();return mem[url]=d.data??d}
 const surahs=()=>j(import.meta.env.BASE_URL+'offline/surahs.json').catch(()=>j(API+'/surah'));
@@ -171,9 +172,34 @@ const urlsFor=async s=>{const n=AYAH_COUNTS[s-1];let ar=[];if(S.amode!=='tr'){tr
  return Array.from({length:n},(_,i)=>ayahClips(S.amode,ar[i],S.talang,s,i+1))};
 const isWhole=w=>w&&S.amode==='ar';
 const flowMem=new Map();
-async function loadFlow(reciter,s){const id=chapterId(reciter);if(!id||S.amode!=='ar'||S.surahAudio===false)return null;const k=id+':'+s;
- if(!flowMem.has(k))flowMem.set(k,fetch(`https://api.quran.com/api/v4/chapter_recitations/${id}/${s}?segments=true`).then(r=>r.ok?r.json():null).then(d=>{const af=d&&d.audio_file;const verses=parseTimings(af);if(!af||!af.audio_url||verses.length<2)return null;const by=new Map(verses.map(v=>[v.a,v]));return {url:af.audio_url,verses,by}}).catch(()=>null).then(v=>{if(!v)flowMem.delete(k);return v}));
+// Continuous Arabic recitation, best source first: (1) one recording per surah with ayah times (quran.com chapter audio, or
+// the mp3quran timing data), (2) the reciter's per-ayah clips joined into one stream (stitch-net.js). Timing data is checked
+// per surah (every ayah, in order); a surah that fails uses (2), so no reciter stops between ayahs.
+const flowBad=new Set();
+const asFlow=(url,verses)=>({url,verses,by:new Map(verses.map(v=>[v.a,v]))});
+const qdcFlow=(id,s)=>fetch(`https://api.quran.com/api/v4/chapter_recitations/${id}/${s}?segments=true`).then(r=>r.ok?r.json():null).then(d=>{const af=d&&d.audio_file;if(!af||!af.audio_url)return null;const v=tidy(parseTimings(af),AYAH_COUNTS[s-1]);return v?{...asFlow(af.audio_url,v),bas:true}:false});// these surah files start at ayah 1 with no Bismillah
+const mp3qFlow=([rid,folder],s)=>fetch(`https://www.mp3quran.net/api/v3/ayat_timing?surah=${s}&read=${rid}`).then(r=>r.ok?r.json():null).then(d=>{if(!d)return null;const v=tidy(parseMp3q(d),AYAH_COUNTS[s-1],{s,needIntro:true});return v?asFlow(mp3qUrl(folder,s),v):false});
+async function loadFlow(reciter,s){if(S.amode!=='ar'||S.surahAudio===false)return null;const id=chapterId(reciter),mq=mp3qOf(reciter);if(!id&&!mq)return null;const k=reciter+':'+s;if(flowBad.has(k))return null;
+ if(!flowMem.has(k))flowMem.set(k,(id?qdcFlow(id,s):mp3qFlow(mq,s)).catch(()=>null).then(v=>{if(v===false)flowBad.add(k);if(!v)flowMem.delete(k);return v||null}));
  return flowMem.get(k)}
+// ---- joined per-ayah clips (one blob per chunk of ayahs; the next chunk is built while this one plays) ----
+const stMem=new Map();window.__stMem=stMem;
+function stChunk(s,from,k,noBas){const r=S.reciter,n=AYAH_COUNTS[s-1],size=SN.sizeAt(k),nb=!!(noBas||hifzCfg&&hifzCfg.s===s),key=[r,s,from,size,nb?1:0].join(':');
+ if(stMem.has(key))return stMem.get(key);const list=[];for(let a=from+1;a<=Math.min(n,from+size);a++)list.push({key:a,urls:SN.ayahUrls(r,s,a,nb)});
+ const pr=SN.build(list).then(c=>{const verses=c.marks.map(m=>({a:m.key,from:m.from,to:m.to,segs:[]}));const last=verses.at(-1).a-1;const f={...asFlow(c.url,verses),st:{r,s,first:from,last,n,k,nb,cbr:c.cbr,c,nextFrom:c.partial?from:last+1,nextNb:c.partial||nb}};pr.value=f;return f});
+ stMem.set(key,pr);pr.catch(()=>stMem.delete(key));
+ while(stMem.size>8){const [k0,p0]=stMem.entries().next().value;stMem.delete(k0);p0.then(f=>{if(cur?.flow!==f&&audio.src!==f.url)SN.release(f.st.c)}).catch(()=>{})}
+ return pr}
+/** Build what plays after this chunk: the next chunk of the surah, or the start of the next surah. */
+function stAhead(f){const st=f.st;if(st.nextFrom<st.n){stChunk(st.s,st.nextFrom,st.k+1,st.nextNb).catch(()=>{});return}
+ if(S.autoNext&&st.s<114&&!(hifzCfg&&hifzCfg.s===st.s))loadFlow(S.reciter,st.s+1).then(fl=>{if(!fl&&SN.has(S.reciter))stChunk(st.s+1,0,0).catch(()=>{})}).catch(()=>{})}
+let stFail=0;// a failed join (clip host down) skips joining for a minute instead of retrying on every ayah
+async function playStitch(s,i,name,k=0){if(!SN.has(S.reciter)||S.amode!=='ar'||Date.now()-stFail<6e4)return false;let f;try{f=await stChunk(s,i,k)}catch(e){stFail=Date.now();console.warn('joined audio',e);return false}playFlow(s,i,name,f);stAhead(f);return true}
+/** The chunk ended: switch to the next one inside the same 'ended' task when it is ready (no gap, iOS keeps the session). */
+function stNext(){const c=cur,st=c.flow.st,i=st.nextFrom,go=S.continuous||st.nextFrom===st.first,pr=stChunk(c.s,i,st.k+1,st.nextNb);
+ const on=f=>{if(cur!==c)return;if(go){playFlow(c.s,i,c.name,f);stAhead(f)}else{cur={s:c.s,i,name:c.name,flow:f,flowUrl:f.url,segs:segsByAyah(f.verses),part:0,want:0};audio.src=f.url;playerUI();media();stAhead(f)}};
+ if(pr.value)return on(pr.value);pr.then(on).catch(()=>{if(cur===c)playClips(c.s,i,c.name)})}
+async function playSeq(s,i,name){if(await playStitch(s,i,name))return;return playClips(s,i,name)}
 function setClip(){const c=cur.urls[cur.i][cur.part];audio.src=cur.altOn?c.alt:c.u}
 const surahUrl=(s,br)=>`https://cdn.islamic.network/quran/audio-surah/${br}/${S.reciter}/${s}.mp3`;
 async function surahName(s){try{return (await surahs())[s-1].englishName}catch{return 'Surah '+s}}
@@ -188,7 +214,7 @@ function msHandlers(){if(!('mediaSession' in navigator))return;const ms=navigato
  h('play',()=>{audio.play().catch(()=>{});playerUI()});h('pause',()=>{audio.pause();playerUI()});h('nexttrack',()=>advance(true));h('previoustrack',()=>prev());h('stop',()=>stop())}
 msHandlers();
 // Word-by-word follow (only where timing data matches the clip: Arabic per-ayah, not the Bismillah, not translation).
-PH.follow(()=>{if(!cur||cur.whole||!cur.segs)return null;if(!cur.flow){const c=cur.urls?.[cur.i]?.[cur.part];if(!c||c.tr||c.bas||cur.altOn)return null}
+PH.follow(()=>{if(!cur||cur.whole||!cur.segs||cur.bas)return null;if(!cur.flow){const c=cur.urls?.[cur.i]?.[cur.part];if(!c||c.tr||c.bas||cur.altOn)return null}
  if(!location.hash.match(new RegExp('^#/surah/'+cur.s+'(/|$)')))return null;const el=document.getElementById('a'+(cur.i+1));if(!el)return null;
  const segs=cur.segs[cur.i+1];if(!segs)return null;if(el._ws?.[0]?.isConnected!==true)el._ws=PH.wordEls(el);const ws=el._ws;if(!ws||ws.length!==Math.max(...segs.map(x=>x[0])))return null;return {audio,segs,ws}});
 // One sound at a time across the app: the Qaida player (qaida-play.js) and this player tell each other when they start.
@@ -198,17 +224,27 @@ async function playClips(s,i,name){let urls;try{urls=await urlsFor(s)}catch{toas
  cur={s,i,name,urls,part:0};setClip();{const c=cur;PH.segmentsFor(S.reciter,s).then(m=>{if(cur===c)c.segs=m}).catch(()=>{})}armClips(urls,i);
  try{await audio.play()}catch(e){if(e.name==='NotAllowedError'){toast('Tap ▶ to start audio')}}playerUI();media()}
 function applyWant(){if(!cur||cur.want==null||audio.readyState<1)return;try{audio.currentTime=cur.want;cur.want=null}catch{/* not seekable yet */}}
-function seekFlow(index){const v=verse(cur.flow,index);if(!v)return false;cur.i=index;cur.want=v.from/1000;applyWant();
+/** Bismillah finished (or skipped): continue in the surah file at ayah index, inside the same task. */
+function toFlowFile(index=cur.i){const c=cur;c.bas=false;c.i=index;const v=verse(c.flow,index);c.want=v?v.from/1000:0;audio.addEventListener('loadedmetadata',applyWant,{once:true});audio.src=c.flow.url;
+ audio.play().then(applyWant).catch(e=>{if(e?.name==='NotAllowedError')toast('Tap ▶ to start audio')});playerUI();media();aheadSurah(c.s);return true}
+function seekFlow(index){if(cur.bas)return toFlowFile(index);if(cur.flow.st&&(!cur.flow.st.cbr||!verse(cur.flow,index))){const c=cur;playStitch(c.s,index,c.name,0).then(ok=>{if(!ok&&cur===c)playClips(c.s,index,c.name)});return true}
+ const v=verse(cur.flow,index);if(!v)return false;cur.i=index;cur.want=v.from/1000;applyWant();
  if(cur.want!=null)audio.addEventListener('loadedmetadata',applyWant,{once:true});
  if(audio.paused)audio.play().catch(e=>{if(e?.name==='NotAllowedError')toast('Tap ▶ to start audio')});playerUI();media();return true}
+/** While a surah file plays: get the next surah ready (its timings, its Bismillah clip, or its first joined chunk) so auto-advance starts at once. */
+function aheadSurah(s){if(s>=114||!S.autoNext||hifzCfg&&hifzCfg.s===s)return;const r=S.reciter;
+ loadFlow(r,s+1).then(fl=>{if(S.reciter!==r)return;if(fl){if(fl.bas&&s+1!==9&&SN.has(r)&&!cur?.bas)try{pre.src=SN.clipUrl(r,1,1)}catch{/* warm-up only */}}else if(SN.has(r))stChunk(s+1,0,0).catch(()=>{})}).catch(()=>{})}
 function playFlow(s,i,name,flow){const v=verse(flow,i);if(!v)return playClips(s,i,name);errs=0;
- if(cur&&cur.flowUrl===flow.url&&cur.s===s&&cur.flow){cur.segs=segsByAyah(flow.verses);return seekFlow(i)}
+ if(cur&&cur.flowUrl===flow.url&&cur.s===s&&cur.flow){cur.segs=segsByAyah(flow.verses);if(!flow.st)return seekFlow(i);cur.i=i;cur.want=v.from/1000;applyWant();if(audio.paused)audio.play().catch(()=>{});playerUI();media();return true}
  cur={s,i,name,flow,flowUrl:flow.url,segs:segsByAyah(flow.verses),part:0,want:v.from/1000};
+ // Surah file without the Bismillah: the reciter's own Bismillah clip first (as ayah-by-ayah play always did), then the file.
+ if(flow.bas&&i===0&&s!==1&&s!==9&&!(hifzCfg&&hifzCfg.s===s)&&SN.has(S.reciter)){cur.bas=true;audio.src=SN.clipUrl(S.reciter,1,1);try{pre.src=flow.url}catch{/* warm-up only */}
+  audio.play().catch(e=>{if(e.name==='NotAllowedError')toast('Tap ▶ to start audio')});playerUI();media();if(s<114)loadFlow(S.reciter,s+1);return}
  audio.addEventListener('loadedmetadata',applyWant,{once:true});audio.src=flow.url;
  audio.play().then(applyWant).catch(e=>{if(e.name==='NotAllowedError')toast('Tap ▶ to start audio')});
- playerUI();media();if(s<114)loadFlow(S.reciter,s+1)}
+ playerUI();media();if(!flow.st)aheadSurah(s)}
 async function playPos(s,i,whole=S.surahAudio){if(NET.isOffline()){toast(offAudio());return stop()}whole=isWhole(whole);if(!validSurah(s))return stop();const name=await surahName(s);errs=whole?errs:0;
- if(S.amode==='ar'&&S.surahAudio!==false){const flow=await loadFlow(S.reciter,s);if(flow)return playFlow(s,i,name,flow)}
+ if(S.amode==='ar'&&S.surahAudio!==false){const flow=await loadFlow(S.reciter,s);if(flow)return playFlow(s,i,name,flow);if(await playStitch(s,i,name))return}
  if(whole){cur={s,i:0,name,whole:true,br:cur?.br||128};audio.src=surahUrl(s,cur.br);try{await audio.play()}catch(e){if(e.name==='NotAllowedError')toast('Tap ▶ to start audio')}playerUI();media();return}
  return playClips(s,i,name)}
 /** Next ayah of the same surah: switch the clip and call play() synchronously inside the 'ended' task (no awaits, so iOS keeps
@@ -218,13 +254,14 @@ function step(i){const c=cur;cur={s:c.s,i,name:c.name,urls:c.urls,segs:c.segs,pa
  try{armClips(c.urls,i)}catch{/* preload is optional */}
  try{playerUI();media()}catch(e){console.warn('player ui',e)}}
 let flowHold=0;
-function onFlowTick(){if(!cur?.flow||audio.paused)return;const ms=audio.currentTime*1000;if(hifzCfg&&hifzCfg.s===cur.s&&hifzPos){const v=verse(cur.flow,hifzPos.a-1);
+function onFlowTick(){if(!cur?.flow||cur.bas||audio.paused)return;const ms=audio.currentTime*1000;if(hifzCfg&&hifzCfg.s===cur.s&&hifzPos){const v=verse(cur.flow,hifzPos.a-1);
   if(v&&ms>=v.to-70&&performance.now()>flowHold){flowHold=performance.now()+250;const nx=hifzNextPos();if(!nx){hifzCfg=null;toast(S.ui==='ur'?'حفظ سیشن مکمل':'Hifz session complete ✓');audio.pause();return playerUI()}
-   const nv=verse(cur.flow,nx-1);if(nv){cur.i=nx-1;try{audio.currentTime=nv.from/1000}catch{/* ignore */}playerUI()}return}}
+   const nv=verse(cur.flow,nx-1);if(cur.flow.st&&(!nv||!cur.flow.st.cbr)){seekFlow(nx-1);return}if(nv){cur.i=nx-1;try{audio.currentTime=nv.from/1000}catch{/* ignore */}playerUI()}return}}
  const v=verse(cur.flow,cur.i);if(v&&!S.continuous&&ms>=v.to-70&&performance.now()>flowHold){flowHold=performance.now()+400;try{audio.currentTime=Math.max(v.from/1000,(v.to-40)/1000)}catch{/* ignore */}audio.pause();return playerUI()}
  const idx=ayahIndex(cur.flow.verses,ms);const a=cur.flow.verses[idx].a-1;if(a!==cur.i){cur.i=a;playerUI();media()}}
 function advance(manual){if(!cur)return;
- if(cur.flow){if(manual){const n=cur.i+1;if(verse(cur.flow,n))return seekFlow(n);if(cur.s<114)return playPos(cur.s+1,0);return stop()}
+ if(cur.flow){const st=cur.flow.st;if(manual){const n=cur.i+1;if(verse(cur.flow,n)||(st&&n<st.n))return seekFlow(n);if(cur.s<114)return playPos(cur.s+1,0);return stop()}
+  if(st&&st.nextFrom<st.n)return stNext();
   if(S.autoNext&&cur.s<114){const from=cur.s;return playPos(from+1,0).then(()=>{if(location.hash.match(new RegExp('^#/surah/'+from+'(/|$)'))&&!document.getElementById('recite'))location.hash='#/surah/'+(from+1)})}return stop()}
  if(hifzCfg&&!manual&&!cur.whole&&cur.s===hifzCfg.s){const nx=hifzNextPos();if(!nx){hifzCfg=null;toast(S.ui==='ur'?'حفظ سیشن مکمل':'Hifz session complete ✓');audio.pause();return playerUI()}return playPos(hifzCfg.s,nx-1,false)}if(cur.whole){if(S.autoNext&&cur.s<114||manual)return playPos(cur.s+1,0,true);return stop()}
  if(!S.continuous&&!manual)return playerUI();const n=nextPos(cur.s,cur.i);if(!n)return stop();
@@ -233,12 +270,12 @@ function prev(){if(!cur)return;if(cur.flow){const into=verse(cur.flow,cur.i);con
  if(cur.whole)return playPos(Math.max(1,cur.s-1),0,true);if(cur.i>0)return playPos(cur.s,cur.i-1);if(cur.s>1)playPos(cur.s-1,AYAH_COUNTS[cur.s-2]-1)}
 function stop(){audio.pause();cur=null;hifzCfg=null;playerUI();if('mediaSession' in navigator)navigator.mediaSession.playbackState='none'}
 audio.ontimeupdate=()=>{try{onFlowTick()}catch(e){console.warn('flow',e)}};
-audio.onended=()=>{if(oneShot){oneShot=false;cur=null;return playerUI()}if(cur?.flow){try{advance(false)}catch(e){console.warn('advance',e)}return}if(cur&&!cur.whole&&cur.urls&&cur.part+1<cur.urls[cur.i].length){cur.part++;cur.altOn=false;setClip();audio.play().catch(()=>{});return}try{advance(false)}catch(e){console.warn('advance',e)}};
+audio.onended=()=>{if(oneShot){oneShot=false;cur=null;return playerUI()}if(cur?.bas){try{toFlowFile()}catch(e){console.warn('bismillah',e)}return}if(cur?.flow){try{advance(false)}catch(e){console.warn('advance',e)}return}if(cur&&!cur.whole&&cur.urls&&cur.part+1<cur.urls[cur.i].length){cur.part++;cur.altOn=false;setClip();audio.play().catch(()=>{});return}try{advance(false)}catch(e){console.warn('advance',e)}};
 /** Play a single clip (dua / word audio) through the same player. */
 function playUrl(url,label,quiet){hifzCfg=null;oneShot=true;cur={s:0,i:0,name:label||'Audio',whole:true,clip:true,quiet:!!quiet};audio.src=url;audio.play().catch(()=>{});if(!quiet)playerUI()}
 const hifzNextPos=()=>{const p=hifzNext(hifzCfg,hifzPos);hifzPos=p;return p?p.a:null};
 audio.onplay=()=>{dispatchEvent(new CustomEvent('qs:audio',{detail:'app'}));if('mediaSession' in navigator)navigator.mediaSession.playbackState='playing';playerUI()};audio.onpause=()=>{if('mediaSession' in navigator)navigator.mediaSession.playbackState='paused';playerUI()};
-audio.onerror=()=>{if(!cur||!audio.src)return;if(cur.flow&&!cur.flowTried){cur.flowTried=1;const s=cur.s,i=cur.i,name=cur.name;cur.flow=null;flowMem.delete(chapterId(S.reciter)+':'+s);return playClips(s,i,name)}
+audio.onerror=()=>{if(!cur||!audio.src)return;if(cur.bas)return toFlowFile();if(cur.flow&&!cur.flowTried){const st=cur.flow.st;cur.flowTried=1;const s=cur.s,i=cur.i,name=cur.name;cur.flow=null;if(st)return playClips(s,i,name);flowMem.delete(S.reciter+':'+s);return playSeq(s,i,name)}
  const netErr=audio.error&&audio.error.code===2;if(netErr)NET.noteResult(audio.currentSrc||audio.src,false);
  if(NET.isOffline()){toast(offAudio());return stop()}if(cur.whole){if(cur.br===128){cur.br=64;audio.src=surahUrl(cur.s,64);audio.play().catch(()=>{});return}toast('Whole-surah audio unavailable for this reciter; playing ayah by ayah');return playPos(cur.s,0,false)}
  const c=cur.urls?.[cur.i]?.[cur.part];if(c&&c.alt&&!cur.altOn){cur.altOn=true;setClip();audio.play().catch(()=>{});return}
