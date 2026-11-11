@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 async function mock(page,dur){
  await page.route('https://api.alquran.cloud/v1/surah/*/ar.*',r=>r.fulfill({json:{data:{ayahs:Array.from({length:30},(_,i)=>({audio:`https://cdn.islamic.network/quran/audio/128/ar.alafasy/${5242+i}.mp3`}))}}}));
  await page.route('https://cdn.islamic.network/**',r=>r.fulfill({status:200,contentType:'audio/mpeg',body:''}));
- await page.route('https://api.quran.com/**',r=>r.fulfill({json:{audio_files:[]}}));
+ await page.context().route('https://api.quran.com/**',r=>r.fulfill({json:{audio_files:[]}}));
  await page.addInitScript(d=>{localStorage.setItem('instBanner','1');const P=HTMLMediaElement.prototype;
   P.play=function(){this.__p=false;this.__t0=performance.now();clearTimeout(this.__t);this.__t=setTimeout(()=>{this.__p=true;this.dispatchEvent(new Event('ended'))},/\/1\.mp3$/.test(this.src)?100:d);this.dispatchEvent(new Event('play'));return Promise.resolve()};
   P.pause=function(){clearTimeout(this.__t);this.__p=true;this.dispatchEvent(new Event('pause'))};

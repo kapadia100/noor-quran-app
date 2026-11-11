@@ -1,7 +1,8 @@
 import {test,expect} from '@playwright/test';
 // t232u: the reader must keep going ayah after ayah (incl. across the Bismillah) with the playing highlight + follow-scroll on.
 let errors=[];
-test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>errors.push(String(e)))});
+test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.addInitScript(()=>{localStorage.setItem('settings',JSON.stringify({surahAudio:false,flowV:1,amode:'ar',reciter:'ar.alafasy',continuous:true,autoNext:true}))})});
 test.afterEach(()=>expect(errors).toEqual([]));
 const end=page=>page.evaluate(()=>window.__audio.dispatchEvent(new Event('ended')));
 for(const [s,from] of [[2,0],[1,0],[113,0]])test(`surah ${s}: plays 4 consecutive ayahs from ended alone, highlight follows`,async({page})=>{

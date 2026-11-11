@@ -1,7 +1,7 @@
 // Automatic offline mode. Phones have no airplane-mode API, so this watches
 // navigator.onLine, the online/offline events, and failed remote fetches
 // (iOS often leaves onLine true when the radio is down).
-const REMOTE=/alquran\.cloud|jsdelivr\.net|islamic\.network|everyayah\.com|quran\.com|huggingface\.co|github\.io\/noor-quran-app\/models/;
+const REMOTE=/alquran\.cloud|jsdelivr\.net|islamic\.network|everyayah\.com|quran\.com|quranicaudio\.com|huggingface\.co|github\.io\/noor-quran-app\/models/;
 let offline=false,fails=[],hooked=false;
 export const isOffline=()=>offline;
 export const isOnline=()=>!offline;

@@ -2,6 +2,7 @@ import {test,expect} from '@playwright/test';
 // t241u: one playback speed under the big gold Pause, shared by the reader, Ruqyah and Hadith audio.
 let errors=[];test.beforeEach(async({page})=>{errors=[];page.on('pageerror',e=>errors.push(String(e)))});test.afterEach(()=>expect(errors).toEqual([]));
 async function mock(page,o={}){
+ await page.context().route('https://api.quran.com/api/v4/chapter_recitations/**',r=>r.fulfill({json:{audio_file:null}}));
  await page.route('https://api.alquran.cloud/v1/surah/**',r=>{const s=+r.request().url().split('/surah/')[1].split('/')[0];r.fulfill({json:{data:{ayahs:Array.from({length:300},(_,i)=>({audio:`https://audio.test/${s}/${i+1}.mp3`}))}}})});
  await page.route('https://audio.test/**',r=>r.fulfill({status:200,contentType:'audio/mpeg',body:''}));
  await page.addInitScript(o=>{localStorage.setItem('instBanner','1');if(!sessionStorage.qsS){sessionStorage.qsS=1;localStorage.setItem('settings',JSON.stringify(o))}

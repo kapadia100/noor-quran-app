@@ -20,6 +20,7 @@ describe('automatic offline mode',()=>{
  it('only content hosts count as a remote fetch',()=>{
   expect(isRemote('https://api.alquran.cloud/v1/search/x/all/en.sahih')).toBe(true);
   expect(isRemote('https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3')).toBe(true);
+  expect(isRemote('https://download.quranicaudio.com/qdc/mishari_al_afasy/murattal/1.mp3')).toBe(true);
   expect(isRemote('https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.json')).toBe(true);
   expect(isRemote('./offline/s/ar/1.json')).toBe(false);
   expect(isRemote('https://quransafar.goatcounter.com/count')).toBe(false)});
