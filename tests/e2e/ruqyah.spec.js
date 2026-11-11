@@ -71,7 +71,7 @@ test('v83: Ruqyah uses the same mini player as the reader: prev | gold play/paus
  await page.click('#rqMP');await expect(page.locator('#rqMP')).toHaveAttribute('aria-label','Play');await page.click('#rqMP');await expect(page.locator('#rqMP')).toHaveAttribute('aria-label','Pause');
  // same geometry as the reader's player
  const b=await m.boundingBox();await page.click('#rqMStop');await expect(m).toBeHidden();await expect(page.locator('.rq-on')).toHaveCount(0);
- await page.goto('./#/surah/1');await page.waitForSelector('.ayah');await page.click('[data-play="0"]');const r=await page.locator('#player').boundingBox();
+ await page.goto('./#/surah/1');await page.waitForSelector('.ayah');await page.click('[data-play="0"]');await expect(page.locator('#player')).toBeVisible();const r=await page.locator('#player').boundingBox();
  for(const k of ['x','width','height'])expect(Math.abs(b[k]-r[k])).toBeLessThanOrEqual(2);expect(Math.abs(b.y-r.y)).toBeLessThanOrEqual(2);
  if(process.env.SHOTS){await page.screenshot({path:'/workspace/shots-player/reader-v83b.png'})}
 });
