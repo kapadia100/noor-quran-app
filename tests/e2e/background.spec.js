@@ -15,7 +15,7 @@ test('reader: going to the background does not pause; lock-screen handlers incl.
 test('ruqyah: sequence advances on ended while hidden, next ayah preloaded, lock-screen controls',async({page})=>{
  await spy(page);
  await page.route('https://api.alquran.cloud/v1/surah/**',r=>{const s=+r.request().url().split('/surah/')[1].split('/')[0];r.fulfill({json:{data:{ayahs:Array.from({length:300},(_,i)=>({audio:`https://audio.test/${s}/${i+1}.mp3`}))}}})});
- await page.route('https://audio.test/**',r=>r.fulfill({status:200,contentType:'audio/mpeg',body:''}));
+ await page.route('https://audio.test/**',r=>r.fulfill({status:200,contentType:'audio/mpeg',body:''}));await page.context().route('https://everyayah.com/**',r=>r.fulfill({status:404,body:''}));// clip-by-clip path (joined clips: gapless.spec.js)
  await page.addInitScript(()=>{localStorage.setItem('instBanner','1');const P=HTMLMediaElement.prototype;
   P.play=function(){(window.__played=window.__played||[]).push(this.src);clearTimeout(this.__t);this.__t=setTimeout(()=>this.dispatchEvent(new Event('ended')),150);return Promise.resolve()};P.pause=function(){clearTimeout(this.__t)};
   Object.defineProperty(P,'src',{configurable:true,get(){return this.__src||''},set(v){this.__src=v;(window.__srcs=window.__srcs||[]).push(v)}})});

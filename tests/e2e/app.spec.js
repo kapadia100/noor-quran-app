@@ -11,7 +11,7 @@ test('translation switch incl. Urdu RTL',async({page})=>{await page.goto('./#/su
 test('juz 1, 15, 30',async({page})=>{for(const [n,c] of [[1,148],[15,185],[30,564]]){await page.goto('./#/juz/'+n);await expect(page.locator('.ayah')).toHaveCount(c)}await page.goto('./#/juz');await expect(page.locator('.list li')).toHaveCount(30)});
 test('AUDIO continuous play: one recording across ayahs, then the next surah',async({page})=>{
  await page.goto('./#/surah/112');await page.waitForSelector('.ayah');await page.evaluate(()=>window.__audio.muted=true);await page.click('#playAll');
- await expect.poll(()=>page.evaluate(()=>window.__audio.readyState>=1&&(window.__cur()?.flow?.verses?.length||0)>2),{timeout:30000}).toBe(true);
+ await expect.poll(()=>page.evaluate(()=>!window.__cur()?.bas&&/quranicaudio/.test(window.__audio.src)&&window.__audio.readyState>=1&&(window.__cur()?.flow?.verses?.length||0)>2),{timeout:30000}).toBe(true);
  const src=await page.evaluate(()=>window.__audio.src);expect(src).toMatch(/quranicaudio\.com/);
  for(const a of [2,3,4]){await page.evaluate(n=>{const v=window.__cur().flow.verses.find(x=>x.a===n);window.__audio.currentTime=v.from/1000+0.04;window.__audio.dispatchEvent(new Event('timeupdate'))},a);
   await expect(page.locator('#pInfo')).toContainText('112:'+a);expect(await page.evaluate(()=>window.__audio.paused)).toBe(false);expect(await page.evaluate(()=>window.__audio.src)).toBe(src)}
@@ -43,8 +43,9 @@ test('manifest valid',async({page,request})=>{await page.goto('./');const href=a
 test('offline: Quran reading works with no network after first load',async({page,context})=>{await page.goto('./');await page.evaluate(async()=>{await navigator.serviceWorker.ready});await page.reload();await page.waitForTimeout(1500);
  await context.setOffline(true);await page.reload();await page.goto('./#/surah/18');await expect(page.locator('#a1')).toBeVisible({timeout:20000});await expect(page.locator('#a1 .tr')).not.toBeEmpty();
  await page.goto('./#/juz/30');await expect(page.locator('.ayah')).toHaveCount(564);await page.goto('./#/prayer');await expect(page.locator('.ptimes li')).toHaveCount(6);await context.setOffline(false)});
-test('AUDIO continuous file is the default; an unmapped reciter falls back to ayah clips',async({page})=>{
+test('AUDIO continuous file is the default (reciter Bismillah first); a reciter with no timed file plays joined ayah clips',async({page})=>{
  await page.goto('./#/surah/112');await page.waitForSelector('.ayah');await page.evaluate(()=>window.__audio.muted=true);await page.click('#playAll');
+ await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/Alafasy_128kbps\/001001\.mp3/);
  await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/quranicaudio\.com\/qdc\/mishari/);
  await page.click('#pClose');await page.selectOption('#rc','ar.hudhaify');await page.click('#playAll');
- await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/\/ar\.hudhaify\/\d+\.mp3/)});
+ await expect.poll(()=>page.evaluate(()=>window.__audio.src),{timeout:30000}).toMatch(/^blob:/);expect(await page.evaluate(()=>window.__cur().flow.st.r)).toBe('ar.hudhaify')});
