@@ -24,10 +24,10 @@ describe('store-prep config',()=>{
   const ios=readFileSync(new URL('../../ios/App/App/adhan.wav',import.meta.url));
   expect(Buffer.compare(web,android)).toBe(0);
   expect(Buffer.compare(web,ios)).toBe(0)});
- it('tajweed surah files are in the service-worker shell and the cache name moved past v99',()=>{
+ it('tajweed surah files are in the service-worker shell and the cache name moved past v100',()=>{
   const sw=read('public/sw.js');
-  expect(sw).toMatch(/const C='qsafar-v100'/);
-  expect(sw).not.toMatch(/qsafar-v99/);
+  expect(sw).toMatch(/const C='qsafar-v101'/);
+  expect(sw).not.toMatch(/qsafar-v100/);
   expect(sw).toMatch(/offline\/tj\/\$\{i\+1\}\.json/);
   expect(sw).toMatch(/\{length:114\}/);
   const n=(sw.match(/offline\/tj\//g)||[]).length;

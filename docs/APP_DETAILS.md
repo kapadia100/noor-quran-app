@@ -160,7 +160,7 @@ Microphone (Quran Live / Qaida Live) and location are used for app functionality
 - [x] Native alert text uses a city name, not GPS numbers.
 - [x] Adhan file is in the iOS app bundle (still the short placeholder tone).
 - [x] Proprietary `LICENSE` and the in-app rights line. Listing text matches GoatCounter, six hadith books and 17 reciters. Privacy page is linked in the app and already live at https://kapadia100.github.io/noor-quran-app/privacy.html.
-- [x] Tajweed files are in the service-worker precache (`qsafar-v100`).
+- [x] Tajweed files are in the service-worker precache (`qsafar-v101`).
 - [x] The app switches to offline mode by itself (Offline mark, bundled reading, a clear note on Search, recitation audio, hadith audio and the first Live-tutor download).
 
 ### Android
