@@ -6,7 +6,7 @@ for(const [surah,reciter] of CASES)test(`continuous ${reciter} surah ${surah}: o
  await page.addInitScript(rec=>{const s=JSON.parse(localStorage.getItem('settings')||'{}');Object.assign(s,{reciter:rec,amode:'ar',surahAudio:true,flowV:1,continuous:true,autoNext:true});localStorage.setItem('settings',JSON.stringify(s))},reciter);
  await page.goto(`./#/surah/${surah}`);await page.waitForSelector('#a1');await page.evaluate(()=>{window.__audio.muted=true});
  await page.click('#playAll');
- try{await expect.poll(()=>page.evaluate(()=>{const c=window.__cur(),a=window.__audio;return !!(c?.flow&&a.readyState>=2&&a.currentTime>0.05&&!a.paused)}),{timeout:40000}).toBe(true)}
+ try{await expect.poll(()=>page.evaluate(()=>{const c=window.__cur(),a=window.__audio;return !!(c?.flow&&!c.bas&&a.readyState>=2&&a.currentTime>0.05&&!a.paused)}),{timeout:40000}).toBe(true)}
  catch(e){const d=await page.evaluate(()=>{const a=window.__audio,c=window.__cur();return {src:a.src,err:a.error&&a.error.code,rs:a.readyState,t:a.currentTime,paused:a.paused,flow:!!c?.flow}});throw new Error(e.message+' '+JSON.stringify(d),{cause:e})}
  const crossed=await page.evaluate(()=>new Promise((res,rej)=>{const a=window.__audio,f=window.__cur().flow,cut=f.verses[0].to/1000,src=a.src;
   const begin=()=>{let started=false,last=performance.now(),lastC=a.currentTime,worst=0;const t0=last;

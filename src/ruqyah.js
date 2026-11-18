@@ -1,10 +1,11 @@
-// v3.7.9 Ruqyah Shariah: the standard Quranic ruqyah set read from the app's own Quran text (offline/s/ar), played ayah by ayah
-// with the user's chosen reciter; the prophetic duas are shown as text (never spoken by the device voice).
+// v3.7.9 Ruqyah Shariah: the standard Quranic ruqyah set read from the app's own Quran text (offline/s/ar), played as one
+// continuous stream (the reciter's ayah clips joined, see stitch-net.js; ayah by ayah only if that cannot load) with the user's chosen reciter; the prophetic duas are shown as text (never spoken by the device voice).
 import*as H from'./hadith-tts.js';
 import {ayahText} from'./lib.js';
 import {kick as glide} from'./glide.js';
 import {follow} from'./follow.js';
 import*as MP from'./miniplayer.js';import*as SP from'./speed.js';
+import*as SN from'./stitch-net.js';
 const API='https://api.alquran.cloud/v1';
 /** Quranic sections: [surah, fromAyah, toAyah]. */
 export const RQ=[[1,1,7],[2,1,5],[2,102,102],[2,163,164],[2,255,255],[2,285,286],[3,18,19],[7,54,56],[7,117,122],[10,81,82],[20,69,69],[23,115,118],[37,1,10],[46,29,32],[55,33,36],[59,21,24],[72,1,9],[112,1,4],[113,1,5],[114,1,6]];
@@ -52,9 +53,28 @@ q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))
  try{new IntersectionObserver(([e])=>{topVis=e.isIntersecting;mp()}).observe(top)}catch{/* old browsers: no mini player */}
  const end=()=>{st.state='idle';st.i=-1;paint();mediaOff();q('#rqSt').textContent=tt('Finished.','مکمل ہوا۔')};
  const paint0=paint;paint=()=>{paint0();mp()};
+ // Gapless: the ayat are joined into chunks (4, then 12, then 40 ayat) that play back to back on the same element;
+ // the next chunk is built while the current one plays. Highlight follows the joined stream's ayah times.
+ const R=C.S.reciter||'ar.alafasy',joinable=SN.has(R),chMem=new Map();let ch=null;
+ const chunk=(from,k)=>{const size=SN.sizeAt(k),key=from+':'+size;if(chMem.has(key))return chMem.get(key);const list=[];
+  for(let i=from;i<Math.min(seq.length,from+size);i++){const x=seq[i];if(x.k!=='q')break;list.push({key:i,urls:[SN.clipUrl(R,x.s,x.a)]})}
+  const pr=SN.build(list).then(c=>{c.first=from;c.last=c.marks.at(-1).key;c.k=k;pr.value=c;return c});chMem.set(key,pr);pr.catch(()=>chMem.delete(key));
+  while(chMem.size>6){const [k0,p0]=chMem.entries().next().value;chMem.delete(k0);p0.then(c=>{if(ch!==c)SN.release(c)}).catch(()=>{})}return pr};
+ off.push(()=>{for(const p of chMem.values())p.then(c=>SN.release(c)).catch(()=>{});chMem.clear();ch=null});
+ const ahead=c=>{if(c.last+1<seq.length)chunk(c.last+1,c.k+1).catch(()=>{})};
+ const playChunk=(c,i)=>{ch=c;au.src=c.url;media(seq[i]);ahead(c);au.play().then(()=>{if(ch===c&&st.state==='loading'){st.state='playing';paint()}else if(ch!==c||st.state!=='playing'&&st.state!=='loading')au.pause()}).catch(()=>{if(ch===c&&st.state==='loading'){st.state='paused';paint()}})};
+ const at=ms=>{let k=ch.first;for(const m of ch.marks){if(ms+15>=m.from)k=m.key;else break}return k};
+ au.ontimeupdate=()=>{if(!ch||!app.isConnected||st.state!=='playing')return;const k=at(au.currentTime*1000);if(k!==st.i){st.i=k;paint();const e=app.querySelector(`[data-i="${k}"]`);requestAnimationFrame(()=>follow(e));media(seq[k])}};
+ let joinOk=joinable;// one failed join (clip host down): ayah by ayah for the rest of this visit
+ const goJoined=async i=>{let c;try{c=await chunk(i,0)}catch{c=null;joinOk=false}if(st.i!==i||st.state!=='loading')return true;if(!c)return false;playChunk(c,i);return true};
+ /** The chunk ended: start the next inside the same 'ended' task when it is ready (no gap; iOS keeps playing locked). */
+ const nextChunk=()=>{const c=ch;if(c.last+1>=seq.length){ch=null;end();return}const i=c.last+1,pr=chunk(i,c.k+1);st.i=i;paint();
+  if(pr.value){st.state='loading';playChunk(pr.value,i);return}st.state='loading';paint();pr.then(n=>{if(st.i===i&&st.state==='loading')playChunk(n,i)}).catch(()=>{if(st.i===i&&st.state==='loading'){ch=null;go1(i)}})};
  const go=async i=>{if(i>=seq.length){end();return}
-  st.i=i;st.state='loading';paint();const e=app.querySelector(`[data-i="${i}"]`);requestAnimationFrame(()=>follow(e));const x=seq[i];
+  st.i=i;st.state='loading';ch=null;paint();const e=app.querySelector(`[data-i="${i}"]`);requestAnimationFrame(()=>follow(e));
   try{dispatchEvent(new CustomEvent('qs:audio',{detail:'ruqyah'}))}catch{/* ignore */}
+  if(joinOk&&seq[i].k==='q'&&await goJoined(i))return;if(st.i!==i||st.state!=='loading')return;go1(i)};
+ const go1=async i=>{const x=seq[i];
   if(x.k==='q'){let u;try{u=(await getUrl(x.s))[x.a-1]}catch{u=null}if(st.i!==i||st.state!=='loading')return;
    if(!u){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔');return}
    preNext(i);au.src=u;media(x);au.play().then(()=>{if(st.i===i&&st.state==='loading'){st.state='playing';paint()}else if(st.i!==i||st.state!=='playing')au.pause()}).catch(()=>{if(st.i===i&&st.state==='loading'){st.state='paused';paint()}})}
@@ -67,18 +87,18 @@ q('#rqBar').style.width=st.i<0?'0%':`${Math.round((st.i+(st.state==='idle'?0:1))
   h('previoustrack',()=>jump(-1));h('nexttrack',()=>jump(1));h('stop',()=>q('#rqMStop').click())}catch{/* ignore */}};
  const mediaOff=()=>{const ms=MS();if(!ms)return;try{ms.metadata=null;ms.playbackState='none';for(const a of['play','pause','stop','previoustrack','nexttrack'])ms.setActionHandler(a,null)}catch{/* ignore */}try{dispatchEvent(new Event('qs:media-restore'))}catch{/* ignore */}};
  au.onplay=()=>{const ms=MS();if(ms)try{ms.playbackState='playing'}catch{/* ignore */}};au.onpause=()=>{const ms=MS();if(ms&&st.state!=='idle')try{ms.playbackState='paused'}catch{/* ignore */}};
- au.onended=()=>{if(app.isConnected&&st.state==='playing')go(st.i+1)};
+ au.onended=()=>{if(!app.isConnected||st.state!=='playing')return;if(ch)return nextChunk();go(st.i+1)};
  au.onerror=()=>{if(app.isConnected&&st.state!=='idle'&&au.src){st.state='idle';paint();q('#rqSt').textContent=tt('Could not load the audio. Check your connection.','آڈیو لوڈ نہیں ہو سکی۔ کنکشن چیک کریں۔')}};
  q('#rqPlay').onclick=()=>{const x=seq[st.i];
   if(st.state==='playing'||st.state==='loading'){if(x?.k==='d')H.pause();else au.pause();st.state='paused';paint()}
   else if(st.state==='paused'){if(x?.k==='d')H.resume();else au.play().catch(()=>{});st.state='playing';paint()}
   else go(0)};
  q('#rqMP').onclick=()=>q('#rqPlay').click();
- q('#rqMStop').onclick=()=>{au.pause();H.stop();st.state='idle';st.i=-1;paint();mediaOff()};
+ q('#rqMStop').onclick=()=>{au.pause();H.stop();ch=null;st.state='idle';st.i=-1;paint();mediaOff()};
  const jump=d=>{if(st.i<0)return;const n=Math.max(0,Math.min(seq.length-1,st.i+d));au.pause();H.stop();go(n)};q('#rqMPrev').onclick=()=>jump(-1);q('#rqMNext').onclick=()=>jump(1);
  const pick=e=>{const el=e.target.closest('[data-i]');if(!el)return;au.pause();H.stop();go(+el.dataset.i)};
  app.addEventListener('click',e=>{if(e.target.closest('.rq-a,.rq-d'))pick(e)});
  app.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('.rq-a,.rq-d')){e.preventDefault();pick(e)}});
  const other=e=>{if(e.detail!=='ruqyah'&&st.state==='playing'){au.pause();H.pause();st.state='paused';paint()}};
  addEventListener('qs:audio',other);off.push(()=>removeEventListener('qs:audio',other));
- window.__rq={seq:()=>seq.length,state:()=>({...st}),au}}
+ window.__rq={seq:()=>seq.length,state:()=>({...st}),au,chunk:()=>ch}}
